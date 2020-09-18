@@ -6,7 +6,7 @@
  *  Copyright (C) 2015-2017 The LIME development team
  *
 TODO:
-	- In readOrBuildGrid(), test for the presence of the 5 mandatory functions (actually 4, since velocity() is already tested in aux.c:parseInput() ) before doing smoothing.
+  - In readOrBuildGrid(), test for the presence of the 5 mandatory functions (actually 4, since velocity() is already tested in aux.c:parseInput() ) before doing smoothing.
  */
 
 #include "lime.h"
@@ -59,9 +59,9 @@ exit(1);
       if(!silent) warning("par->pIntensity will be overwritten");
     }
   }
-  par->sinkPoints = (int)gridInfoRead.nSinkPoints;
+  par->sinkPoints = 0;//(int)gridInfoRead.nSinkPoints;
   par->pIntensity = (int)gridInfoRead.nInternalPoints;
-  par->ncell = par->sinkPoints + par->pIntensity;
+  par->ncell = par->pIntensity;
 
   if(gridInfoRead.nDims!=DIM){ /* At present this situation is already detected and handled inside readGridExtFromFits(), but it may not be in future. The test here has no present functionality but saves trouble later if we change grid.x from an array to a pointer. */
     if(!silent){
@@ -197,35 +197,12 @@ void randomsViaRejection(configInfo *par, const unsigned int desiredNumPoints, g
       /* Pick a point and check if we like it or not */
       j=0;
       while(!pointIsAccepted && j<maxNumAttempts){
-        if(par->sampling==0){
+
           r=pow(10,logmin+gsl_rng_uniform(randGen)*(lograd-logmin));
-          theta=2.*M_PI*gsl_rng_uniform(randGen);
-          phi=M_PI*gsl_rng_uniform(randGen);
-          sinPhi=sin(phi);
-          x[0]=r*cos(theta)*sinPhi;
-          x[1]=r*sin(theta)*sinPhi;
-          if(DIM==3) x[2]=r*cos(phi);
-        } else if(par->sampling==1){
-          x[0]=(2*gsl_rng_uniform(randGen)-1)*par->radius;
-          x[1]=(2*gsl_rng_uniform(randGen)-1)*par->radius;
-          if(DIM==3) x[2]=(2*gsl_rng_uniform(randGen)-1)*par->radius;
-        } else if(par->sampling==2){
-          r=pow(10,logmin+gsl_rng_uniform(randGen)*(lograd-logmin));
-          theta=2.*M_PI*gsl_rng_uniform(randGen);
-          if(DIM==3) {
-            z=2*gsl_rng_uniform(randGen)-1.;
-            semiradius=r*sqrt(1.-z*z);
-            z*=r;
-            x[2]=z;
-          } else {
-            semiradius=r;
-          }
-          x[0]=semiradius*cos(theta);
-          x[1]=semiradius*sin(theta);
-        } else {
-          if(!silent) bail_out("Don't know how to sample model");
-          exit(1);
-        }
+          x[0]=0.0;
+          x[1]=0.0;
+          if(DIM==3)
+            x[2]=r;   
         pointIsAccepted = pointEvaluation(par, uniformRandom, x);
         j++;
       }
@@ -368,7 +345,7 @@ Generate the grid point locations.
     outRandDensities = malloc(sizeof(double   )*par->pIntensity); /* Not used at present; and in fact they are not useful outside this routine, because they are not the values of the physical density at that point, just what densityFunc3D() returns, which is not necessarily the same thing. */
     outRandLocations = malloc(sizeof(*outRandLocations)*par->pIntensity);
 
-    randGen = gsl_rng_alloc(ranNumGenType);	/* Random number generator */
+    randGen = gsl_rng_alloc(ranNumGenType); /* Random number generator */
     if(fixRandomSeeds)
       gsl_rng_set(randGen,342971);
     else
@@ -377,43 +354,7 @@ Generate the grid point locations.
     if(par->samplingAlgorithm==0){
       randomsViaRejection(par, (unsigned int)par->pIntensity, randGen, outRandLocations);
 
-    } else if(par->samplingAlgorithm==1){
-      setConstDefaults(&rinc);
-
-      if(fixRandomSeeds)
-        rinc.randSeed = 342971;
-      else
-        rinc.randSeed = time(0);
-
-      rinc.numDims = DIM;
-      rinc.par = *par;
-      rinc.desiredNumPoints = (unsigned int)par->pIntensity;
-      for(di=0;di<DIM;di++){
-        rinc.wholeFieldOrigin[di] = -par->radius;
-        rinc.wholeFieldWidth[di] = 2.0*par->radius;
-      }
-      rinc.verbosity = 0;
-      rinc.monitorFunc = NULL;
-
-      rinc.totalNumHighPoints = par->numGridDensMaxima;
-
-      if(rinc.totalNumHighPoints>0){
-        rinc.allHighPointLoc   = malloc(sizeof(*(rinc.allHighPointLoc  ))*rinc.totalNumHighPoints);
-        rinc.allHighPointDensy = malloc(sizeof(*(rinc.allHighPointDensy))*rinc.totalNumHighPoints);
-        for(i=0;i<rinc.totalNumHighPoints;i++){
-          for(di=0;di<rinc.numDims;di++){
-            rinc.allHighPointLoc[i][di] = par->gridDensMaxLoc[i][di];
-          }
-          rinc.allHighPointDensy[i] = par->gridDensMaxValues[i];
-        }
-      }else{
-        rinc.allHighPointLoc = NULL;
-        rinc.allHighPointDensy = NULL;
-      }
-
-      treeGenerateRandoms(&rinc, gridDensity, outRandLocations, outRandDensities);
-
-    } else {
+    }  else {
       if(!silent) bail_out("Unrecognized sampling algorithm.");
 exit(1);
     }
@@ -427,39 +368,9 @@ exit(1);
       (*gp)[k].sink=0;
     }
 
-    /* end model grid point assignment */
-    if(!silent) printDone(4);
-
-    /* Add surface sink particles */
-    for(k=par->pIntensity;k<par->ncell;k++){
-      theta=gsl_rng_uniform(randGen)*2*M_PI;
-
-      if(DIM==3) {
-        z=2*gsl_rng_uniform(randGen)-1.;
-        semiradius=sqrt(1.-z*z);
-        x[2]=z;
-      } else {
-        semiradius=1.0;
-      }
-
-      x[0]=semiradius*cos(theta);
-      x[1]=semiradius*sin(theta);;
-      (*gp)[k].id=k;
-      (*gp)[k].x[0]=par->radius*x[0];
-      (*gp)[k].x[1]=par->radius*x[1];
-      if(DIM==3) (*gp)[k].x[2]=par->radius*x[2];
-      (*gp)[k].sink=1;
-    }
-    /* end grid allocation */
-
     free(outRandLocations);
     free(outRandDensities);
     gsl_rng_free(randGen);
-
-    if(par->samplingAlgorithm==0){
-      smooth(par,*gp);
-      if(!silent) printDone(5);
-    }
 
     par->dataFlags |= DS_mask_1;
   }
@@ -470,20 +381,10 @@ exit(1);
   /* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 Generate the remaining values if needed. **Note** that we check a few of them to make sure the user has set the appropriate values.
   */
-  if(!allBitsSet(par->dataFlags, DS_mask_neighbours)){
-    unsigned long nExtraSinks;
+   if(!allBitsSet(par->dataFlags, DS_mask_neighbours)){
 
-    delaunay(DIM, *gp, (unsigned long)par->ncell, 0, 1, &dc, &numCells);
-
-    /* We just asked delaunay() to flag any grid points with IDs lower than par->pIntensity (which means their distances from model centre are less than the model radius) but which are nevertheless found to be sink points by virtue of the geometry of the mesh of Delaunay cells. Now we need to reshuffle the list of grid points, then reset par->pIntensity, such that all the non-sink points still have IDs lower than par->pIntensity.
-    */ 
-    nExtraSinks = reorderGrid((unsigned long)par->ncell, *gp);
-    par->pIntensity -= nExtraSinks;
-    par->sinkPoints += nExtraSinks;
-
-    par->dataFlags |= DS_mask_neighbours;
-  }
-  distCalc(par, *gp); /* Mallocs and sets .dir & .ds, sets .nphot. We don't store these values so we have to calculate them whether we read a file or not. */
+     par->dataFlags |= DS_mask_neighbours;
+   }
 
   if(onlyBitsSet(par->dataFlags, DS_mask_2)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==2. */
     writeGridIfRequired(par, *gp, NULL, 2);
@@ -601,7 +502,7 @@ exit(1);
       }
 
       for(i=0;i<par->pIntensity;i++)
-        doppler((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],&(*gp)[i].dopb_turb);	
+        doppler((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],&(*gp)[i].dopb_turb); 
       for(i=par->pIntensity;i<par->ncell;i++)
         (*gp)[i].dopb_turb=0.;
 
@@ -613,19 +514,11 @@ exit(1);
       for(i=0;i<par->pIntensity;i++)
         velocity((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].vel);
 
-      /* Set velocity values also for sink points (otherwise Delaunay ray-tracing has problems) */
-      for(i=par->pIntensity;i<par->ncell;i++)
-        velocity((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].vel);
-
       par->dataFlags |= DS_mask_velocity;
     }
 
     if(!allBitsSet(par->dataFlags, DS_mask_ACOEFF)){
-      if(!bitIsSet(defaultFuncFlags, USERFUNC_velocity)){
-        getEdgeVelocities(par,*gp); /* Mallocs and sets .v1, .v2, .v3, which are only used within calculateJBar(), which is only called if par->doMolCalcs. This also sets par->edgeVelsAvailable. */
-
-        par->dataFlags |= DS_mask_ACOEFF;
-      }
+      par->dataFlags |= DS_mask_ACOEFF;
     }
   } /* End if(par->doMolCalcs) */
 
@@ -660,5 +553,3 @@ exit(1);
 
   freeArrayOfStrings(collPartNames, numCollPartRead);
 }
-
-
