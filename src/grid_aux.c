@@ -116,6 +116,7 @@ void calcGridMolSpecNumDens(configInfo *par, molData *md, struct grid *gp){
 void
 delaunay(const int numDims, struct grid *gp, const unsigned long numPoints\
   , const _Bool getCells, _Bool checkSink, struct cell **dc, unsigned long *numCells){
+
   /*
 The principal purpose of this function is to perform a Delaunay triangulation for the set of points defined by the input argument 'g'. This is achieved via routines in the 3rd-party package qhull.
 
@@ -423,23 +424,6 @@ write_VTK_unstructured_Points(configInfo *par, struct grid *g){
 
   sprintf(flags,"qhull d Qbb T0");
 
-  if (!qh_new_qhull(DIM, par->ncell, pt_array, ismalloc, flags, NULL, NULL)) {
-    FORALLfacets {
-      if (!facet->upperdelaunay) l++;
-    }
-    fprintf(fp,"CELLS %d %d\n",l, 5*l);
-    FORALLfacets {
-      if (!facet->upperdelaunay) {
-        fprintf(fp,"4 ");
-        FOREACHvertex_ (facet->vertices) {
-          fprintf(fp, "%d ", qh_pointid(vertex->point));
-        }
-        fprintf(fp, "\n");
-      }
-    }
-  }
-  qh_freeqhull(!qh_ALL);
-  qh_memfreeshort (&curlong, &totlong);
   fprintf(fp,"\nCELL_TYPES %d\n",l);
   for(i=0;i<l;i++){
     fprintf(fp, "10\n");
@@ -586,4 +570,3 @@ exit(1);
     }
   }
 }
-
