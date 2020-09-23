@@ -1013,14 +1013,6 @@ double getTime(struct grid *gp, int id, configInfo *par){
 }
 
 /*....................................................................*/
-int compare(const void *a,const void *b) {
-double *x = (double *) a;
-double *y = (double *) b;
-if (*x < *y) return -1;
-else if (*x > *y) return 1; return 0;
-}
-
-/*....................................................................*/
 void
 solveStatEq(struct grid *gp, molData *md, const int ispec, configInfo *par\
   , struct blendInfo blends, int *nextMolWithBlend, gridPointData **mp\
