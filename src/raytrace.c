@@ -164,15 +164,6 @@ traceray(double *xs,int ppi,imageInfo *img,configInfo *par,struct grid *gp,molDa
 }
 
 /*....................................................................*/
-int 
-compare2(const void *a,const void *b) {
-double *x = (double *) a;
-double *y = (double *) b;
-if (*x < *y) return -1;
-else if (*x > *y) return 1; return 0;
-}
-
-/*....................................................................*/
 void
 raytrace(int im, configInfo *par, struct grid *gp, molData *md\
   , imageInfo *img, double *lamtab, double *kaptab, const int nEntries){
@@ -271,7 +262,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
     sorted_radius[id] = radiusarr[id]; //Note: not sorted yet
   }
 
-  qsort(sorted_radius, par->pIntensity, sizeof(double), compare2);
+  qsort(sorted_radius, par->pIntensity, sizeof(double), compare);
 
   struct radius_struct radius_struct;
   radius_struct.id = malloc(sizeof(int) * par -> pIntensity);
