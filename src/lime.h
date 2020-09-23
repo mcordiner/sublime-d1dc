@@ -264,6 +264,7 @@ void	setCollPartsDefaults(struct cpData*);
 int	setupAndWriteGrid(configInfo *par, struct grid *gp, molData *md, char *outFileName);
 void	setUpDensityAux(configInfo*, int*, const int);
 void	sigintHandler(int sigI);
+int compare(const void *a,const void *b);
 void	smooth(configInfo*, struct grid*);
 void	sourceFunc_line(const molData*, const double, const struct populations*, const int, double*, double*);
 void	sourceFunc_cont(const struct continuumLine, double*, double*);
