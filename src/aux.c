@@ -22,6 +22,14 @@ exit(1);
 }
 
 /*....................................................................*/
+int compare(const void *a,const void *b) {
+double *x = (double *) a;
+double *y = (double *) b;
+if (*x < *y) return -1;
+else if (*x > *y) return 1; return 0;
+}
+
+/*....................................................................*/
 void checkFgets(char *fgetsResult, char *message){
   const size_t buflen=80;
   char string[buflen];
