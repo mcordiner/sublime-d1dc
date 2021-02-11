@@ -9,11 +9,41 @@
 
 #include "lime.h"
 #include "raythrucells.h"
+#include <math.h>
+
+
+struct flux{
+  double *intense;
+  double *tau;
+};
 
 struct radius_struct{
   int *id;
   double *radius;
+  struct flux *flux;
 };
+
+// double linear_interp(double x_array, double y_array,configInfo *par, double value){
+
+//   gsl_spline *spline = NULL;
+//   gsl_interp_accel *acc = NULL;
+//   double *knus=NULL, *dusts=NULL;
+
+//   acc = gsl_interp_accel_alloc();
+//   spline = gsl_spline_alloc(gsl_interp_linear,par->pIntensity);
+//   gsl_spline_init(spline,x_array,y_array,par->pIntensity);
+
+//   interp_value = gsl_spline_eval (spline, value, acc);
+
+//   gsl_spline_free(spline);
+//   gsl_interp_accel_free(acc);
+
+//   return(interp_value);
+// }
+
+double linear_interp(double x0, double x1, double y0, double y1, double value){
+  return((y0*(x1-value) + y1*(value-x0))/(x1-x0));
+}
 
 /*....................................................................*/
 void calcGridContDustOpacity(configInfo *par, const double freq\
@@ -63,23 +93,20 @@ void calcGridContDustOpacity(configInfo *par, const double freq\
 
 /*....................................................................*/
 void
-traceray(double *xs,int ppi,imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct radius_struct radius_struct,const int im){
+traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct radius_struct radius_struct,const int im, int index){
 
-  int ichan,stokesId,di,i,posn,posnu,posnl,molI,lineI, index;
-  double xp,yp,zp,x[DIM],dx[DIM],dz,dtau,col,r;
+  int ichan,stokesId,di,i,posn,posnu,posnl,molI,lineI;
+  double zp,x[DIM],dx[DIM],dz,dtau,col,r;
   double contJnu,contAlpha,jnu,alpha,lineRedShift,vThisChan,deltav,vfac=0.0;
   double remnantSnu,expDTau,brightnessIncrement;
 
-  xp = xs[0];
-  yp = xs[1];
-
   zp=-par->radiusSqu;
+
   for(di=0;di<DIM;di++){
-    //x[di]=xp*img[im].rotMat[di][0] + yp*img[im].rotMat[di][1] + zp*img[im].rotMat[di][2];
     dx[di]= img[im].rotMat[di][2]; /* This points away from the observer. */
   }
-  x[0] = xp;
-  x[1] = yp;
+  x[0] = radius_struct.radius[index];
+  x[1] = 0.0;
   x[2] = zp;
 
   col=0.0;
@@ -149,17 +176,21 @@ traceray(double *xs,int ppi,imageInfo *img,configInfo *par,struct grid *gp,molDa
         dtau=alpha*dz;
         calcSourceFn(dtau, par, &remnantSnu, &expDTau);
         remnantSnu *= jnu*dz;
+
 #ifdef FASTEXP
-        brightnessIncrement = FastExp(img[im].pixel[ppi].tau[ichan])*remnantSnu;
+        brightnessIncrement = FastExp(radius_struct.flux[index].tau[ichan])*remnantSnu;
 #else
-        brightnessIncrement =    exp(-img[im].pixel[ppi].tau[ichan])*remnantSnu;
+        brightnessIncrement =    exp(-radius_struct.flux[index].tau[ichan])*remnantSnu;
 #endif
-        img[im].pixel[ppi].intense[ichan] += brightnessIncrement;
-        img[im].pixel[ppi].tau[ichan]+=dtau;
+
+        radius_struct.flux[index].intense[ichan] += brightnessIncrement;
+        radius_struct.flux[index].tau[ichan] += dtau;
+
       }//end for ichan
     }// end if
     col+=dz;
     x[2] += dz;
+    
   }while(col < 2.0*fabs(zp));
 }
 
@@ -180,8 +211,8 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   const int nsupsamppix = 3; // Number of pixels (in x,y) from origin in which to do cartesian supersampling
   const int supsamp = 10; // Number of rays per pixel (in x,y) for central pixel super-sampling
 
-    double pixelSize, imgCentrePixels,minfreq,absDeltaFreq,xs[2],oneOnNumRays;
-    int totalNumImagePixels,ppi, ichan,lastChan,molI,lineI,i,j,di, xi, yi,id;
+    double pixelSize, imgCentrePixels,minfreq,absDeltaFreq,xs[2],oneOnNumRays, ro;
+    int totalNumImagePixels,ppi, ichan,lastChan,molI,lineI,i,j,di, xi, yi,id, index;
     double local_cmb,cmbFreq,scale;
     int cmbMolI,cmbLineI, ppx,ppy;
 
@@ -254,7 +285,6 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   for(ppi=0;ppi<totalNumImagePixels;ppi++)
     img[im].pixel[ppi].numRays = 0;
 
-
   double radiusarr[par->pIntensity], sorted_radius[par->pIntensity];
 
   for (id = 0;id < par->pIntensity;id++) {
@@ -265,7 +295,8 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   qsort(sorted_radius, par->pIntensity, sizeof(double), compare);
 
   struct radius_struct radius_struct;
-  radius_struct.id = malloc(sizeof(int) * par -> pIntensity);
+  radius_struct.id = malloc(sizeof(int) * par->pIntensity);
+  radius_struct.flux = malloc(sizeof(*radius_struct.flux) * par->pIntensity);
   radius_struct.radius = sorted_radius;
   double current;
 
@@ -276,6 +307,19 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
         radius_struct.id[i] = j; //holds sorted ids according to the time/radius of its corresponding gridpoint
   }
 
+  for(i = 0; i < par->pIntensity; i++){
+    radius_struct.flux[i].intense= malloc(sizeof(double) * img[im].nchan);
+    radius_struct.flux[i].tau= malloc(sizeof(double) * img[im].nchan);
+
+    for(ichan=0;ichan<img[im].nchan;ichan++){
+      radius_struct.flux[i].intense[ichan] = 0.0;
+      radius_struct.flux[i].tau[ichan] = 0.0;
+    }
+  }
+
+  for(i = 0; i < par->pIntensity; i++){
+    traceray(img,par,gp,md,radius_struct,im,i);
+  }
 
   ppy = 0;
   for (ppi = 0; ppi<totalNumImagePixels; ppi++){
@@ -285,25 +329,63 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
 
     xs[0] = (0.5 + ppx - imgCentrePixels) * pixelSize;
     xs[1] = (0.5 + ppy - imgCentrePixels) * pixelSize;
+    ro = sqrt(xs[0]*xs[0] + xs[1]*xs[1]);
 
-    if(abs(xs[0])>pixelSize*nsupsamppix || abs(xs[1])>pixelSize*nsupsamppix){
+    for(i=0;i<par->pIntensity;i++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
+      if(radius_struct.radius[i]>ro){
+        index =i;
+        break;
+      }
+   // if(abs(xs[0])>pixelSize*nsupsamppix || abs(xs[1])>pixelSize*nsupsamppix){
       img[im].pixel[ppi].numRays++;
-      traceray(xs,ppi,img,par,gp,md,radius_struct,im);
-    }
+
+      if(index==0){
+        for(ichan=0;ichan<img[im].nchan;ichan++){
+          img[im].pixel[ppi].intense[ichan] = pow(10.0,radius_struct.flux[index].intense[ichan]);
+          img[im].pixel[ppi].tau[ichan] = pow(10.0,radius_struct.flux[index].tau[ichan]);
+        }
+      }
+
+      else if(index==par->pIntensity){
+        index = par->pIntensity-1;
+        for(ichan=0;ichan<img[im].nchan;ichan++){
+          img[im].pixel[ppi].intense[ichan] = pow(10.0,radius_struct.flux[index].intense[ichan]);
+          img[im].pixel[ppi].tau[ichan] = pow(10.0,radius_struct.flux[index].tau[ichan]);
+        }
+      }
+      else{
+        for(ichan=0;ichan<img[im].nchan;ichan++){
+          img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(radius_struct.radius[index-1],radius_struct.radius[index],log10(radius_struct.flux[index-1].intense[ichan]),log10(radius_struct.flux[index].intense[ichan]),ro));
+          img[im].pixel[ppi].tau[ichan] = pow(10.0,linear_interp(radius_struct.radius[index-1],radius_struct.radius[index],log10(radius_struct.flux[index-1].tau[ichan]),log10(radius_struct.flux[index].tau[ichan]),ro));
+        }
+      }
+    //}
   }
 
-  scale = pixelSize/supsamp;
-  for(j=1-(nsupsamppix*supsamp);j<(nsupsamppix*supsamp);j++){
-    for(i=1-(nsupsamppix*supsamp);i<(nsupsamppix*supsamp);i++){
-      xs[0] = j*scale;
-      xs[1] = i*scale;
-      xi = floor(xs[0]/pixelSize + imgCentrePixels);
-      yi = floor(xs[1]/pixelSize + imgCentrePixels);
-      ppi = yi * img[im].pxls + xi;
-      img[im].pixel[ppi].numRays++;
-      traceray(xs,ppi,img,par,gp,md,radius_struct,im);
-    }
-  }
+  // scale = pixelSize/(double)supsamp;
+
+  // for(j=1-(nsupsamppix*supsamp);j<(nsupsamppix*supsamp);j++){
+  //   for(i=1-(nsupsamppix*supsamp);i<(nsupsamppix*supsamp);i++){
+  //     xs[0] = j*scale;
+  //     xs[1] = i*scale;
+  //     ro = sqrt(xs[0]*xs[0] + xs[1]*xs[1]);
+
+  //     xi = floor(xs[0]/pixelSize + imgCentrePixels);
+  //     yi = floor(xs[1]/pixelSize + imgCentrePixels);
+  //     ppi = yi * img[im].pxls + xi;
+  //     img[im].pixel[ppi].numRays++;
+
+  //     for(i=0;i<par->pIntensity;i++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
+  //       if(radius_struct.radius[i]>ro){
+  //         index =i;
+  //         break;
+  //       }
+  //     for(ichan=0;ichan<img[im].nchan;ichan++){
+  //         img[im].pixel[ppi].intense[ichan] += pow(10.0,linear_interp(radius_struct.radius[index-1],radius_struct.radius[index],log10(radius_struct.flux[index-1].intense[ichan]),log10(radius_struct.flux[index].intense[ichan]),ro));
+  //         img[im].pixel[ppi].tau[ichan] += pow(10.0,linear_interp(radius_struct.radius[index-1],radius_struct.radius[index],log10(radius_struct.flux[index-1].tau[ichan]),log10(radius_struct.flux[index].tau[ichan]),ro));
+  //       }
+  //   }
+  // }
 
   for(ppi=0;ppi<totalNumImagePixels;ppi++){
     if(img[im].pixel[ppi].numRays >= minNumRaysForAverage){
@@ -314,6 +396,14 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
       }
     }
   }
+
+  for(i = 0; i < par->pIntensity; i++){
+    free(radius_struct.flux[i].intense);
+    free(radius_struct.flux[i].tau);    
+  }
+  free(radius_struct.id);
+  free(radius_struct.flux);
+
 
   if(par->polarization){ /* just add cmb to Stokes I, which is the first 'channel' */
     lastChan = 0;
