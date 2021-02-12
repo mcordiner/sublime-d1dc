@@ -93,7 +93,7 @@ void calcGridContDustOpacity(configInfo *par, const double freq\
 
 /*....................................................................*/
 void
-traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct radius_struct radius_struct,const int im, int index){
+traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct radius_struct radius_struct,const int im, int index, double* rho_grid){
 
   int ichan,stokesId,di,i,posn,posnu,posnl,molI,lineI;
   double zp,x[DIM],dx[DIM],dz,dtau,col,r;
@@ -105,7 +105,7 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct radiu
   for(di=0;di<DIM;di++){
     dx[di]= img[im].rotMat[di][2]; /* This points away from the observer. */
   }
-  x[0] = radius_struct.radius[index];
+  x[0] = rho_grid[index];
   x[1] = 0.0;
   x[2] = zp;
 
@@ -208,12 +208,10 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   printf("\nRaytracing in progress...\n");
 
   const int minNumRaysForAverage=2;
-  const int nsupsamppix = 3; // Number of pixels (in x,y) from origin in which to do cartesian supersampling
-  const int supsamp = 10; // Number of rays per pixel (in x,y) for central pixel super-sampling
 
-    double pixelSize, imgCentrePixels,minfreq,absDeltaFreq,xs[2],oneOnNumRays, ro;
-    int totalNumImagePixels,ppi, ichan,lastChan,molI,lineI,i,j,di, xi, yi,id, index;
-    double local_cmb,cmbFreq,scale;
+    double pixelSize, imgCentrePixels,minfreq,absDeltaFreq,xs[2],oneOnNumRays, rho_grid[par->pIntensity], ro;
+    int totalNumImagePixels,ppi, ichan,lastChan,molI,lineI,i,j,k,di, xi, yi,id, index, pixoff,pixoff2,pixshiftx,pixshifty, nsupsamppix;
+    double local_cmb,cmbFreq,scale,shift,offset;
     int cmbMolI,cmbLineI, ppx,ppy;
 
     pixelSize = img[im].distance*img[im].imgres;
@@ -299,6 +297,12 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   radius_struct.flux = malloc(sizeof(*radius_struct.flux) * par->pIntensity);
   radius_struct.radius = sorted_radius;
   double current;
+  
+  offset =  radius_struct.radius[0];
+  
+  for (i = 0; i < par->pIntensity; i++) {
+    rho_grid[i] = radius_struct.radius[i] - offset;
+  }
 
   for (i = 0; i < par->pIntensity; i++) {
     current = radius_struct.radius[i];
@@ -316,10 +320,14 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
       radius_struct.flux[i].tau[ichan] = 0.0;
     }
   }
-
+  
+  printf("Calling traceray...\n");
+  
   for(i = 0; i < par->pIntensity; i++){
-    traceray(img,par,gp,md,radius_struct,im,i);
+    traceray(img,par,gp,md,radius_struct,im,i,rho_grid);
   }
+  
+  printf("Interpolating to image grid...\n");
 
   ppy = 0;
   for (ppi = 0; ppi<totalNumImagePixels; ppi++){
@@ -332,7 +340,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
     ro = sqrt(xs[0]*xs[0] + xs[1]*xs[1]);
 
     for(i=0;i<par->pIntensity;i++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
-      if(radius_struct.radius[i]>ro){
+      if(rho_grid[i]>ro){
         index =i;
         break;
       }
@@ -341,22 +349,22 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
 
       if(index==0){
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = pow(10.0,radius_struct.flux[index].intense[ichan]);
-          img[im].pixel[ppi].tau[ichan] = pow(10.0,radius_struct.flux[index].tau[ichan]);
+          img[im].pixel[ppi].intense[ichan] = radius_struct.flux[index].intense[ichan];
+          img[im].pixel[ppi].tau[ichan] = radius_struct.flux[index].tau[ichan];          
         }
       }
 
       else if(index==par->pIntensity){
         index = par->pIntensity-1;
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = pow(10.0,radius_struct.flux[index].intense[ichan]);
-          img[im].pixel[ppi].tau[ichan] = pow(10.0,radius_struct.flux[index].tau[ichan]);
+          img[im].pixel[ppi].intense[ichan] = radius_struct.flux[index].intense[ichan];
+          img[im].pixel[ppi].tau[ichan] = radius_struct.flux[index].tau[ichan];
         }
       }
       else{
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(radius_struct.radius[index-1],radius_struct.radius[index],log10(radius_struct.flux[index-1].intense[ichan]),log10(radius_struct.flux[index].intense[ichan]),ro));
-          img[im].pixel[ppi].tau[ichan] = pow(10.0,linear_interp(radius_struct.radius[index-1],radius_struct.radius[index],log10(radius_struct.flux[index-1].tau[ichan]),log10(radius_struct.flux[index].tau[ichan]),ro));
+          img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(radius_struct.flux[index-1].intense[ichan]),log10(radius_struct.flux[index].intense[ichan]),ro));
+          img[im].pixel[ppi].tau[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(radius_struct.flux[index-1].tau[ichan]),log10(radius_struct.flux[index].tau[ichan]),ro));
         }
       }
     //}
@@ -375,9 +383,9 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   //     ppi = yi * img[im].pxls + xi;
   //     img[im].pixel[ppi].numRays++;
 
-  //     for(i=0;i<par->pIntensity;i++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
-  //       if(radius_struct.radius[i]>ro){
-  //         index =i;
+  //     for(k=0;k<par->pIntensity;k++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
+  //       if(radius_struct.radius[k]>ro){
+  //         index =k;
   //         break;
   //       }
   //     for(ichan=0;ichan<img[im].nchan;ichan++){
@@ -386,8 +394,71 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   //       }
   //   }
   // }
+  
+  printf("Supersampling the central pixels...\n");
+  
+  const int supsamp = 20; // Number of rays per pixel (supsamp * supsamp in x,y plane)
+  scale = pixelSize/((double)supsamp);
+  
+  if(img[im].pxls % 2 != 0){
+  // If there is an odd number of image pixels, supersample the innermost nsupsamppix x nsupsamppix region:
+      nsupsamppix = 5; 
+      shift = (pixelSize/2.0) + (scale/2.0);
+      pixoff = 1;
+      pixoff2 = 0;
+      printf("odd\n");
+  }else{
+  // If there is an even number of image pixels, supersample the innermost nsupsamppix x nsupsamppix region:
+      nsupsamppix = 4;
+      shift = (scale/2.0);
+      pixoff = 0;
+      pixoff2 = 1;
+  }
+  
+  for(pixshiftx=(pixoff-nsupsamppix)/2;pixshiftx<=(nsupsamppix-pixoff-pixoff2)/2;pixshiftx++){
+    for(pixshifty=(pixoff-nsupsamppix)/2;pixshifty<=(nsupsamppix-pixoff-pixoff2)/2;pixshifty++){
+      
+  // Subtract the central rays from the supersampled pixels by setting them back to zero
+      xi=pixshiftx+(img[im].pxls-pixoff)/2;
+      yi=pixshifty+(img[im].pxls-pixoff)/2;
+      ppi = yi * img[im].pxls + xi;
+      for(ichan=0;ichan<img[im].nchan;ichan++){
+         img[im].pixel[ppi].intense[ichan] = 0.0;
+         img[im].pixel[ppi].tau[ichan] = 0.0;
+      }
+      img[im].pixel[ppi].numRays = 0;
+  
+  for(j=1;j<=supsamp;j++){
+    for(i=1;i<=supsamp;i++){
+      xs[0] = (j*scale) - shift + (pixshiftx*pixelSize);
+      xs[1] = (i*scale) - shift + (pixshifty*pixelSize);
+      ro = sqrt(xs[0]*xs[0] + xs[1]*xs[1]);
+
+      xi = round(xs[0]/pixelSize + imgCentrePixels - 0.5);
+      yi = round(xs[1]/pixelSize + imgCentrePixels - 0.5);
+      ppi = yi * img[im].pxls + xi;
+      img[im].pixel[ppi].numRays++;
+
+
+      for(k=0;k<par->pIntensity;k++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
+        if(rho_grid[k]>ro){
+          index =k;
+          break;
+        }
+  //      printf("Added ray at %f, %f, in pixel %d, %d, radial point %d, ro=%f, I=%8.3e\n", xs[0], xs[1], xi, yi, index,ro,radius_struct.flux[index].intense[ichan]);  
+      for(ichan=0;ichan<img[im].nchan;ichan++){
+          img[im].pixel[ppi].intense[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(radius_struct.flux[index-1].intense[ichan]),log10(radius_struct.flux[index].intense[ichan]),ro));
+          img[im].pixel[ppi].tau[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(radius_struct.flux[index-1].tau[ichan]),log10(radius_struct.flux[index].tau[ichan]),ro));
+        }
+
+    }
+  }
+    }
+  }
+  
 
   for(ppi=0;ppi<totalNumImagePixels;ppi++){
+  //  printf("Pixel %d has %d rays\n", ppi, img[im].pixel[ppi].numRays);
     if(img[im].pixel[ppi].numRays >= minNumRaysForAverage){
       oneOnNumRays = 1.0/(double)img[im].pixel[ppi].numRays;
       for(ichan=0;ichan<img[im].nchan;ichan++){
