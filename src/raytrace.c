@@ -17,9 +17,15 @@ struct flux{
   double *tau;
 };
 
-struct radius_struct{
+struct molecule{
+  int numLines;
+  int *lines;
+};
+
+struct rayData{
   int *id;
   double *radius;
+  struct molecule *mols;
   struct flux *flux;
 };
 
@@ -93,67 +99,76 @@ void calcGridContDustOpacity(configInfo *par, const double freq\
 
 /*....................................................................*/
 void
-traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct radius_struct radius_struct,const int im, int index, double* rho_grid){
+traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayData rayData,const int im, int index, double* rho_grid){
 
-  int ichan,stokesId,di,i,posn,posnu,posnl,molI,lineI;
-  double zp,x[DIM],dx[DIM],dz,dtau,col,r;
-  double contJnu,contAlpha,jnu,alpha,lineRedShift,vThisChan,deltav,vfac=0.0;
+  int ichan,stokesId,di,i,posn1,posn2,molI,lineI,lineID;
+  double zp,x[DIM],dx[DIM],dz,dtau,col,r,*zp_grid = NULL;
+  double contJnu1,contAlpha1,contJnu2,contAlpha2,alpha,jnu,jnu1,alpha1,jnu2,alpha2,r1,r2,lineRedShift,vThisChan,deltav,vfac=0.0;
   double remnantSnu,expDTau,brightnessIncrement;
 
-  zp=-par->radiusSqu;
+  int zp_grid_size = par->pIntensity+par->pIntensity-1;
+  zp_grid = malloc(sizeof(*zp_grid) * zp_grid_size);
+  
+  //Creating zp_grid. It assigns a point at each rho_grid point, as well as at each midpoint. We will be stepping through zp_grid to trace the trajectory of the ray.
+  int rho_i = 0;
+  for (i = 0; i < zp_grid_size; i++){
+    if(i%2){ //True at midpoints
+      zp_grid[i] = (rho_grid[rho_i] +  rho_grid[rho_i-1])/2.0;
+    }
+    else{
+      zp_grid[i] = rho_grid[rho_i];
+      rho_i++;
+    }
+  }
+
+  int zp_i = zp_grid_size-1;
 
   for(di=0;di<DIM;di++){
-    dx[di]= img[im].rotMat[di][2]; /* This points away from the observer. */
+    dx[di]= -img[im].rotMat[di][2]; /* This points towards the observer. */
   }
+
   x[0] = rho_grid[index];
   x[1] = 0.0;
-  x[2] = zp;
+  x[2] = -zp_grid[zp_i];
 
-  col=0.0;
+  dz = zp_grid[zp_i] - zp_grid[zp_i-1];
+  zp_i--;
+
   do{
-    r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
-    if (fabs(r) > par->minScale)
-      dz = r / 5.0;
-    else
-      dz = 2*par->minScale;
 
-    if (r > radius_struct.radius[0] && r < radius_struct.radius[par->pIntensity - 1]){
+    r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+    if (r > rayData.radius[0] && r < rayData.radius[par->pIntensity - 1]){
       for (i = 0; i < par->pIntensity; i++){
-        if (radius_struct.radius[i] > r) {
-          if(i==0){
-            posn = radius_struct.id[i];
-            dz = fabs(radius_struct.radius[i]-r);
+        if (rayData.radius[i] > r){
+            posn1 = rayData.id[i];
+            posn2 = rayData.id[i-1];
+            r1 = rayData.radius[i];
+            r2 = rayData.radius[i-1];
             break;
           }
-          else{
-            if(fabs(radius_struct.radius[i]-r) < fabs(r-radius_struct.radius[i-1])){
-              posn = radius_struct.id[i];
-              break;
-            }
-
-            else{
-              posn = radius_struct.id[i-1];
-              break;
-            }
-          }//end else
-        }// end if (radius_struct.radius[i] > r)
+        }
       }
 
       /* Calculate first the continuum stuff because it is the same for all channels:*/
-      contJnu = 0.0;
-      contAlpha = 0.0; 
-      sourceFunc_cont(gp[posn].cont, &contJnu, &contAlpha);
+      contJnu1 = 0.0;
+      contAlpha1 = 0.0; 
+      sourceFunc_cont(gp[posn1].cont, &contJnu1, &contAlpha1);
+
+      contJnu2 = 0.0;
+      contAlpha2 = 0.0; 
+      sourceFunc_cont(gp[posn2].cont, &contJnu2, &contAlpha2);
 
       for(ichan=0;ichan<img[im].nchan;ichan++){
-        jnu = contJnu;
-        alpha = contAlpha;
-        vThisChan = (ichan-(img[im].nchan-1)*0.5)*img[im].velres; /* Consistent with the WCS definition in writefits(). */
+        jnu1 = contJnu1;
+        alpha1 = contAlpha1;
+        jnu2 = contJnu2;
+        alpha2 = contAlpha2;
 
+        vThisChan = (ichan-(img[im].nchan-1)*0.5)*img[im].velres; /* Consistent with the WCS definition in writefits(). */
         if(img[im].doline){
           for(molI=0;molI<par->nSpecies;molI++){
-            for(lineI=0;lineI<md[molI].nline;lineI++){
-              if(md[molI].freq[lineI] > img[im].freq-img[im].bandwidth*0.5\
-              && md[molI].freq[lineI] < img[im].freq+img[im].bandwidth*0.5){
+            for(lineID=0;lineID<rayData.mols[molI].numLines;lineID++){
+                lineI = rayData.mols[molI].lines[lineID];
                 /* Calculate the red shift of the transition wrt to the frequency specified for the image.
                 */
                 if(img[im].trans > -1){
@@ -163,35 +178,58 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct radiu
                 }
                 deltav = vThisChan - img[im].source_vel - lineRedShift;
 
-                velocity(x[0],x[1],x[2],gp[posn].vel);
-                vfac = gaussline(deltav-dotProduct3D(dx,gp[posn].vel),gp[posn].mol[molI].binv);
+                /* Calculating the source function for the nearest two radial points, which will later be used to intepolate the jnu and alpha at the current radial point
+                */
 
-                /* Increment jnu and alpha for this Voronoi cell by the amounts appropriate to the spectral line. */
-                sourceFunc_line(&md[molI],vfac,&(gp[posn].mol[molI]),lineI,&jnu,&alpha);
+                //Calculating source function for 1st radial point
+                velocity(x[0],x[1],x[2],gp[posn1].vel);
+                vfac = gaussline(deltav-dotProduct3D(dx,gp[posn1].vel),gp[posn1].mol[molI].binv);                  
+                sourceFunc_line(&md[molI],vfac,&(gp[posn1].mol[molI]),lineI,&jnu1,&alpha1);
 
-              }//end if freq and bandwidth
+                //Calculating source function for 2nd radial point
+                velocity(x[0],x[1],x[2],gp[posn2].vel);
+                vfac = gaussline(deltav-dotProduct3D(dx,gp[posn2].vel),gp[posn2].mol[molI].binv);       
+                sourceFunc_line(&md[molI],vfac,&(gp[posn2].mol[molI]),lineI,&jnu2,&alpha2);
+
             }//end for lineI
           }//end for molI
         }//end if doline
+
+        alpha = linear_interp(r1, r2, alpha1, alpha2, r);
+        jnu = linear_interp(r1, r2, jnu1, jnu2, r);
+
         dtau=alpha*dz;
         calcSourceFn(dtau, par, &remnantSnu, &expDTau);
         remnantSnu *= jnu*dz;
 
 #ifdef FASTEXP
-        brightnessIncrement = FastExp(radius_struct.flux[index].tau[ichan])*remnantSnu;
+        brightnessIncrement = FastExp(rayData.flux[index].tau[ichan])*remnantSnu;
 #else
-        brightnessIncrement =    exp(-radius_struct.flux[index].tau[ichan])*remnantSnu;
+        brightnessIncrement =    exp(-rayData.flux[index].tau[ichan])*remnantSnu;
 #endif
 
-        radius_struct.flux[index].intense[ichan] += brightnessIncrement;
-        radius_struct.flux[index].tau[ichan] += dtau;
+        rayData.flux[index].intense[ichan] += brightnessIncrement;
+        rayData.flux[index].tau[ichan] += dtau;
 
       }//end for ichan
-    }// end if
-    col+=dz;
-    x[2] += dz;
+
+    if(x[2]<0 && zp_i !=1){ // If the zp_radius is negative, we move to the next grid point going towards the nucleus (negative radius)
+      x[2] = -zp_grid[zp_i];
+      dz = fabs(zp_grid[zp_i] - zp_grid[zp_i-1]); 
+      zp_i--;
+    }
+    else if(x[2]<0 && zp_i ==0){ //When we reach the initial zp_grid point, we skip over the nucleus and procede to step though the coma at the other side of the nucleus (positive radius). The last dz was fabs(zp_grid[1] - zp_grid[0]), and since now e will step from zp_grid[0] to zp_grid[1], it does not need to be updated
+      x[2] = zp_grid[zp_i]; //Since we are moving from a negative radius to the positive region, x[2] stays the same (thus zp_i is not updated), and just changes sign.
+    }
+    else{
+      x[2] = zp_grid[zp_i]; // If the radius is positive, we step to the next grid point going away from the nucleus (positive radius)
+      dz = zp_grid[zp_i+1] - zp_grid[zp_i];
+      zp_i++;
+    }
     
-  }while(col < 2.0*fabs(zp));
+  }while(zp_i != zp_grid_size); //This loops from (zp_i = zp_grid_size-1) -> zp_i=0, and then from zp_i=0 -> zp_i = (zp_grid_size-1)
+
+  free(zp_grid);
 }
 
 /*....................................................................*/
@@ -292,40 +330,70 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
 
   qsort(sorted_radius, par->pIntensity, sizeof(double), compare);
 
-  struct radius_struct radius_struct;
-  radius_struct.id = malloc(sizeof(int) * par->pIntensity);
-  radius_struct.flux = malloc(sizeof(*radius_struct.flux) * par->pIntensity);
-  radius_struct.radius = sorted_radius;
+  struct rayData rayData;
+  rayData.id = malloc(sizeof(int) * par->pIntensity);
+  rayData.flux = malloc(sizeof(*rayData.flux) * par->pIntensity);
+  rayData.radius = sorted_radius;
   double current;
   
-  offset =  radius_struct.radius[0];
+  offset =  rayData.radius[0];
   
   for (i = 0; i < par->pIntensity; i++) {
-    rho_grid[i] = radius_struct.radius[i] - offset;
+    rho_grid[i] = rayData.radius[i] - offset;
   }
 
   for (i = 0; i < par->pIntensity; i++) {
-    current = radius_struct.radius[i];
+    current = rayData.radius[i];
     for (j = 0; j < par->pIntensity; j++) //TODO: More efficient algorithm than sequential search could be implemented
       if (current == radiusarr[j])
-        radius_struct.id[i] = j; //holds sorted ids according to the time/radius of its corresponding gridpoint
+        rayData.id[i] = j; //holds sorted ids according to the time/radius of its corresponding gridpoint
   }
 
   for(i = 0; i < par->pIntensity; i++){
-    radius_struct.flux[i].intense= malloc(sizeof(double) * img[im].nchan);
-    radius_struct.flux[i].tau= malloc(sizeof(double) * img[im].nchan);
+    rayData.flux[i].intense= malloc(sizeof(double) * img[im].nchan);
+    rayData.flux[i].tau= malloc(sizeof(double) * img[im].nchan);
 
     for(ichan=0;ichan<img[im].nchan;ichan++){
-      radius_struct.flux[i].intense[ichan] = 0.0;
-      radius_struct.flux[i].tau[ichan] = 0.0;
+      rayData.flux[i].intense[ichan] = 0.0;
+      rayData.flux[i].tau[ichan] = 0.0;
     }
   }
-  
+
+  rayData.mols = malloc(sizeof(*rayData.mols) * par->nSpecies);
+  int numLines= 0;
+
+  //For each molecule,count how many lines fall within the spectral range of the image. This way, we know how much space to allocate for each rayData.mols[molI].lines
+  //We do these steps now so that we don't need to determine which spectral lines contribute to the image repeteadly inside traceray(), which is time consuming
+  for(molI=0;molI<par->nSpecies;molI++){
+    for(lineI=0;lineI<md[molI].nline;lineI++){
+      if(md[molI].freq[lineI] > img[im].freq-img[im].bandwidth*0.5\
+        && md[molI].freq[lineI] < img[im].freq+img[im].bandwidth*0.5){
+        numLines++;
+      }
+    }
+    rayData.mols[molI].lines = malloc(sizeof(*rayData.mols[molI].lines)*numLines);
+    rayData.mols[molI].numLines = numLines;
+    numLines = 0;
+  }
+
+  //Now we store the index of the lines that contribute to the image.
+  for(molI=0;molI<par->nSpecies;molI++){
+    index = 0;
+    for(lineI=0;lineI<md[molI].nline;lineI++){
+      if(md[molI].freq[lineI] > img[im].freq-img[im].bandwidth*0.5\
+        && md[molI].freq[lineI] < img[im].freq+img[im].bandwidth*0.5){
+        rayData.mols[molI].lines[index] = lineI;
+        index++;
+      }
+    }
+  }
+
   printf("Calling traceray...\n");
   
   for(i = 0; i < par->pIntensity; i++){
-    traceray(img,par,gp,md,radius_struct,im,i,rho_grid);
+    traceray(img,par,gp,md,rayData,im,i,rho_grid);
   }
+
   
   printf("Interpolating to image grid...\n");
 
@@ -344,57 +412,32 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
         index =i;
         break;
       }
-   // if(abs(xs[0])>pixelSize*nsupsamppix || abs(xs[1])>pixelSize*nsupsamppix){
+
       img[im].pixel[ppi].numRays++;
 
       if(index==0){
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = radius_struct.flux[index].intense[ichan];
-          img[im].pixel[ppi].tau[ichan] = radius_struct.flux[index].tau[ichan];          
+          img[im].pixel[ppi].intense[ichan] = rayData.flux[index].intense[ichan];
+          img[im].pixel[ppi].tau[ichan] = rayData.flux[index].tau[ichan];          
         }
       }
 
       else if(index==par->pIntensity){
         index = par->pIntensity-1;
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = radius_struct.flux[index].intense[ichan];
-          img[im].pixel[ppi].tau[ichan] = radius_struct.flux[index].tau[ichan];
+          img[im].pixel[ppi].intense[ichan] = rayData.flux[index].intense[ichan];
+          img[im].pixel[ppi].tau[ichan] = rayData.flux[index].tau[ichan];
         }
       }
       else{
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(radius_struct.flux[index-1].intense[ichan]),log10(radius_struct.flux[index].intense[ichan]),ro));
-          img[im].pixel[ppi].tau[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(radius_struct.flux[index-1].tau[ichan]),log10(radius_struct.flux[index].tau[ichan]),ro));
+          img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].intense[ichan]),log10(rayData.flux[index].intense[ichan]),ro));
+          img[im].pixel[ppi].tau[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].tau[ichan]),log10(rayData.flux[index].tau[ichan]),ro));
+        
         }
       }
-    //}
   }
 
-  // scale = pixelSize/(double)supsamp;
-
-  // for(j=1-(nsupsamppix*supsamp);j<(nsupsamppix*supsamp);j++){
-  //   for(i=1-(nsupsamppix*supsamp);i<(nsupsamppix*supsamp);i++){
-  //     xs[0] = j*scale;
-  //     xs[1] = i*scale;
-  //     ro = sqrt(xs[0]*xs[0] + xs[1]*xs[1]);
-
-  //     xi = floor(xs[0]/pixelSize + imgCentrePixels);
-  //     yi = floor(xs[1]/pixelSize + imgCentrePixels);
-  //     ppi = yi * img[im].pxls + xi;
-  //     img[im].pixel[ppi].numRays++;
-
-  //     for(k=0;k<par->pIntensity;k++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
-  //       if(radius_struct.radius[k]>ro){
-  //         index =k;
-  //         break;
-  //       }
-  //     for(ichan=0;ichan<img[im].nchan;ichan++){
-  //         img[im].pixel[ppi].intense[ichan] += pow(10.0,linear_interp(radius_struct.radius[index-1],radius_struct.radius[index],log10(radius_struct.flux[index-1].intense[ichan]),log10(radius_struct.flux[index].intense[ichan]),ro));
-  //         img[im].pixel[ppi].tau[ichan] += pow(10.0,linear_interp(radius_struct.radius[index-1],radius_struct.radius[index],log10(radius_struct.flux[index-1].tau[ichan]),log10(radius_struct.flux[index].tau[ichan]),ro));
-  //       }
-  //   }
-  // }
-  
   printf("Supersampling the central pixels...\n");
   
   const int supsamp = 20; // Number of rays per pixel (supsamp * supsamp in x,y plane)
@@ -406,7 +449,6 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
       shift = (pixelSize/2.0) + (scale/2.0);
       pixoff = 1;
       pixoff2 = 0;
-      printf("odd\n");
   }else{
   // If there is an even number of image pixels, supersample the innermost nsupsamppix x nsupsamppix region:
       nsupsamppix = 4;
@@ -418,41 +460,38 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   for(pixshiftx=(pixoff-nsupsamppix)/2;pixshiftx<=(nsupsamppix-pixoff-pixoff2)/2;pixshiftx++){
     for(pixshifty=(pixoff-nsupsamppix)/2;pixshifty<=(nsupsamppix-pixoff-pixoff2)/2;pixshifty++){
       
-  // Subtract the central rays from the supersampled pixels by setting them back to zero
+      // Subtract the central rays from the supersampled pixels by setting them back to zero
       xi=pixshiftx+(img[im].pxls-pixoff)/2;
       yi=pixshifty+(img[im].pxls-pixoff)/2;
       ppi = yi * img[im].pxls + xi;
       for(ichan=0;ichan<img[im].nchan;ichan++){
-         img[im].pixel[ppi].intense[ichan] = 0.0;
-         img[im].pixel[ppi].tau[ichan] = 0.0;
+          img[im].pixel[ppi].intense[ichan] = 0.0;
+          img[im].pixel[ppi].tau[ichan] = 0.0;
       }
       img[im].pixel[ppi].numRays = 0;
-  
-  for(j=1;j<=supsamp;j++){
-    for(i=1;i<=supsamp;i++){
-      xs[0] = (j*scale) - shift + (pixshiftx*pixelSize);
-      xs[1] = (i*scale) - shift + (pixshifty*pixelSize);
-      ro = sqrt(xs[0]*xs[0] + xs[1]*xs[1]);
+      
+      for(j=1;j<=supsamp;j++){
+        for(i=1;i<=supsamp;i++){
+          xs[0] = (j*scale) - shift + (pixshiftx*pixelSize);
+          xs[1] = (i*scale) - shift + (pixshifty*pixelSize);
+          ro = sqrt(xs[0]*xs[0] + xs[1]*xs[1]);
 
-      xi = round(xs[0]/pixelSize + imgCentrePixels - 0.5);
-      yi = round(xs[1]/pixelSize + imgCentrePixels - 0.5);
-      ppi = yi * img[im].pxls + xi;
-      img[im].pixel[ppi].numRays++;
+          xi = round(xs[0]/pixelSize + imgCentrePixels - 0.5);
+          yi = round(xs[1]/pixelSize + imgCentrePixels - 0.5);
+          ppi = yi * img[im].pxls + xi;
+          img[im].pixel[ppi].numRays++;
 
-
-      for(k=0;k<par->pIntensity;k++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
-        if(rho_grid[k]>ro){
-          index =k;
-          break;
+          for(k=0;k<par->pIntensity;k++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
+            if(rho_grid[k]>ro){
+              index =k;
+              break;
+            }
+          for(ichan=0;ichan<img[im].nchan;ichan++){
+              img[im].pixel[ppi].intense[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].intense[ichan]),log10(rayData.flux[index].intense[ichan]),ro));
+              img[im].pixel[ppi].tau[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].tau[ichan]),log10(rayData.flux[index].tau[ichan]),ro));
+            }
         }
-  //      printf("Added ray at %f, %f, in pixel %d, %d, radial point %d, ro=%f, I=%8.3e\n", xs[0], xs[1], xi, yi, index,ro,radius_struct.flux[index].intense[ichan]);  
-      for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(radius_struct.flux[index-1].intense[ichan]),log10(radius_struct.flux[index].intense[ichan]),ro));
-          img[im].pixel[ppi].tau[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(radius_struct.flux[index-1].tau[ichan]),log10(radius_struct.flux[index].tau[ichan]),ro));
-        }
-
-    }
-  }
+      }
     }
   }
   
@@ -469,12 +508,15 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   }
 
   for(i = 0; i < par->pIntensity; i++){
-    free(radius_struct.flux[i].intense);
-    free(radius_struct.flux[i].tau);    
+    free(rayData.flux[i].intense);
+    free(rayData.flux[i].tau);    
   }
-  free(radius_struct.id);
-  free(radius_struct.flux);
-
+  for(molI=0;molI<par->nSpecies;molI++){
+    free(rayData.mols[molI].lines);
+  }
+  free(rayData.id);
+  free(rayData.flux);
+  free(rayData.mols);
 
   if(par->polarization){ /* just add cmb to Stokes I, which is the first 'channel' */
     lastChan = 0;
