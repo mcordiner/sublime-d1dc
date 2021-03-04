@@ -110,8 +110,6 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
   
     x[2] = posneg[zp_i] * dz_grid[dz_indices[zp_i]];
     dz = dz_vals[dz_indices[zp_i]];
-    
-    if (index == 100)    printf("%d %10.3e %8.3e\n",zp_i,x[2],dz);
 
     r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
     
