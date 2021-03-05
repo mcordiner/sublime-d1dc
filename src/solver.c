@@ -789,7 +789,7 @@ void
 getTransitionRates(molData *md, int ispec, struct grid *gp, int id, configInfo *par, int NEQ, double A[NEQ-1], double *p, double time, struct time_struct time_struct, double *jbar_grid, double *Pops, int *nMaserWarnings){
   int ipart,iline,k,l,ti, li, upper, lower, j;
   double radius, rnuc, Te, vexp, ne, aij, sigmaij, ve, bessel, ceij, gij, ceji, dens[md[ispec].npart];
-  double jbar[par->pIntensity];
+  double jbar[par->pIntensity],molDens[par->nSpecies], tau, beta;
 
   rnuc = par->minScale;
   vexp = sqrt(gp[id].vel[0]* gp[id].vel[0]+gp[id].vel[1]*gp[id].vel[1]+gp[id].vel[2]*gp[id].vel[2]);
@@ -860,9 +860,8 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, int id, configInfo *
             p[l * NEQ + k] = p[l * NEQ + k] + md[ispec].gir[l*md[ispec].nlev+k];
         }
 
-   //Radiation field using the Escape Probaility method
+   //Radiation trapping using the Escape Probaility method
    if(par->useEP){ 
-   double tau, beta, molDens[par->nSpecies];
 
    molNumDensity(radius,0.0,0.0, molDens); 
     for(li=0;li<md[ispec].nline;li++){
@@ -871,8 +870,6 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, int id, configInfo *
 
       //Calculating the optical depth
       tau = ((A[li]*pow(CLIGHT,3))/(8*PI*pow(md[ispec].freq[li],3))) * ((md[ispec].gstat[upper]/md[ispec].gstat[lower])*Pops[lower] - Pops[upper]) * ((molDens[ispec]* radius)/vexp);
-          
-      tau = 0.0;
 
       if ((tau > 0.0 && tau<1e-8) ||tau == 0.0){
         beta = 1.0;
@@ -888,8 +885,14 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, int id, configInfo *
       p[upper * NEQ + lower] = p[upper * NEQ + lower] + A[li]*beta;
 
     }//end for
-  }//end if
-
+  }else{
+     
+     for(li=0;li<md[ispec].nline;li++){
+        upper=md[ispec].lau[li];
+        lower=md[ispec].lal[li];
+        p[upper * NEQ + lower] = p[upper * NEQ + lower] + A[li];
+     }
+  }
 }
 
 /*....................................................................*/
@@ -1010,14 +1013,6 @@ solveStatEq(struct grid *gp, molData *md, const int ispec, configInfo *par\
   }
   double (*jbar_grid)[md[ispec].nline] = malloc(sizeof(double[par->pIntensity][md[ispec].nline]));
 
-  if(!par->useEP){
-    for(id=0;id<par->pIntensity;id++)
-      updateJBar(id,md,gp,ispec,par,blends,nextMolWithBlend[id],mp[id],halfFirstDs[id]);
-
-    for(i=0;i<par->pIntensity;i++)
-      for(j=0;j<md[ispec].nline;j++)
-        jbar_grid[i][j] = mp[time_struct.id[i]][ispec].jbar[j];
-  }
   /*Initializing Pops */
   for(i=0;i<md[ispec].nlev;i++)
     Pops[i] = gp[time_struct.id[0]].mol[ispec].pops[i]; //we use gp[time_struct.id[0]] since we only need to initialize the level populations for the initial time
@@ -1209,9 +1204,7 @@ levelPops(molData *md, configInfo *par, struct grid *gp, int *popsdone, double *
       printf("\nError on grid point = %d\n, aborting", id);
       exit(1);
     }
-    else if (!par->useEP){
-      calculateJBar(id,gp,md,threadRans[id],par,nlinetot,blends,mp[id],halfFirstDs[id],&nMaserWarnings[id]);
-    }
+
   }
   for(ispec=0;ispec<par->nSpecies;ispec++){
     solveStatEq(gp,md,ispec,par,blends,nextMolWithBlend,mp,halfFirstDs, nMaserWarnings); 

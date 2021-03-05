@@ -470,10 +470,6 @@ exit(1);
       if(!silent) bail_out("You must define the pIntensity parameter.");
 exit(1);
     }
-    if (par->sinkPoints<=0){
-      if(!silent) bail_out("You must define the sinkPoints parameter.");
-exit(1);
-    }
     if (par->Qwater<=0){
       if(!silent) bail_out("You must define the Qwater parameter.");
 exit(1);
@@ -1121,11 +1117,6 @@ exit(1);
   if(par.nSpecies>0 && !par.doMolCalcs){
     if(!silent) bail_out("If you want only continuum calculations you must supply zero moldatfiles.");
 exit(1);
-  }
-
-  if(!silent && par.nThreads>1){
-    snprintf(message, STR_LEN_0, "Number of threads used: %d", par.nThreads);
-    printMessage(message);
   }
 
   if(par.doPregrid){
