@@ -27,8 +27,8 @@ TODO:
 #include <gsl/gsl_sf_bessel.h>
 
 //###
-#define RTOL  RCONST(1.0e-10)   /* scalar relative tolerance            */
-#define ATOL RCONST(1.0e-10)   /* vector absolute tolerance components */
+#define RTOL  RCONST(1.0e-8)   /* scalar relative tolerance            */
+#define ATOL RCONST(1.0e-8)   /* vector absolute tolerance components */
 #define Ith(v,i)    NV_Ith_S(v,i)         /* Ith numbers components 0..NEQ-1 */
 #define IJth(sunMatrix,i,j) SM_ELEMENT_D(sunMatrix,i,j) /* IJth numbers rows,cols 0..NEQ-1 */
 
@@ -871,74 +871,25 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, int id, configInfo *
 
       //Calculating the optical depth
       tau = ((A[li]*pow(CLIGHT,3))/(8*PI*pow(md[ispec].freq[li],3))) * ((md[ispec].gstat[upper]/md[ispec].gstat[lower])*Pops[lower] - Pops[upper]) * ((molDens[ispec]* radius)/vexp);
+          
+      tau = 0.0;
 
-      if ((tau > 0.0 && tau<1e-8) ||tau == 0.0)
+      if ((tau > 0.0 && tau<1e-8) ||tau == 0.0){
         beta = 1.0;
-      else if (tau>0.0)
+      }else if (tau>0.0) {
         beta = (2/(3*tau)) - exp(-tau/2)*(tau*(gsl_sf_bessel_Kn(2,tau/2)-gsl_sf_bessel_K1(tau/2))/3 -  gsl_sf_bessel_K1(tau/2)); 
-      else if (tau<=0.0)
+      }else if (tau<=0.0){ 
+        beta = (1 - exp(-tau)) / tau;
         // if(tau < -MAX_NEG_OPT_DEPTH){
         //   nMaserWarnings[id]++;
         //   tau = -MAX_NEG_OPT_DEPTH;
-        // }
-        beta = (1 - exp(-tau)) / tau;
-      
-
+      }
+        
       p[upper * NEQ + lower] = p[upper * NEQ + lower] + A[li]*beta;
 
     }//end for
   }//end if
 
-  //Calculating radiation field using full 3D treatment and photon propagation
-  else{
-
-   if(time <= time_struct.time[0]){
-    for(li=0;li<md[ispec].nline;li++){
-      upper=md[ispec].lau[li];
-      lower=md[ispec].lal[li];
-       p[upper * NEQ + lower] = p[upper * NEQ + lower] + md[ispec].beinstl[li]*jbar_grid[0 * md[ispec].nline + li];
-       p[lower * NEQ + upper] = p[lower * NEQ + upper] + md[ispec].beinstl[li]*jbar_grid[0 * md[ispec].nline + li];
-    }
-  }
-
-  else if(time >= time_struct.time[par->pIntensity-1]){
-    for(li=0;li<md[ispec].nline;li++){
-      upper=md[ispec].lau[li];
-      lower=md[ispec].lal[li];
-      p[upper * NEQ + lower] = p[upper * NEQ + lower] + md[ispec].beinstl[li]*jbar_grid[(par->pIntensity-1) * md[ispec].nline + li];
-      p[lower * NEQ + upper] = p[lower * NEQ + upper] + md[ispec].beinstl[li]*jbar_grid[(par->pIntensity-1) * md[ispec].nline + li];
-    }
-  }
-
-
-  else{
-    double jbar_time;
-    int index = time_struct.time[par->pIntensity-1];
-    double x0, x1, y0, y1;
-
-    for(li=0;li<md[ispec].nline;li++){
-      upper=md[ispec].lau[li];
-      lower=md[ispec].lal[li];
-
-    for(j=0;j<par->pIntensity;j++)
-      jbar[j] = jbar_grid[j * md[ispec].nline + li];
-
-    for(j=0;j<par->pIntensity;j++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
-      if(time_struct.time[j]>time){
-        index =j;
-        break;
-      }
-      //linear interpolation between the closest jbar points
-      x0 = time_struct.time[index-1];
-      x1 = time_struct.time[index];
-      y0 = jbar[index-1];
-      y1 = jbar[index];
-      jbar_time = (y0*(x1-time) + y1*(time-x0))/(x1-x0);
-      p[upper * NEQ + lower] = p[upper * NEQ + lower] + md[ispec].beinstl[li]*jbar_time + A[li];
-      p[lower * NEQ + upper] = p[lower * NEQ + upper] + md[ispec].beinstu[li]*jbar_time;
-    }
-  }
-}
 }
 
 /*....................................................................*/
@@ -1232,64 +1183,58 @@ levelPops(molData *md, configInfo *par, struct grid *gp, int *popsdone, double *
 
    defaultErrorHandler = gsl_set_error_handler_off();
 
-   nItersDone = par->nSolveItersDone;
 
-   while(nItersDone < par->nSolveIters){ 
-     printf("ITER %d / %d\n", nItersDone+1,par->nSolveIters);
+  gridPointData *mp[par->pIntensity];
+  double *halfFirstDs[par->pIntensity];
 
-    gridPointData *mp[par->pIntensity];
-    double *halfFirstDs[par->pIntensity];
+  calcGridMolSpecNumDens(par,md,gp);
+  totalNMaserWarnings = 0;
+  nVerticesDone=0;
 
-    calcGridMolSpecNumDens(par,md,gp);
-    totalNMaserWarnings = 0;
-    nVerticesDone=0;
+  //TODO: This for loop could be parallelized
+  for(id=0;id<par->pIntensity;id++){
+    ++nVerticesDone;
+    nMaserWarnings[id]=0;
+    nextMolWithBlend[id] = 0;
+    mp[id]=malloc(sizeof(gridPointData)*par->nSpecies);
+    halfFirstDs[id] = malloc(sizeof(*halfFirstDs)*gp[id].nphot);
 
-    //TODO: This for loop could be parallelized
-    for(id=0;id<par->pIntensity;id++){
-      ++nVerticesDone;
-      nMaserWarnings[id]=0;
-      nextMolWithBlend[id] = 0;
-      mp[id]=malloc(sizeof(gridPointData)*par->nSpecies);
-      halfFirstDs[id] = malloc(sizeof(*halfFirstDs)*gp[id].nphot);
-
-      for (ispec=0;ispec<par->nSpecies;ispec++){
-        mp[id][ispec].jbar = malloc(sizeof(double)*md[ispec].nline);
-        mp[id][ispec].phot = malloc(sizeof(double)*md[ispec].nline*gp[id].nphot);
-        mp[id][ispec].vfac = malloc(sizeof(double)*                gp[id].nphot);
-        mp[id][ispec].vfac_loc = malloc(sizeof(double)*            gp[id].nphot);
-      }
-      if(gp[id].dens[0] < 0 && gp[id].t[0] < 0){
-        printf("\nError on grid point = %d\n, aborting", id);
-        exit(1);
-      }
-      else if (!par->useEP){
-        calculateJBar(id,gp,md,threadRans[id],par,nlinetot,blends,mp[id],halfFirstDs[id],&nMaserWarnings[id]);
-      }
+    for (ispec=0;ispec<par->nSpecies;ispec++){
+      mp[id][ispec].jbar = malloc(sizeof(double)*md[ispec].nline);
+      mp[id][ispec].phot = malloc(sizeof(double)*md[ispec].nline*gp[id].nphot);
+      mp[id][ispec].vfac = malloc(sizeof(double)*                gp[id].nphot);
+      mp[id][ispec].vfac_loc = malloc(sizeof(double)*            gp[id].nphot);
     }
-    for(ispec=0;ispec<par->nSpecies;ispec++){
-      solveStatEq(gp,md,ispec,par,blends,nextMolWithBlend,mp,halfFirstDs, nMaserWarnings); 
-      for(i=0;i<par->pIntensity;i++)
-        if(par->blend && blends.mols!=NULL && ispec==blends.mols[nextMolWithBlend[i]].molI)
-          nextMolWithBlend[i] = nextMolWithBlend[i] + 1;
+    if(gp[id].dens[0] < 0 && gp[id].t[0] < 0){
+      printf("\nError on grid point = %d\n, aborting", id);
+      exit(1);
     }
+    else if (!par->useEP){
+      calculateJBar(id,gp,md,threadRans[id],par,nlinetot,blends,mp[id],halfFirstDs[id],&nMaserWarnings[id]);
+    }
+  }
+  for(ispec=0;ispec<par->nSpecies;ispec++){
+    solveStatEq(gp,md,ispec,par,blends,nextMolWithBlend,mp,halfFirstDs, nMaserWarnings); 
+    for(i=0;i<par->pIntensity;i++)
+      if(par->blend && blends.mols!=NULL && ispec==blends.mols[nextMolWithBlend[i]].molI)
+        nextMolWithBlend[i] = nextMolWithBlend[i] + 1;
+  }
 
-    for(id=0;id<par->pIntensity;id++){
-      totalNMaserWarnings = nMaserWarnings[id];
-    }
+  for(id=0;id<par->pIntensity;id++){
+    totalNMaserWarnings = nMaserWarnings[id];
+  }
 
-    if(!silent && totalNMaserWarnings>0){
-      snprintf(message, STR_LEN_0, "Maser warning: optical depth dropped below -%4.1f %d times this iteration.", MAX_NEG_OPT_DEPTH, totalNMaserWarnings);
-      warning(message);
-    }
+  if(!silent && totalNMaserWarnings>0){
+    snprintf(message, STR_LEN_0, "Maser warning: optical depth dropped below -%4.1f %d times this iteration.", MAX_NEG_OPT_DEPTH, totalNMaserWarnings);
+    warning(message);
+  }
 
-    if(!silent) warning("");
-    for (i=0;i<par->pIntensity;i++){
-      freeGridPointData(par->nSpecies, mp[i]);
-      free(halfFirstDs[i]);
-    }
-    if(par->outputfile != NULL) popsout(par,gp,md);
-    nItersDone++;
-  }//end while
+  if(!silent) warning("");
+  for (i=0;i<par->pIntensity;i++){
+    freeGridPointData(par->nSpecies, mp[i]);
+    free(halfFirstDs[i]);
+  }
+  if(par->outputfile != NULL) popsout(par,gp,md);
 
   freeMolsWithBlends(blends.mols, blends.numMolsWithBlends);
   freeGridCont(par, gp);

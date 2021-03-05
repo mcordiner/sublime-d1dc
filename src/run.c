@@ -994,8 +994,7 @@ exit(1);
 
   if(!silent){
     if(par->lte_only){
-      if(par->nSolveIters>0)
-        warning("Requesting par->nSolveIters>0 will have no effect if LTE calculation is also requested.");
+        warning("LTE calculation requested\n");
     }else if(par->nSolveIters<=par->nSolveItersDone && !allBitsSet(par->dataFlags, DS_mask_populations)){
       warning("No supplied pops values, and par->nSolveIters <= par->nSolveItersDone.");
     }

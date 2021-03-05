@@ -19,7 +19,7 @@ void
 greetings(){
 #ifdef NO_NCURSES
 
-  printf("*** LIME, The versatile line modeling engine, version %s\n", VERSION);
+  printf("*** SUBLIMED - SUBlimating cometary gases in LIME, version %s\n", VERSION);
 #ifdef TEST
   printf(">>> NOTE! Test flag is set in the Makefile. <<<\n");
 #endif
@@ -30,7 +30,7 @@ greetings(){
 #else
 
   initscr();
-  printw("*** LIME, The versatile line modeling engine, version %s\n", VERSION);
+  printw("*** SUBLIMED - SUBlimating cometary gases in LIME, version %s\n", VERSION);
 #ifdef TEST
   printw(">>> NOTE! Test flag is set in the Makefile. <<<\n");
 #endif
@@ -47,9 +47,9 @@ greetings_parallel(int numThreads){
 #ifdef NO_NCURSES
 
   if (numThreads>1){
-    printf("*** LIME, The versatile line modeling engine, Ver. %s (parallel running, %d threads)\n", VERSION, numThreads);
+    printf("*** SUBLIMED - SUBlimating cometary gases in LIME, Ver. %s (parallel running, %d threads)\n", VERSION, numThreads);
   } else {
-    printf("*** LIME, The versatile line modeling engine, Ver. %s\n", VERSION);
+    printf("*** SUBLIMED - SUBlimating cometary gases in LIME, Ver. %s\n", VERSION);
   }
 #ifdef TEST
   printf(">>> NOTE! Test flag is set in the Makefile. <<<\n");
@@ -62,9 +62,9 @@ greetings_parallel(int numThreads){
 
   initscr();
   if (numThreads>1){
-    printw("*** LIME, The versatile line modeling engine, Ver. %s (parallel running, %d threads)\n", VERSION, numThreads);
+    printw("*** SUBLIMED - SUBlimating cometary gases in LIME, Ver. %s (parallel running, %d threads)\n", VERSION, numThreads);
   } else {
-    printw("*** LIME, The versatile line modeling engine, Ver. %s\n", VERSION);
+    printw("*** SUBLIMED - SUBlimating cometary gases in LIME, Ver. %s\n", VERSION);
   }
 #ifdef TEST
   printw(">>> NOTE! Test flag is set in the Makefile. <<<\n");

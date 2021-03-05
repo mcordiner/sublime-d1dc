@@ -110,10 +110,12 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
   
     x[2] = posneg[zp_i] * dz_grid[dz_indices[zp_i]];
     dz = dz_vals[dz_indices[zp_i]];
+    
+    //if (index == 100)    printf("%d %10.3e %8.3e\n",zp_i,x[2],dz);
 
     r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
     
-    // Find the CVODE grid points that bracket our current radius, and if we are inside the model boundary, do the integral
+    // Find the CVODE grid points that bracket our current radius, and if we are inside the model boundary, add to the integral
     if (r < rayData.radius[par->pIntensity - 1] && r > par->minScale){
       if (r > rayData.radius[0]){
        for (i = 0; i < par->pIntensity; i++){
@@ -396,7 +398,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
      j++;
   }
 
-  printf("Calling traceray...\n");
+  //printf("Calling traceray...\n");
   
   // Do the raytracing as a function of rho (linear vector from the origin), to be interpolated onto the image grid 
   for(i = 0; i < par->pIntensity; i++){
@@ -408,7 +410,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   free(zp_grid);
   free(dz_indices);
   
-  printf("Interpolating to image grid...\n");
+  //printf("Interpolating to image grid...\n");
 
   ppy = 0;
   for (ppi = 0; ppi<totalNumImagePixels; ppi++){
@@ -451,7 +453,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
       }
   }
 
-  printf("Supersampling the central pixels...\n");
+  //printf("Supersampling the central pixels...\n");
   
   const int supsamp = 20; // Number of rays per pixel (supsamp * supsamp in x,y plane)
   scale = pixelSize/((double)supsamp);
