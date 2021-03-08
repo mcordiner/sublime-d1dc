@@ -27,8 +27,8 @@ TODO:
 #include <gsl/gsl_sf_bessel.h>
 
 //###
-#define RTOL  RCONST(1.0e-8)   /* scalar relative tolerance            */
-#define ATOL RCONST(1.0e-8)   /* vector absolute tolerance components */
+#define RTOL RCONST(1.0e-10)   /* scalar relative tolerance            */
+#define ATOL RCONST(1.0e-10)   /* vector absolute tolerance components */
 #define Ith(v,i)    NV_Ith_S(v,i)         /* Ith numbers components 0..NEQ-1 */
 #define IJth(sunMatrix,i,j) SM_ELEMENT_D(sunMatrix,i,j) /* IJth numbers rows,cols 0..NEQ-1 */
 
@@ -871,15 +871,13 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, int id, configInfo *
       //Calculating the optical depth
       tau = ((A[li]*pow(CLIGHT,3))/(8*PI*pow(md[ispec].freq[li],3))) * ((md[ispec].gstat[upper]/md[ispec].gstat[lower])*Pops[lower] - Pops[upper]) * ((molDens[ispec]* radius)/vexp);
 
-      if ((tau > 0.0 && tau<1e-8) ||tau == 0.0){
+      //If the optical depth is small, ignore it
+      if (tau > -1.0e-8 && tau < 1.0e-8){
         beta = 1.0;
       }else if (tau>0.0) {
         beta = (2/(3*tau)) - exp(-tau/2)*(tau*(gsl_sf_bessel_Kn(2,tau/2)-gsl_sf_bessel_K1(tau/2))/3 -  gsl_sf_bessel_K1(tau/2)); 
-      }else if (tau<=0.0){ 
+      }else if (tau<0.0){ 
         beta = (1 - exp(-tau)) / tau;
-        // if(tau < -MAX_NEG_OPT_DEPTH){
-        //   nMaserWarnings[id]++;
-        //   tau = -MAX_NEG_OPT_DEPTH;
       }
         
       p[upper * NEQ + lower] = p[upper * NEQ + lower] + A[li]*beta;
