@@ -16,21 +16,19 @@ input(inputPars *par, image *img){
 /*
  * Basic parameters. See cheat sheet for details.
  */
-  par-> useEP       = 0;
+  par->useEP       = 0;
   par->Qwater       = Qwater;
-  par -> xne = 0.2;
+  par->xne = 0.2;
   par->rHelio       = 1.0;
-  par->radius           = 1e8;
+  par->radius           = 2e8;
   par->minScale         = rnuc;
-  par->pIntensity = 1000;
-  par->sinkPoints = 500;
+  par->pIntensity = 500;
   par->moldatfile[0]    = "hcn.dat";
   par->girdatfile[0]    = "g_hcn_1au.dat";
+  par->girScale = 1.0;
   par->lte_only         = 0;
 
-  par->nSolveIters  = 7;
   par->outputfile = "hcn.pop";
-  par->binoutputfile    = "restart.pop";
   par->gridfile         = "grid.vtk";
 
   par->collPartIds[0]   = 1;
