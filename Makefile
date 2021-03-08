@@ -16,7 +16,6 @@ PREFIX  =  ${PATHTOLIME}
 srcdir		= ${CURDIR}/src
 docdir		= ${CURDIR}/doc
 exampledir	= ${CURDIR}/example
-pydir		= ${CURDIR}/python
 #*** better to use ${PREFIX} here rather than ${CURDIR}? (the latter is used in artist/lime.)
 
 ifneq (,$(wildcard ${PREFIX}/lib/.))
@@ -40,6 +39,7 @@ CPPFLAGS += -I${PREFIX}/include \
 	    -I${PREFIX}/src \
 	    -I${HOME}/include \
 	    -I/opt/local/include \
+	    -I/opt/local/include/qhull \
 	    -I/sw//include \
 	    ${EXTRACPPFLAGS}
 
@@ -81,13 +81,9 @@ SRCS = ${CORESOURCES} ${STDSOURCES}
 INCS = ${COREINCLUDES}
 OBJS = $(SRCS:.c=.o)
 
-PYSRCS = ${CORESOURCES} ${PYSOURCES}
-PYINCS = ${COREINCLUDES} ${PYINCLUDES}
-PYOBJS = $(PYSRCS:.c=.o)
-
 CONV_OBJS = $(CONVSOURCES:.c=.o)
 
-.PHONY: all doc docclean objclean limeclean clean distclean pyclean
+.PHONY: all doc docclean objclean limeclean clean distclean
 
 all:: ${TARGET} 
 
@@ -99,7 +95,6 @@ ${TARGET}: ${OBJS} ${MODELO}
 	${CC} -o $@ $^ ${LIBS} ${LDFLAGS}
 
 ${OBJS} : ${INCS}
-${PYOBJS} : ${PYINCS}
 ${CONV_OBJS} : ${CONVINCLUDES}
 
 ${MODELO}: ${INCS}

@@ -54,13 +54,6 @@ CONVSOURCES = \
 	src/popsout.c\
 	src/predefgrid.c
 
-PYSOURCES = \
-	src/messages.c\
-	src/py_main.c\
-	src/py_messages.c\
-	src/py_models.c\
-	src/py_utils.c
-
 COREINCLUDES = \
 	src/collparts.h\
 	src/constants.h\
@@ -86,9 +79,4 @@ CONVINCLUDES = \
 	src/gridio.h\
 	src/inpars.h\
 	src/lime.h
-
-PYINCLUDES = \
-	src/error_codes.h\
-	src/py_lime.h\
-	src/py_utils.h
 
