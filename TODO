@@ -1,0 +1,5 @@
+Consider getting rid of QHULL to generate the radial grid. It seems unnecessary and results in different radial grids from one run to the next, which could be problematic in terms of repeatability.
+
+Need to strip out remaining, unnecessary LIME parameters and source code files.
+
+Move some key parameters from the code to the lime.h file, such as the CVODE tolerances, optical depth cutoffs for EP method, number of supersamples during raytracting, etc.
