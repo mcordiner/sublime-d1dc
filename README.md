@@ -10,7 +10,7 @@ Example input and output files are given in the example/ folder.
 
 After installation of the required gsl, qhull and cvode (SUNDIALS) libraries, recommend running the executable as follows:
 
-> lime -f -n model.c
+> sublimed1d -f -n model.c
 
 To generate a reliable coma image, care needs to be taken to correctly set the par->radius parameter in model.c to capture all the expected emission (this will vary depending on the molecule, coma and viewing geometry). The channel spacing (velres) needs to be small enough (around 0.1 km/s or less) to properly sample the spectral line profile, even if the velocity information is later discarded. 
 
