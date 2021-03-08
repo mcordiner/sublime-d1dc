@@ -118,7 +118,7 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
     // Find the CVODE grid points that bracket our current radius, and if we are inside the model boundary, add to the integral
     if (r < rayData.radius[par->pIntensity - 1] && r > par->minScale){
       if (r > rayData.radius[0]){
-       for (i = 0; i < par->pIntensity; i++){
+       for (i = 1; i < par->pIntensity; i++){
          if (rayData.radius[i] > r){
              posn1 = rayData.id[i];
              posn2 = rayData.id[i-1];
@@ -127,13 +127,6 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
              break;
          }
        }
-      }else{
-       // We are off the bottom of the CVODE grid, so choose the first value
-       posn1 = rayData.id[0];
-       posn2 = rayData.id[0];
-       r1 = rayData.radius[0];
-       r2 = rayData.radius[0];
-      }   
      
       /* Calculate first the continuum stuff because it is the same for all channels:*/
       contJnu1 = 0.0;
@@ -196,8 +189,9 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
 
         rayData.flux[index].intense[ichan] += brightnessIncrement;
         rayData.flux[index].tau[ichan] += dtau;
-
+      
       }//end for ichan
+     }//check for r<radius[0]
    }//Move to next z point
 
   }//Loop over z points
