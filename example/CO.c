@@ -24,8 +24,7 @@ input(inputPars *par, image *img){
   par->rHelio       = 1.0;
   par->radius           = 2e8;
   par->minScale         = rnuc;
-  par->pIntensity	= 1000;
-  par->sinkPoints	= 500;
+  par->pIntensity	= 500;
   par->moldatfile[0]  = "CO.dat";
   par->girdatfile[0]  = "g_co_1au_new4.dat";
   par->girScale = 1.0;
