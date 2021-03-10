@@ -183,8 +183,18 @@ void randomsViaRejection(configInfo *par, const unsigned int desiredNumPoints, g
   lograd=log10(par->radius);
   logmin=log10(par->minScale);
 
+   //Forcing the smallest grid point radius to be equal to par->minScale
+   x[0]=0.0;
+   x[1]=0.0;
+   x[2]=par->minScale;
+   for(di=0;di<DIM;di++)
+      outRandLocations[i_u][di]=x[di];
+   progFraction = 0.0/((double)desiredNumPoints-1);
+   if(!silent) progressbar(progFraction, 4);
+
+
   /* Sample pIntensity number of points */
-  for(i_u=0;i_u<desiredNumPoints;i_u++){
+  for(i_u=1;i_u<desiredNumPoints;i_u++){
     pointIsAccepted=0;
     numRandomsThisPoint=0;
     do{
