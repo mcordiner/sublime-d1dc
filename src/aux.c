@@ -30,6 +30,11 @@ else if (*x > *y) return 1; return 0;
 }
 
 /*....................................................................*/
+double linear_interp(double x0, double x1, double y0, double y1, double value){
+  return((y0*(x1-value) + y1*(value-x0))/(x1-x0));
+}
+
+/*....................................................................*/
 void checkFgets(char *fgetsResult, char *message){
   const size_t buflen=80;
   char string[buflen];
@@ -330,4 +335,3 @@ _Bool onlyBitsSet(const int flags, const int mask){
   else
     return 1;
 }
-
