@@ -2,7 +2,6 @@
 #include "raythrucells.h"
 #include <math.h>
 
-
 struct flux{
   double *intense;
   double *tau;
@@ -19,28 +18,6 @@ struct rayData{
   struct molecule *mols;
   struct flux *flux;
 };
-
-// double linear_interp(double x_array, double y_array,configInfo *par, double value){
-
-//   gsl_spline *spline = NULL;
-//   gsl_interp_accel *acc = NULL;
-//   double *knus=NULL, *dusts=NULL;
-
-//   acc = gsl_interp_accel_alloc();
-//   spline = gsl_spline_alloc(gsl_interp_linear,par->pIntensity);
-//   gsl_spline_init(spline,x_array,y_array,par->pIntensity);
-
-//   interp_value = gsl_spline_eval (spline, value, acc);
-
-//   gsl_spline_free(spline);
-//   gsl_interp_accel_free(acc);
-
-//   return(interp_value);
-// }
-
-double linear_interp(double x0, double x1, double y0, double y1, double value){
-  return((y0*(x1-value) + y1*(value-x0))/(x1-x0));
-}
 
 /*....................................................................*/
 void calcGridContDustOpacity(configInfo *par, const double freq\
@@ -110,9 +87,6 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
   
     x[2] = posneg[zp_i] * dz_grid[dz_indices[zp_i]];
     dz = dz_vals[dz_indices[zp_i]];
-    
-    //if (index == 100)    printf("%d %10.3e %8.3e\n",zp_i,x[2],dz);
-
     r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
     
     // Find the CVODE grid points that bracket our current radius, and if we are inside the model boundary, add to the integral
@@ -441,7 +415,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
       else{
         for(ichan=0;ichan<img[im].nchan;ichan++){
           img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].intense[ichan]),log10(rayData.flux[index].intense[ichan]),ro));
-          img[im].pixel[ppi].tau[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].tau[ichan]),log10(rayData.flux[index].tau[ichan]),ro));
+          img[im].pixel[ppi].tau[ichan] += linear_interp(rho_grid[index-1],rho_grid[index],rayData.flux[index-1].tau[ichan],rayData.flux[index].tau[ichan],ro);
         
         }
       }
@@ -497,7 +471,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
             }
           for(ichan=0;ichan<img[im].nchan;ichan++){
               img[im].pixel[ppi].intense[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].intense[ichan]),log10(rayData.flux[index].intense[ichan]),ro));
-              img[im].pixel[ppi].tau[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].tau[ichan]),log10(rayData.flux[index].tau[ichan]),ro));
+              img[im].pixel[ppi].tau[ichan] += linear_interp(rho_grid[index-1],rho_grid[index],rayData.flux[index-1].tau[ichan],rayData.flux[index].tau[ichan],ro);
             }
         }
       }
@@ -506,7 +480,6 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   
 
   for(ppi=0;ppi<totalNumImagePixels;ppi++){
-  //  printf("Pixel %d has %d rays\n", ppi, img[im].pixel[ppi].numRays);
     if(img[im].pixel[ppi].numRays >= minNumRaysForAverage){
       oneOnNumRays = 1.0/(double)img[im].pixel[ppi].numRays;
       for(ichan=0;ichan<img[im].nchan;ichan++){
