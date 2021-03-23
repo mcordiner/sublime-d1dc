@@ -140,7 +140,7 @@ inRandLocation values should be in the range [-0.5,0.5).
 
   if(rinc->doQuasiRandom){ /* only this, because all points are accepted if they are pure random. */
     for(di=0;di<rinc->numDims;di++){
-      if(abs(inRandLocation[cell->axisIndices[di]]) > cell->absRanAcceptRange[di]){
+      if(fabs(inRandLocation[cell->axisIndices[di]]) > cell->absRanAcceptRange[di]){
         *pointIsInRange = 0;
         break;
       }
