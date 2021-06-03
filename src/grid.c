@@ -413,9 +413,6 @@ Generate the remaining values if needed. **Note** that we check a few of them to
     par->dataFlags |= DS_mask_density;
   }
 
-  if(par->doMolCalcs)
-    checkGridDensities(par, *gp); /* Check that none of the density samples is too small. */
-
   if(!allBitsSet(par->dataFlags, DS_mask_temperatures)){
     if(!bitIsSet(defaultFuncFlags, USERFUNC_temperature)){
       /* Check that the user has defined gas temperatures at least (if the dust temp was not defined, it is taken to be the same as the gas temp).

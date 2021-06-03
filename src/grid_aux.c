@@ -50,27 +50,6 @@ void mallocAndSetDefaultGrid(struct grid **gp, const size_t numPoints, const siz
 }
 
 /*....................................................................*/
-void checkGridDensities(configInfo *par, struct grid *gp){
-  /* This checks that none of the density samples is too small. */
-  int i;
-  static _Bool warningAlreadyIssued=0;
-  char errStr[STR_LEN_1];
-
-  if(!silent){ /* Warn if any densities too low. */
-    i = 0;
-    while(i<par->pIntensity && !warningAlreadyIssued){
-      if(gp[i].dens[0]<TYPICAL_ISM_DENS){
-        warningAlreadyIssued = 1;
-        snprintf(errStr, STR_LEN_1, "gp[%d].dens[0] at %.1e is below typical values for the ISM (~%.1e).", i, gp[i].dens[0], TYPICAL_ISM_DENS);
-        warning(errStr);
-        warning("This could give you convergence problems. NOTE: no further warnings will be issued.");
-      }
-      i++;
-    }
-  }
-}
-
-/*....................................................................*/
 void calcGridMolDoppler(configInfo *par, molData *md, struct grid *gp){
   int i,id;
 
