@@ -223,7 +223,6 @@ void	checkFgets(char *fgetsResult, char *message);
 void	checkFscanf(const int fscanfResult, const int expectedNum, char *message);
 void	checkFread(const size_t freadResult, const size_t expectedNum, char *message);
 void	checkFwrite(const size_t fwriteResult, const size_t expectedNum, char *message);
-void	checkGridDensities(configInfo*, struct grid*);
 void	checkUserDensWeights(configInfo*);
 void	copyInparStr(const char*, char**);
 void	delaunay(const int, struct grid*, const unsigned long, const _Bool, const _Bool, struct cell**, unsigned long*);

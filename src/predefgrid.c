@@ -60,9 +60,6 @@ exit(1);
   fclose(fp);
   if(!silent) printDone(4);
 
-  if(par->doMolCalcs)
-    checkGridDensities(par, gp);
-
   for(i=par->pIntensity;i<par->ncell;i++){
     x=2*gsl_rng_uniform(ran)-1.;
     y=2*gsl_rng_uniform(ran)-1.;
