@@ -389,6 +389,9 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
     xs[0] = (0.5 + ppx - imgCentrePixels) * pixelSize;
     xs[1] = (0.5 + ppy - imgCentrePixels) * pixelSize;
     ro = sqrt(xs[0]*xs[0] + xs[1]*xs[1]);
+    
+    if(ro>=par->radius)
+      continue;
 
     for(i=0;i<par->pIntensity;i++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
       if(rho_grid[i]>ro){
@@ -458,6 +461,8 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
           xs[0] = (j*scale) - shift + (pixshiftx*pixelSize);
           xs[1] = (i*scale) - shift + (pixshifty*pixelSize);
           ro = sqrt(xs[0]*xs[0] + xs[1]*xs[1]);
+          if(ro>=par->radius)
+            continue;
 
           xi = round(xs[0]/pixelSize + imgCentrePixels - 0.5);
           yi = round(xs[1]/pixelSize + imgCentrePixels - 0.5);
