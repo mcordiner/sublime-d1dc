@@ -101,7 +101,7 @@ Users have complained that downstream packages (produced by lazy coders >:8) wil
     cdelt[axesOrder[2]] = 1.0;
   crpix[axesOrder[2]] = (double) (naxes[axesOrder[2]]-1)/2.+1;
   crval[axesOrder[2]] = 0.0e0;
-  sprintf(cunit[axesOrder[2]], "M/S    ");
+  sprintf(cunit[axesOrder[2]], "m/s    ");
 
   sprintf(ctype[axesOrder[3]], "STOKES  ");
   cdelt[axesOrder[3]] = 1.0;
@@ -117,7 +117,7 @@ Users have complained that downstream packages (produced by lazy coders >:8) wil
   fits_write_key(fptr, TDOUBLE, "LONPOLE ", &lonpole,       "", &status);
   fits_write_key(fptr, TDOUBLE, "EQUINOX ", &equinox,       "", &status);
   fits_write_key(fptr, TSTRING, "SPECSYS ", &"LSRK    ",    "", &status);
-  fits_write_key(fptr, TDOUBLE, "RESTFREQ", &restfreq,      "", &status);
+  fits_write_key(fptr, TDOUBLE, "RESTFRQ", &restfreq,      "", &status);
   fits_write_key(fptr, TINT,    "VELREF  ", &velref,        "", &status);
 
   for(i=0;i<numAxes;i++)
