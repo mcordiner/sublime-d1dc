@@ -33,7 +33,7 @@ typedef struct {
   double radius,minScale,tcmb,Qwater,rHelio,xne,colliScale,girScale,*nMolWeights;
   double (*gridDensMaxLoc)[DIM],*gridDensMaxValues,*collPartMolWeights;
   int sinkPoints,pIntensity,blend,*collPartIds,traceRayAlgorithm,samplingAlgorithm;
-  int sampling,lte_only,init_lte,antialias,polarization,nThreads,nSolveIters,useEP;
+  int sampling,lte_only,init_lte,antialias,polarization,nThreads,nSolveIters,useEP,fixRNG;
   int collPartUserSetFlags;
   char **girdatfile,**moldatfile,**collPartNames;
   char *outputfile,*binoutputfile,*gridfile,*pregrid,*restart,*dust;

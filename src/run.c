@@ -16,11 +16,7 @@ TODO:
 int defaultFuncFlags = 0;
 double defaultDensyPower = DENSITY_POWER;
 
-#ifdef TEST
-_Bool fixRandomSeeds = TRUE;
-#else
-_Bool fixRandomSeeds = FALSE;
-#endif
+_Bool fixRandomSeeds;
 
 /*....................................................................*/
 void
@@ -350,6 +346,7 @@ Copy over user-set parameters to the configInfo versions. (This seems like dupli
   par->colliScale        = inpars.colliScale;
   par->girScale          = inpars.girScale;
   par->useEP             = inpars.useEP;
+  par->fixRNG            = inpars.fixRNG;
 
   /* Somewhat more carefully copy over the strings:
   */
@@ -360,6 +357,13 @@ Copy over user-set parameters to the configInfo versions. (This seems like dupli
   copyInparStr(inpars.gridfile,      &(par->gridfile));
   copyInparStr(inpars.pregrid,       &(par->pregrid));
   copyInparStr(inpars.gridInFile,    &(par->gridInFile));
+
+  if(par->fixRNG){
+    fixRandomSeeds = True;
+    printf("Random number generator seeds are fixed.\n");
+    }else{
+    fixRandomSeeds = False; 
+  }
 
   par->gridOutFiles = malloc(sizeof(char *)*NUM_GRID_STAGES);
   for(i=0;i<NUM_GRID_STAGES;i++)
