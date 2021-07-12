@@ -368,7 +368,9 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
 
   //printf("Calling traceray...\n");
   
-  // Do the raytracing as a function of rho (linear vector from the origin), to be interpolated onto the image grid 
+  // Do the raytracing as a function of rho (linear vector from the origin), to be interpolated onto the image grid
+  omp_set_num_threads(par->nThreads);
+  #pragma omp parallel for schedule (dynamic)
   for(i = 0; i < par->pIntensity; i++){
     traceray(img,par,gp,md,rayData,im,i,rho_grid,dz_grid_size,dz_grid,dz_vals,dz_indices,posneg);
   }
