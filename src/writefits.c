@@ -127,7 +127,7 @@ Users have complained that downstream packages (produced by lazy coders >:8) wil
   fits_write_key(fptr, TDOUBLE, "BZERO   ", &bzero,         "", &status);
 
   if(unitI==0) fits_write_key(fptr, TSTRING, "BUNIT", &"K       ", "", &status);
-  if(unitI==1) fits_write_key(fptr, TSTRING, "BUNIT", &"Jy/pixel", "", &status);
+  if(unitI==1) fits_write_key(fptr, TSTRING, "BUNIT", &"Jy/pix", "", &status);
   if(unitI==2) fits_write_key(fptr, TSTRING, "BUNIT", &"WM2HZSR ", "", &status);
   if(unitI==3) fits_write_key(fptr, TSTRING, "BUNIT", &"Lsun/PX ", "", &status);
   if(unitI==4) fits_write_key(fptr, TSTRING, "BUNIT", &"        ", "", &status);

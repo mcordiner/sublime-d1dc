@@ -940,6 +940,7 @@ int f(realtype t, N_Vector P, N_Vector Pdot, void *data){
   getTransitionRates(user_data->md,user_data->ispec,user_data->gp,id,user_data->par, NEQ, user_data -> A_array, p, t, user_data->time_struct, user_data->jbar_grid, Pops_array, user_data ->nMaserWarnings);
 
   //Initializing Pdot (otherwise it stores previous values between calls to CVode)
+  // MAC: This seems unnecessary?
   for(i=0; i < NEQ; ++i)
     Ith(Pdot,i) = 0.0;
 
