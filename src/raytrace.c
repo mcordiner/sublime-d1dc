@@ -177,6 +177,56 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
 }
 
 /*....................................................................*/
+void rhoGrid2image(int ppi,configInfo *par, double *rho_grid, struct rayData rayData, imageInfo *img, double pixelSize, double imgCentrePixels, const int im){
+/*Take the raytraced rho vector and interpolate it into the 2D image grid at pixel number ppi*/
+    double xs[2], ro;
+    int ppx, ppy, ichan, i, index;
+    
+    ppx = ppi % img[im].pxls;
+    ppy = (int)(ppi/img[im].pxls);
+
+    xs[0] = (0.5 + ppx - imgCentrePixels) * pixelSize;
+    xs[1] = (0.5 + ppy - imgCentrePixels) * pixelSize;
+    ro = sqrt(xs[0]*xs[0] + xs[1]*xs[1]);
+    
+    if(ro>=rho_grid[par->pIntensity-1]){
+    // Pixel is outside model domain so set to zero
+      for(ichan=0;ichan<img[im].nchan;ichan++){
+          img[im].pixel[ppi].intense[ichan] = 0.0;
+          img[im].pixel[ppi].tau[ichan] = 0.0;          
+        }
+    }else{
+    
+    for(i=0;i<par->pIntensity;i++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
+      if(rho_grid[i]>ro){
+        index =i;
+        break;
+      }
+
+      if(index==0){
+        for(ichan=0;ichan<img[im].nchan;ichan++){
+          img[im].pixel[ppi].intense[ichan] = rayData.flux[index].intense[ichan];
+          img[im].pixel[ppi].tau[ichan] = rayData.flux[index].tau[ichan];          
+        }
+      }
+
+      else if(index==par->pIntensity){
+        index = par->pIntensity-1;
+        for(ichan=0;ichan<img[im].nchan;ichan++){
+          img[im].pixel[ppi].intense[ichan] = rayData.flux[index].intense[ichan];
+          img[im].pixel[ppi].tau[ichan] = rayData.flux[index].tau[ichan];
+        }
+      }
+      else{
+        for(ichan=0;ichan<img[im].nchan;ichan++){
+          img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].intense[ichan]),log10(rayData.flux[index].intense[ichan]),ro));
+          img[im].pixel[ppi].tau[ichan] = linear_interp(rho_grid[index-1],rho_grid[index],rayData.flux[index-1].tau[ichan],rayData.flux[index].tau[ichan],ro);
+        }
+      }
+    }
+}
+
+/*....................................................................*/
 void
 raytrace(int im, configInfo *par, struct grid *gp, molData *md\
   , imageInfo *img, double *lamtab, double *kaptab, const int nEntries){
@@ -189,10 +239,8 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
 
   printf("\nRaytracing in progress...\n");
 
-  const int minNumRaysForAverage=2;
-
-    double pixelSize, imgCentrePixels,minfreq,absDeltaFreq,xs[2],oneOnNumRays, rho_grid[par->pIntensity], ro;
-    int totalNumImagePixels,ppi, ichan,lastChan,molI,lineI,i,j,k,di, xi, yi,id, index, pixoff,pixoff2,pixshiftx,pixshifty, nsupsamppix;
+    double pixelSize, imgCentrePixels,minfreq,absDeltaFreq,xs[2],rho_grid[par->pIntensity],radiusarr[par->pIntensity], sorted_radius[par->pIntensity], ro;
+    int totalNumImagePixels,ppi, ichan,lastChan,molI,lineI,i,j,k,di, xi, yi,id, index, pixoff,pixoff2,pixshiftx,pixshifty, nsupsamppix,numRays;
     double local_cmb,cmbFreq,scale,shift,offset,logdz,*zp_grid = NULL,*dz_grid = NULL,*dz_vals = NULL,*posneg = NULL;
     int cmbMolI,cmbLineI, ppx,ppy,*dz_indices = NULL;
 
@@ -257,19 +305,6 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
 
   local_cmb = planckfunc(cmbFreq,LOCAL_CMB_TEMP);
   calcGridContDustOpacity(par, cmbFreq, lamtab, kaptab, nEntries, gp); /* Reads gp attributes x, dens, and t and writes attributes cont.dust and cont.knu. */
-
-
-  for(ppi=0;ppi<totalNumImagePixels;ppi++){
-    for(ichan=0;ichan<img[im].nchan;ichan++){
-      img[im].pixel[ppi].intense[ichan] = 0.0;
-      img[im].pixel[ppi].tau[    ichan] = 0.0;
-    }
-  }
-
-  for(ppi=0;ppi<totalNumImagePixels;ppi++)
-    img[im].pixel[ppi].numRays = 0;
-
-  double radiusarr[par->pIntensity], sorted_radius[par->pIntensity];
 
   for (id = 0;id < par->pIntensity;id++) {
     radiusarr[id] = sqrt(gp[id].x[0] * gp[id].x[0] + gp[id].x[1] * gp[id].x[1] + gp[id].x[2] * gp[id].x[2]);
@@ -372,8 +407,8 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
 
   //printf("Calling traceray...\n");
   
-  // Do the raytracing as a function of rho (linear vector from the origin), to be interpolated onto the image grid
-  // Run the loop over grid points in parallel
+  // Do the raytracing as a function of rho (linear vector from the origin), to later be interpolated onto the image grid
+  // Parallel loop over rho grid points
   omp_set_num_threads(par->nThreads);
   #pragma omp parallel for schedule (dynamic)
   for(i = 0; i < par->pIntensity; i++){
@@ -387,48 +422,10 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   
   //printf("Interpolating to image grid...\n");
 
-  ppy = 0;
+  // Parallel loop over image pixels
+  #pragma omp parallel for schedule (dynamic)
   for (ppi = 0; ppi<totalNumImagePixels; ppi++){
-    ppx = ppi % img[im].pxls;
-    if (ppx == 0 && ppi != 0)
-      ppy += 1;
-
-    xs[0] = (0.5 + ppx - imgCentrePixels) * pixelSize;
-    xs[1] = (0.5 + ppy - imgCentrePixels) * pixelSize;
-    ro = sqrt(xs[0]*xs[0] + xs[1]*xs[1]);
-    
-    if(ro>=par->radius)
-      continue;
-
-    for(i=0;i<par->pIntensity;i++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
-      if(rho_grid[i]>ro){
-        index =i;
-        break;
-      }
-
-      img[im].pixel[ppi].numRays++;
-
-      if(index==0){
-        for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = rayData.flux[index].intense[ichan];
-          img[im].pixel[ppi].tau[ichan] = rayData.flux[index].tau[ichan];          
-        }
-      }
-
-      else if(index==par->pIntensity){
-        index = par->pIntensity-1;
-        for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = rayData.flux[index].intense[ichan];
-          img[im].pixel[ppi].tau[ichan] = rayData.flux[index].tau[ichan];
-        }
-      }
-      else{
-        for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].intense[ichan]),log10(rayData.flux[index].intense[ichan]),ro));
-          img[im].pixel[ppi].tau[ichan] += linear_interp(rho_grid[index-1],rho_grid[index],rayData.flux[index-1].tau[ichan],rayData.flux[index].tau[ichan],ro);
-        
-        }
-      }
+     rhoGrid2image(ppi,par,rho_grid,rayData,img,pixelSize,imgCentrePixels,im);
   }
 
   //printf("Supersampling the central pixels...\n");
@@ -451,9 +448,13 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   }
   
   for(pixshiftx=(pixoff-nsupsamppix)/2;pixshiftx<=(nsupsamppix-pixoff-pixoff2)/2;pixshiftx++){
+  // Parallel loop over y axis of supersampled region. At some point we should extend this treatment to all pixels
+    #pragma omp parallel for schedule (dynamic) default(shared) private(numRays,xi,yi,ppi,ichan,i,j,xs,ro,index,k)
     for(pixshifty=(pixoff-nsupsamppix)/2;pixshifty<=(nsupsamppix-pixoff-pixoff2)/2;pixshifty++){
       
-      // Subtract the central rays from the supersampled pixels by setting them back to zero
+      numRays=0;
+      
+      // Initially set supersampled pixels to zero
       xi=pixshiftx+(img[im].pxls-pixoff)/2;
       yi=pixshifty+(img[im].pxls-pixoff)/2;
       ppi = yi * img[im].pxls + xi;
@@ -461,22 +462,26 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
           img[im].pixel[ppi].intense[ichan] = 0.0;
           img[im].pixel[ppi].tau[ichan] = 0.0;
       }
-      img[im].pixel[ppi].numRays = 0;
       
       for(j=1;j<=supsamp;j++){
         for(i=1;i<=supsamp;i++){
           xs[0] = (j*scale) - shift + (pixshiftx*pixelSize);
           xs[1] = (i*scale) - shift + (pixshifty*pixelSize);
           ro = sqrt(xs[0]*xs[0] + xs[1]*xs[1]);
-          if(ro>=par->radius)
+          
+          if(ro>=par->radius){
+            // Outside the model boundary so do not add any flux
+            numRays++;
             continue;
-
+          
+          }else{
+          
           xi = round(xs[0]/pixelSize + imgCentrePixels - 0.5);
           yi = round(xs[1]/pixelSize + imgCentrePixels - 0.5);
           ppi = yi * img[im].pxls + xi;
-          img[im].pixel[ppi].numRays++;
+          numRays++;
 
-          for(k=0;k<par->pIntensity;k++) //TODO: use a more efficient searching algorithm, such as binary search (since its already sorted)
+          for(k=0;k<par->pIntensity;k++)
             if(rho_grid[k]>ro){
               index =k;
               break;
@@ -485,21 +490,17 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
               img[im].pixel[ppi].intense[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].intense[ichan]),log10(rayData.flux[index].intense[ichan]),ro));
               img[im].pixel[ppi].tau[ichan] += linear_interp(rho_grid[index-1],rho_grid[index],rayData.flux[index-1].tau[ichan],rayData.flux[index].tau[ichan],ro);
             }
+          }
         }
       }
+    
+     for(ichan=0;ichan<img[im].nchan;ichan++){
+       img[im].pixel[ppi].intense[ichan] /= numRays;
+       img[im].pixel[ppi].tau[ichan] /= numRays;
+     }
     }
   }
   
-
-  for(ppi=0;ppi<totalNumImagePixels;ppi++){
-    if(img[im].pixel[ppi].numRays >= minNumRaysForAverage){
-      oneOnNumRays = 1.0/(double)img[im].pixel[ppi].numRays;
-      for(ichan=0;ichan<img[im].nchan;ichan++){
-        img[im].pixel[ppi].intense[ichan] *= oneOnNumRays;
-        img[im].pixel[ppi].tau[    ichan] *= oneOnNumRays;
-      }
-    }
-  }
 
   for(i = 0; i < par->pIntensity; i++){
     free(rayData.flux[i].intense);
