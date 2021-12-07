@@ -69,8 +69,10 @@ void calcGridContDustOpacity(configInfo *par, const double freq\
 void
 traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayData rayData,const int im, int index, double* rho_grid, int dz_grid_size, double* dz_grid, double* dz_vals, int* dz_indices, double* posneg){
 
+// Note: this can be sped up considerably by separating the main loop into 2 parts: (1) generating the source function for each channel for each z point, and (2) doing the linear interpolation in a separate loop
+
   int ichan,stokesId,di,i,posn1,posn2,molI,lineI,lineID,zp_i;
-  double zp,x[DIM],dx[DIM],dz,dtau,col,r;
+  double zp,x[DIM],dx[DIM],vel[DIM],dz,dtau,col,r;
   double contJnu1,contAlpha1,contJnu2,contAlpha2,alpha,jnu,jnu1,alpha1,jnu2,alpha2,r1,r2,lineRedShift,vThisChan,deltav,logdz,vfac=0.0;
   double remnantSnu,expDTau,brightnessIncrement;
 
@@ -89,6 +91,7 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
     dz = dz_vals[dz_indices[zp_i]];
     r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
     
+    
     // Find the CVODE grid points that bracket our current radius, and if we are inside the model boundary, add to the integral
     if (r < rayData.radius[par->pIntensity - 1] && r > par->minScale){
       if (r > rayData.radius[0]){
@@ -101,6 +104,9 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
              break;
          }
        }
+      
+      // Find the velocity vector   
+      velocity(x[0],x[1],x[2],vel);
      
       /* Calculate first the continuum stuff because it is the same for all channels:*/
       contJnu1 = 0.0;
@@ -135,13 +141,11 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
                 */
 
                 //Calculating source function and velocity term for 1st radial point
-                velocity(x[0],x[1],x[2],gp[posn1].vel);
-                vfac = gaussline(deltav-dotProduct3D(dx,gp[posn1].vel),gp[posn1].mol[molI].binv);                  
+                vfac = gaussline(deltav-dotProduct3D(dx,vel),gp[posn1].mol[molI].binv);                  
                 sourceFunc_line(&md[molI],vfac,&(gp[posn1].mol[molI]),lineI,&jnu1,&alpha1);
 
                 //Calculating source function and velocity term for 2nd radial point
-                velocity(x[0],x[1],x[2],gp[posn2].vel);
-                vfac = gaussline(deltav-dotProduct3D(dx,gp[posn2].vel),gp[posn2].mol[molI].binv);       
+                vfac = gaussline(deltav-dotProduct3D(dx,vel),gp[posn2].mol[molI].binv);       
                 sourceFunc_line(&md[molI],vfac,&(gp[posn2].mol[molI]),lineI,&jnu2,&alpha2);
 
             }//end for lineI
@@ -369,6 +373,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   //printf("Calling traceray...\n");
   
   // Do the raytracing as a function of rho (linear vector from the origin), to be interpolated onto the image grid
+  // Run the loop over grid points in parallel
   omp_set_num_threads(par->nThreads);
   #pragma omp parallel for schedule (dynamic)
   for(i = 0; i < par->pIntensity; i++){
