@@ -188,7 +188,7 @@ void randomsViaRejection(configInfo *par, const unsigned int desiredNumPoints, g
    x[1]=0.0;
    x[2]=par->minScale;
    for(di=0;di<DIM;di++)
-      outRandLocations[i_u][di]=x[di];
+      outRandLocations[0][di]=x[di];
    progFraction = 0.0/((double)desiredNumPoints-1);
    if(!silent) progressbar(progFraction, 4);
 
