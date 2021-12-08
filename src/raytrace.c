@@ -349,8 +349,8 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   //We do these steps now so that we don't need to determine which spectral lines contribute to the image repeteadly inside traceray(), which is time consuming
   for(molI=0;molI<par->nSpecies;molI++){
     for(lineI=0;lineI<md[molI].nline;lineI++){
-      if(md[molI].freq[lineI] > img[im].freq-img[im].bandwidth*0.5\
-        && md[molI].freq[lineI] < img[im].freq+img[im].bandwidth*0.5){
+      if((md[molI].freq[lineI] * (1. - img[im].source_vel/CLIGHT)) > img[im].freq-img[im].bandwidth*0.5\
+        && (md[molI].freq[lineI] * (1. - img[im].source_vel/CLIGHT)) < img[im].freq+img[im].bandwidth*0.5){
         numLines++;
       }
     }
@@ -363,8 +363,8 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   for(molI=0;molI<par->nSpecies;molI++){
     index = 0;
     for(lineI=0;lineI<md[molI].nline;lineI++){
-      if(md[molI].freq[lineI] > img[im].freq-img[im].bandwidth*0.5\
-        && md[molI].freq[lineI] < img[im].freq+img[im].bandwidth*0.5){
+      if((md[molI].freq[lineI] * (1. - img[im].source_vel/CLIGHT)) > img[im].freq-img[im].bandwidth*0.5\
+        && (md[molI].freq[lineI] * (1. - img[im].source_vel/CLIGHT)) < img[im].freq+img[im].bandwidth*0.5){
         rayData.mols[molI].lines[index] = lineI;
         index++;
       }
