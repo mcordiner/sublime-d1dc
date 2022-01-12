@@ -181,6 +181,10 @@ typedef struct {
   char *units;
   int *imgunits;
   int numunits;
+  int psfShape;
+  double psfWidth;
+  double *psfKernel;
+  int psfKernelN;
   double freq,bandwidth;
   char *filename;
   double source_vel;

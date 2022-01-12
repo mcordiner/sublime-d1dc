@@ -314,7 +314,7 @@ The parameters visible to the user have now been strictly confined to members of
   char message[STR_LEN_1];
   _Bool doThetaPhi,foundGoodValue;
   double cos_pa,sin_pa,cosPhi,sinPhi,cos_incl,sin_incl,cosTheta,sinTheta,cos_az,sin_az;
-  double tempRotMat[3][3],auxRotMat[3][3],r[3],tempPointDensity;
+  double tempRotMat[3][3],auxRotMat[3][3],r[3],tempPointDensity,jd,sigma;
   int row,col;
   char *pch_sep = " ,:_", *pch, *pch_end, *units_str;
   const gsl_rng_type *ranNumGenType = gsl_rng_ranlxs2;
@@ -633,6 +633,7 @@ The cutoff will be the value of abs(x) for which the error in the exact expressi
       (*img)[i].bandwidth  = inimg[i].bandwidth;
       copyInparStr(inimg[i].filename, &((*img)[i].filename));
       (*img)[i].source_vel = inimg[i].source_vel;
+      (*img)[i].psfShape = inimg[i].psfShape;
       (*img)[i].theta      = inimg[i].theta;
       (*img)[i].phi        = inimg[i].phi;
       (*img)[i].incl       = inimg[i].incl;
@@ -640,12 +641,31 @@ The cutoff will be the value of abs(x) for which the error in the exact expressi
       (*img)[i].azimuth    = inimg[i].azimuth;
       (*img)[i].distance   = inimg[i].distance;
       (*img)[i].doInterpolateVels = inimg[i].doInterpolateVels; // This is only accessed if par->traceRayAlgorithm==1.
+    
+      (*img)[i].psfWidth = inimg[i].psfWidth / inimg[i].velres;  // The spectral response FWHM in channels
+          
     }
   }
 
   /* Allocate pixel space and parse image information.
   */
   for(i=0;i<nImages;i++){
+      /* Set up the spectral convolution kernels */
+      if((*img)[i].psfShape == 1){ // Kernel is a boxcar
+         (*img)[i].psfKernelN = (int)round((*img)[i].psfWidth);
+      }else if((*img)[i].psfShape == 2){ // Kernel is Gaussian
+         (*img)[i].psfKernelN = (int)(round((*img)[i].psfWidth) * 2.) + 1;
+         (*img)[i].psfKernel = malloc(sizeof(double) * (*img)[i].psfKernelN);
+         sigma = (*img)[i].psfWidth/2.3548;
+         j = 0;
+         for(jd=(-((*img)[i].psfKernelN-1.0)/2.0);jd<=(((*img)[i].psfKernelN-1.0)/2.0);jd++){
+            (*img)[i].psfKernel[j] = (1/(sigma*sqrt(2.0 * PI))) * exp(-pow(jd,2.0)/(2.0*pow(sigma,2.0)));
+         //   printf("j=%d  jd=%.1f  G=%8.3e\n",j,jd,(*img)[i].psfKernel[j]);
+            j++;
+            
+         }
+    }
+      
     (*img)[i].imgunits = NULL;
 
     /* If user has not supplied a units string then use unit value (default 0) to maintain backwards compatibility */

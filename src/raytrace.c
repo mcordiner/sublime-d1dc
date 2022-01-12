@@ -17,6 +17,7 @@ struct rayData{
   double *radius;
   struct molecule *mols;
   struct flux *flux;
+  struct flux *fluxc;
 };
 
 /*....................................................................*/
@@ -71,8 +72,8 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
 
 // Note: this can be sped up considerably by separating the main loop into 2 parts: (1) generating the source function for each channel for each z point, and (2) doing the linear interpolation in a separate loop
 
-  int ichan,stokesId,di,i,posn1,posn2,molI,lineI,lineID,zp_i;
-  double zp,x[DIM],dx[DIM],vel[DIM],dz,dtau,col,r;
+  int ichan,stokesId,di,i,posn1,posn2,molI,lineI,lineID,zp_i,navg;
+  double zp,x[DIM],dx[DIM],vel[DIM],dz,dtau,col,r,avg,avgtau;
   double contJnu1,contAlpha1,contJnu2,contAlpha2,alpha,jnu,jnu1,alpha1,jnu2,alpha2,r1,r2,lineRedShift,vThisChan,deltav,logdz,vfac=0.0;
   double remnantSnu,expDTau,brightnessIncrement;
 
@@ -174,14 +175,88 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
 
   }//Loop over z points
 
+/* Convolve the spectral axis by the requested PSF*/
+   if(img[im].psfShape == 1){ // Boxcar smooth
+      if(img[im].psfKernelN%2!=0){// Odd kernel width
+       //  printf("Boxcar smoothing %d\n",img[im].psfKernelN);
+         for(ichan=0;ichan<img[im].nchan;ichan++){
+            avg=0.;
+            avgtau=0.;
+            navg=0;
+            for(i=-(img[im].psfKernelN-1)/2;i<=(img[im].psfKernelN-1)/2;i++){
+               if (ichan+i > -1 && ichan+i < img[im].nchan){
+                  avg += rayData.flux[index].intense[ichan+i];
+                  avgtau += rayData.flux[index].tau[ichan+i];
+                  navg++;
+               }
+            }   
+            rayData.fluxc[index].intense[ichan]=avg/navg;
+            rayData.fluxc[index].tau[ichan]=avgtau/navg;
+         }
+      }else{// Even kernel width - have to interpolate the values to find the intermediate points
+       //  printf("Boxcar smoothing %d\n",img[im].psfKernelN);
+         for(ichan=0;ichan<img[im].nchan;ichan++){
+            avg=0.;
+            avgtau=0.;
+            navg=0;
+            for(i=-img[im].psfKernelN/2;i<img[im].psfKernelN/2;i++){
+               if (ichan+i > -1 && ichan+i+1 < img[im].nchan){
+                  avg += (rayData.flux[index].intense[ichan+i]+rayData.flux[index].intense[ichan+i+1])/2.0;
+                  avgtau += (rayData.flux[index].tau[ichan+i]+rayData.flux[index].tau[ichan+i+1])/2.0;
+                  navg++;
+               }
+            }   
+            rayData.fluxc[index].intense[ichan]=avg/navg;
+            rayData.fluxc[index].tau[ichan]=avgtau/navg;
+         }
+      }    
+    }else if(img[im].psfShape == 2){ // Gaussian smooth - note that the Gaussian kernel size is always odd
+      // printf("Gaussian smoothing %.2f\n",img[im].psfWidth);
+        for(ichan = (img[im].psfKernelN-1)/2; ichan < (img[im].nchan - ((img[im].psfKernelN-1)/2)); ichan++){
+            avg=0.;
+            avgtau=0.;
+            for(i=0;i<img[im].psfKernelN;i++){
+               avg += img[im].psfKernel[i] * rayData.flux[index].intense[ichan-((img[im].psfKernelN-1)/2)+i];
+               avgtau += img[im].psfKernel[i] * rayData.flux[index].tau[ichan-((img[im].psfKernelN-1)/2)+i];
+            }
+            rayData.fluxc[index].intense[ichan]=avg;
+            rayData.fluxc[index].tau[ichan]=avgtau;
+         }
+      /*Zero-padded end regions where the kernel runs off the ends of the spectrum */
+        for(ichan=0; ichan<(img[im].psfKernelN-1)/2; ichan ++){
+           avg=0.;
+           avgtau=0.;
+           for(i=((img[im].psfKernelN-1)/2)-ichan;i<img[im].psfKernelN;i++){
+              avg += img[im].psfKernel[i] * rayData.flux[index].intense[ichan+i-((img[im].psfKernelN-1)/2)];
+              avgtau += img[im].psfKernel[i] * rayData.flux[index].tau[ichan+i-((img[im].psfKernelN-1)/2)];
+           }  
+           rayData.fluxc[index].intense[ichan]=avg; 
+           rayData.fluxc[index].tau[ichan]=avgtau;
+        }
+        for(ichan=img[im].nchan - ((img[im].psfKernelN-1)/2) ; ichan < img[im].nchan; ichan ++){
+           avg=0.;
+           avgtau=0.;
+           for(i=0;i<((img[im].psfKernelN-1)/2) + (img[im].nchan - ichan);i++){
+              avg += img[im].psfKernel[i] * rayData.flux[index].intense[ichan+i-((img[im].psfKernelN-1)/2)];
+              avgtau += img[im].psfKernel[i] * rayData.flux[index].tau[ichan+i-((img[im].psfKernelN-1)/2)];
+           }  
+           rayData.fluxc[index].intense[ichan]=avg;
+           rayData.fluxc[index].tau[ichan]=avgtau;
+        }
+        
+   }else{// No spectral smoothing
+       rayData.fluxc[index].intense = rayData.flux[index].intense;
+       rayData.fluxc[index].tau = rayData.flux[index].tau;
+   }
 }
 
 /*....................................................................*/
 void rhoGrid2image(int ppi,configInfo *par, double *rho_grid, struct rayData rayData, imageInfo *img, double pixelSize, double imgCentrePixels, const int im){
 /*Take the raytraced rho vector and interpolate it into the 2D image grid at pixel number ppi*/
+/*For legacy reasons, the intensity and optical depth (rho) vectors and associated images are calculated separately, then combined at the end to form the final image. Could potentially get a ~ factor 2 speed up by combining tau and intense at an earlier stage to make an image flux vector, which is then interpolated onto the image grid. */
     double xs[2], ro;
     int ppx, ppy, ichan, i, index;
-    
+        
     ppx = ppi % img[im].pxls;
     ppy = (int)(ppi/img[im].pxls);
 
@@ -202,25 +277,25 @@ void rhoGrid2image(int ppi,configInfo *par, double *rho_grid, struct rayData ray
         index =i;
         break;
       }
-
+      
       if(index==0){
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = rayData.flux[index].intense[ichan];
-          img[im].pixel[ppi].tau[ichan] = rayData.flux[index].tau[ichan];          
+          img[im].pixel[ppi].intense[ichan] = rayData.fluxc[index].intense[ichan];
+          img[im].pixel[ppi].tau[ichan] = rayData.fluxc[index].tau[ichan];          
         }
       }
 
       else if(index==par->pIntensity){
         index = par->pIntensity-1;
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = rayData.flux[index].intense[ichan];
-          img[im].pixel[ppi].tau[ichan] = rayData.flux[index].tau[ichan];
+          img[im].pixel[ppi].intense[ichan] = rayData.fluxc[index].intense[ichan];
+          img[im].pixel[ppi].tau[ichan] = rayData.fluxc[index].tau[ichan];
         }
       }
       else{
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].intense[ichan]),log10(rayData.flux[index].intense[ichan]),ro));
-          img[im].pixel[ppi].tau[ichan] = linear_interp(rho_grid[index-1],rho_grid[index],rayData.flux[index-1].tau[ichan],rayData.flux[index].tau[ichan],ro);
+          img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.fluxc[index-1].intense[ichan]),log10(rayData.fluxc[index].intense[ichan]),ro));
+          img[im].pixel[ppi].tau[ichan] = linear_interp(rho_grid[index-1],rho_grid[index],rayData.fluxc[index-1].tau[ichan],rayData.fluxc[index].tau[ichan],ro);
         }
       }
     }
@@ -316,6 +391,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   struct rayData rayData;
   rayData.id = malloc(sizeof(int) * par->pIntensity);
   rayData.flux = malloc(sizeof(*rayData.flux) * par->pIntensity);
+  rayData.fluxc = malloc(sizeof(*rayData.flux) * par->pIntensity);
   rayData.radius = sorted_radius;
   double current;
   
@@ -334,7 +410,9 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
 
   for(i = 0; i < par->pIntensity; i++){
     rayData.flux[i].intense= malloc(sizeof(double) * img[im].nchan);
+    rayData.fluxc[i].intense= malloc(sizeof(double) * img[im].nchan);
     rayData.flux[i].tau= malloc(sizeof(double) * img[im].nchan);
+    rayData.fluxc[i].tau= malloc(sizeof(double) * img[im].nchan);
 
     for(ichan=0;ichan<img[im].nchan;ichan++){
       rayData.flux[i].intense[ichan] = 0.0;
@@ -405,7 +483,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
      j++;
   }
 
-  //printf("Calling traceray...\n");
+  printf("Calling traceray...\n");
   
   // Do the raytracing as a function of rho (linear vector from the origin), to later be interpolated onto the image grid
   // Parallel loop over rho grid points
@@ -420,7 +498,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   free(zp_grid);
   free(dz_indices);
   
-  //printf("Interpolating to image grid...\n");
+  printf("Interpolating to image grid...\n");
 
   // Parallel loop over image pixels
   #pragma omp parallel for schedule (dynamic)
@@ -428,7 +506,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
      rhoGrid2image(ppi,par,rho_grid,rayData,img,pixelSize,imgCentrePixels,im);
   }
 
-  //printf("Supersampling the central pixels...\n");
+  printf("Supersampling the central pixels...\n");
   
   const int supsamp = 20; // Number of rays per pixel (supsamp * supsamp in x,y plane)
   scale = pixelSize/((double)supsamp);
@@ -487,8 +565,8 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
               break;
             }
           for(ichan=0;ichan<img[im].nchan;ichan++){
-              img[im].pixel[ppi].intense[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.flux[index-1].intense[ichan]),log10(rayData.flux[index].intense[ichan]),ro));
-              img[im].pixel[ppi].tau[ichan] += linear_interp(rho_grid[index-1],rho_grid[index],rayData.flux[index-1].tau[ichan],rayData.flux[index].tau[ichan],ro);
+              img[im].pixel[ppi].intense[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.fluxc[index-1].intense[ichan]),log10(rayData.fluxc[index].intense[ichan]),ro));
+              img[im].pixel[ppi].tau[ichan] += linear_interp(rho_grid[index-1],rho_grid[index],rayData.fluxc[index-1].tau[ichan],rayData.fluxc[index].tau[ichan],ro);
             }
           }
         }
@@ -504,7 +582,11 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
 
   for(i = 0; i < par->pIntensity; i++){
     free(rayData.flux[i].intense);
-    free(rayData.flux[i].tau);    
+    free(rayData.flux[i].tau);
+    if(img[im].psfShape != 0){
+      free(rayData.fluxc[i].intense);
+      free(rayData.fluxc[i].tau); 
+    }
   }
   for(molI=0;molI<par->nSpecies;molI++){
     free(rayData.mols[molI].lines);
@@ -532,5 +614,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
     }
   }
 #endif
+
+printf("Raytracing done...\n");
 
 }

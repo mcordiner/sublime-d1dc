@@ -32,6 +32,8 @@ typedef struct {
   int pxls;
   int unit;
   char *units;
+  int psfShape;
+  double psfWidth;
   double freq,bandwidth;
   char *filename;
   double source_vel;
