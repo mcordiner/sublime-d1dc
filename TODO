@@ -2,6 +2,8 @@ Consider getting rid of QHULL to generate the radial grid. It seems unnecessary 
 
 Presently, the relationship between time and radius is hard-coded in solver.c assuming a constant expansion velocity. Obviously, the code breaks if the expansion velocity changes with radius, so this needs to be reworked by including a differential equation for radius as a function of time.
 
+Would be good to check correctness of the Pdot(t) terms, as they seem to behave strangely at small times (there's a large oscillation about 0), even though this does not seem to detrimentally impact the level populations.
+
 Need to strip out remaining, unnecessary LIME parameters and source code files. Probably a good idea to remove all references to LIME, since so much of the code has now changed.
 
 Move some key parameters from the code to the lime.h file, such as the CVODE tolerances, optical depth cutoffs for EP method, number of supersamples during raytracting, etc.
