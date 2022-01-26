@@ -27,8 +27,8 @@ TODO:
 #include <gsl/gsl_sf_bessel.h>
 
 //###
-#define RTOL RCONST(1.0e-10)   /* scalar relative tolerance            */
-#define ATOL RCONST(1.0e-10)   /* vector absolute tolerance components */
+#define RTOL RCONST(1.0e-12)   /* scalar relative tolerance            */
+#define ATOL RCONST(1.0e-12)   /* vector absolute tolerance components */
 #define Ith(v,i)    NV_Ith_S(v,i)         /* Ith numbers components 0..NEQ-1 */
 #define IJth(sunMatrix,i,j) SM_ELEMENT_D(sunMatrix,i,j) /* IJth numbers rows,cols 0..NEQ-1 */
 
@@ -852,14 +852,17 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, int id, configInfo *
    }
 
    /* Add the pumping rates to the matrix */
-   for(k=0;k<md[ispec].nlev;k++)
-    for(l=0;l<md[ispec].nlev;l++)
-      if(par->girdatfile!=NULL)
-        if(k!=l){
-          if(par->girdatfile!=NULL)
+   if(par->girdatfile!=NULL){
+      for(k=0;k<md[ispec].nlev;k++){
+        for(l=0;l<md[ispec].nlev;l++){
+          if(k!=l){
             p[l * NEQ + k] = p[l * NEQ + k] + md[ispec].gir[l*md[ispec].nlev+k];
+          }
         }
+      }  
+   }
 
+ 
    //Radiation trapping using the Escape Probaility method
    if(par->useEP){ 
 
