@@ -10,7 +10,6 @@ TODO:
  */
 
 #include "lime.h"
-#include "tree_random.h"
 #include "gridio.h"
 #include "defaults.h"
 
@@ -232,26 +231,6 @@ void randomsViaRejection(configInfo *par, const unsigned int desiredNumPoints, g
   }
 }
 
-/*....................................................................*/
-void
-treePrintMessage(const int status, const char message[TREE_STRLEN]){
-  char errStr[STR_LEN_0];
-
-  if(silent)
-return;
-
-  if(     status==TREE_MSG_MESSAGE)
-    printMessage((char*)message);
-  else if(status==TREE_MSG_WARN)
-    warning((char*)message);
-  else if(status==TREE_MSG_ERROR)
-    bail_out((char*)message);
-  else{
-    snprintf(errStr, STR_LEN_0, "Message status %d not understood.\n", status);
-    bail_out(errStr);
-exit(1);
-  }
-}
 
 /*....................................................................*/
 void
@@ -261,7 +240,6 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
   double theta,semiradius,z,dummyT[2],dummyScalar;
   double *outRandDensities=NULL,*dummyPointer=NULL,x[DIM];
   double (*outRandLocations)[DIM]=NULL;
-  treeRandConstType rinc;
   gsl_rng *randGen;
   struct cell *dc=NULL; /* Not used at present. */
   unsigned long numCells;
