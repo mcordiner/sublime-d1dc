@@ -27,7 +27,6 @@ CORESOURCES = \
 	src/solver.c\
 	src/sourcefunc.c\
 	src/tcpsocket.c\
-	src/tree_random.c\
 	src/writefits.c
 
 STDSOURCES = \
