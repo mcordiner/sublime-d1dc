@@ -642,14 +642,34 @@ The cutoff will be the value of abs(x) for which the error in the exact expressi
       (*img)[i].distance   = inimg[i].distance;
       (*img)[i].doInterpolateVels = inimg[i].doInterpolateVels; // This is only accessed if par->traceRayAlgorithm==1.
     
-      (*img)[i].psfWidth = inimg[i].psfWidth / inimg[i].velres;  // The spectral response FWHM in channels
+      (*img)[i].psfWidth = inimg[i].psfWidth / inimg[i].velres;  // Convert the spectral response FWHM to channels
           
     }
   }
 
   /* Allocate pixel space and parse image information.
   */
+  
   for(i=0;i<nImages;i++){
+  
+      if ((*img)[i].nchan < 2. * (*img)[i].psfWidth){
+      if(!silent){
+      snprintf(message, STR_LEN_1, "The number of channels is less than twice the requested PSF width", i);
+      bail_out(message);
+        }
+      exit(1);
+      }
+   
+      if ((*img)[i].psfWidth < 0.5){
+      if(!silent){
+      snprintf(message, STR_LEN_1, "The spectral PSF width is less than half the channel width", i);
+      bail_out(message);
+        }
+      exit(1);
+      }
+      
+   
+   
       /* Set up the spectral convolution kernels */
       if((*img)[i].psfShape == 1){ // Kernel is a boxcar
          (*img)[i].psfKernelN = (int)round((*img)[i].psfWidth);
