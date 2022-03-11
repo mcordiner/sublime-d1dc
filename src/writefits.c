@@ -142,7 +142,13 @@ Users have complained that downstream packages (produced by lazy coders >:8) wil
     ru3 = img[im].distance/1.975e13;
     scale=4.*M_PI*ru3*ru3*img[im].freq*img[im].imgres*img[im].imgres;
   }
-  else if(unitI!=4) {
+  else if(unitI==4) {
+    if (img[im].rebinSpec == 1) {
+      if(!silent) bail_out("No rebinned tau image is available (needs to be coded)");
+    exit(0);
+    }
+  }
+  else{
     if(!silent) bail_out("Image unit number invalid");
     exit(0);
   }

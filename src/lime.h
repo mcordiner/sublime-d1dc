@@ -182,7 +182,9 @@ typedef struct {
   int *imgunits;
   int numunits;
   int psfShape;
-  double psfWidth;
+  double psfWidth, binWidth;
+  int rebinSpec;
+  int nBins;
   double *psfKernel;
   int psfKernelN;
   double freq,bandwidth;

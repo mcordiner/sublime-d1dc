@@ -127,6 +127,9 @@ initParImg(inputPars *par, image **img)
     (*img)[i].bandwidth  = -1.0;
     (*img)[i].psfShape   = 0;
     (*img)[i].psfWidth   = 0.0;
+    (*img)[i].rebinSpec   = 0;
+    (*img)[i].nBins      = 0;
+    (*img)[i].binWidth   = 0;
     (*img)[i].source_vel =  0.0;
     (*img)[i].theta      =  0.0;
     (*img)[i].phi        =  0.0;

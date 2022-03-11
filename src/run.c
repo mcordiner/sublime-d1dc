@@ -633,7 +633,10 @@ The cutoff will be the value of abs(x) for which the error in the exact expressi
       (*img)[i].bandwidth  = inimg[i].bandwidth;
       copyInparStr(inimg[i].filename, &((*img)[i].filename));
       (*img)[i].source_vel = inimg[i].source_vel;
-      (*img)[i].psfShape = inimg[i].psfShape;
+      (*img)[i].psfShape   = inimg[i].psfShape;
+      (*img)[i].rebinSpec  = inimg[i].rebinSpec;
+      (*img)[i].nBins      = inimg[i].nBins;
+      (*img)[i].binWidth   = inimg[i].binWidth;
       (*img)[i].theta      = inimg[i].theta;
       (*img)[i].phi        = inimg[i].phi;
       (*img)[i].incl       = inimg[i].incl;
@@ -651,6 +654,25 @@ The cutoff will be the value of abs(x) for which the error in the exact expressi
   */
   
   for(i=0;i<nImages;i++){
+  
+   if((*img)[i].rebinSpec == 1){
+      if ((*img)[i].nBins > (*img)[i].nchan){
+      if(!silent){
+      snprintf(message, STR_LEN_1, "The number of channels (nchan) is less than the number of bins (nBin", i);
+      bail_out(message);
+        }
+      exit(1);
+      }
+      
+      if ((*img)[i].binWidth < (*img)[i].velres){
+      if(!silent){
+      snprintf(message, STR_LEN_1, "The requested bin width is less than the channel width", i);
+      bail_out(message);
+        }
+      exit(1);
+      }
+      
+    }
   
       if ((*img)[i].nchan < 2. * (*img)[i].psfWidth){
       if(!silent){

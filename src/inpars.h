@@ -34,6 +34,9 @@ typedef struct {
   char *units;
   int psfShape;
   double psfWidth;
+  int rebinSpec;
+  int nBins;
+  double binWidth;
   double freq,bandwidth;
   char *filename;
   double source_vel;

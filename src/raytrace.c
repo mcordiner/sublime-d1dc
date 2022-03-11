@@ -7,6 +7,13 @@ struct flux{
   double *tau;
 };
 
+struct fluxc{
+  double *intense;
+  double *tau;
+  double *image;
+  double *imageRB;
+};
+
 struct molecule{
   int numLines;
   int *lines;
@@ -17,7 +24,7 @@ struct rayData{
   double *radius;
   struct molecule *mols;
   struct flux *flux;
-  struct flux *fluxc;
+  struct fluxc *fluxc;
 };
 
 /*....................................................................*/
@@ -68,14 +75,16 @@ void calcGridContDustOpacity(configInfo *par, const double freq\
 
 /*....................................................................*/
 void
-traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayData rayData,const int im, int index, double* rho_grid, int dz_grid_size, double* dz_grid, double* dz_vals, int* dz_indices, double* posneg){
+traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayData rayData,const int im, int index, double* rho_grid, int dz_grid_size, double* dz_grid, double* dz_vals, int* dz_indices, double* posneg, double local_cmb, double* vels){
 
 // Note: this can be sped up considerably by separating the main loop into 2 parts: (1) generating the source function for each channel for each z point, and (2) doing the linear interpolation in a separate loop
 
-  int ichan,stokesId,di,i,posn1,posn2,molI,lineI,lineID,zp_i,navg;
-  double zp,x[DIM],dx[DIM],vel[DIM],dz,dtau,col,r,avg,avgtau;
+  int ichan,stokesId,di,i,j,posn1,posn2,molI,lineI,lineID,zp_i,navg,totalNumImagePixels,lastchan;
+  double zp,x[DIM],dx[DIM],vel[DIM],dz,dtau,col,r,avg,avgtau,newBinWidth;
   double contJnu1,contAlpha1,contJnu2,contAlpha2,alpha,jnu,jnu1,alpha1,jnu2,alpha2,r1,r2,lineRedShift,vThisChan,deltav,logdz,vfac=0.0;
-  double remnantSnu,expDTau,brightnessIncrement;
+  double remnantSnu,expDTau,brightnessIncrement, *newvels=NULL;
+
+  totalNumImagePixels = img[im].pxls*img[im].pxls;
 
   for(di=0;di<DIM;di++){
     dx[di]= -img[im].rotMat[di][2]; /* This points towards the observer. */
@@ -124,7 +133,7 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
         jnu2 = contJnu2;
         alpha2 = contAlpha2;
 
-        vThisChan = (ichan-(img[im].nchan-1)*0.5)*img[im].velres; /* Consistent with the WCS definition in writefits(). */
+        vThisChan = vels[ichan];
         if(img[im].doline){
           for(molI=0;molI<par->nSpecies;molI++){
             for(lineID=0;lineID<rayData.mols[molI].numLines;lineID++){
@@ -178,7 +187,7 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
 /* Convolve the spectral axis by the requested PSF*/
    if(img[im].psfShape == 1){ // Boxcar smooth
       if(img[im].psfKernelN%2!=0){// Odd kernel width
-       //  printf("Boxcar smoothing %d\n",img[im].psfKernelN);
+        // printf("Boxcar smoothing %d\n",img[im].psfKernelN);
          for(ichan=0;ichan<img[im].nchan;ichan++){
             avg=0.;
             avgtau=0.;
@@ -248,12 +257,59 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
        rayData.fluxc[index].intense = rayData.flux[index].intense;
        rayData.fluxc[index].tau = rayData.flux[index].tau;
    }
+   
+   //Combine tau and intense to make the image vector:
+   
+  #ifdef FASTEXP
+  for(int ppi=0;ppi<totalNumImagePixels;ppi++){
+    for(ichan=0;ichan<img[im].nchan;ichan++){
+      rayData.fluxc[index].image[ichan] = rayData.fluxc[index].intense[ichan] + (FastExp(rayData.fluxc[index].tau[ichan])-1.0)*local_cmb;
+    }
+  }
+  #else
+  for(int ppi=0;ppi<totalNumImagePixels;ppi++){
+    for(ichan=0;ichan<img[im].nchan;ichan++){
+      rayData.fluxc[index].image[ichan] = rayData.fluxc[index].intense[ichan] + (exp(rayData.fluxc[index].tau[ichan])-1.0)*local_cmb;
+    }
+  }
+  #endif
+  
+  // Rebin the image vector spectral axis (if required)
+  if(img[im].rebinSpec == 1){
+     newvels = malloc(sizeof(*newvels) * img[im].nBins);
+        for(ichan=0;ichan<img[im].nBins;ichan++){
+           newvels[ichan] = (ichan-(img[im].nBins-1)*0.5)*img[im].binWidth;
+        }
+
+     for(i=0;i<img[im].nBins;i++){
+        for(j=0;j<img[im].nchan;j++){
+          if(vels[j]>newvels[i]){
+          break;
+          }
+        }
+  
+        if (j==img[im].nchan){
+          rayData.fluxc[index].imageRB[i] = rayData.fluxc[index].image[img[im].nchan-1];
+        }else if (j==0){
+          rayData.fluxc[index].imageRB[i] = rayData.fluxc[index].image[0];
+        }else{
+          rayData.fluxc[index].imageRB[i] = linear_interp(vels[j], vels[j-1], rayData.fluxc[index].image[j], rayData.fluxc[index].image[j-1], newvels[i]);
+        }  
+     }
+  
+  // Overwrite the original image vector for this ray index
+  rayData.fluxc[index].image = rayData.fluxc[index].imageRB;   
+      
+  }
+  
+  
+  
 }
 
 /*....................................................................*/
 void rhoGrid2image(int ppi,configInfo *par, double *rho_grid, struct rayData rayData, imageInfo *img, double pixelSize, double imgCentrePixels, const int im){
 /*Take the raytraced rho vector and interpolate it into the 2D image grid at pixel number ppi*/
-/*For legacy reasons, the intensity and optical depth (rho) vectors and associated images are calculated separately, then combined at the end to form the final image. Could potentially get a ~ factor 2 speed up by combining tau and intense at an earlier stage to make an image flux vector, which is then interpolated onto the image grid. */
+
     double xs[2], ro;
     int ppx, ppy, ichan, i, index;
         
@@ -280,7 +336,7 @@ void rhoGrid2image(int ppi,configInfo *par, double *rho_grid, struct rayData ray
       
       if(index==0){
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = rayData.fluxc[index].intense[ichan];
+          img[im].pixel[ppi].intense[ichan] = rayData.fluxc[index].image[ichan];
           img[im].pixel[ppi].tau[ichan] = rayData.fluxc[index].tau[ichan];          
         }
       }
@@ -288,13 +344,13 @@ void rhoGrid2image(int ppi,configInfo *par, double *rho_grid, struct rayData ray
       else if(index==par->pIntensity){
         index = par->pIntensity-1;
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = rayData.fluxc[index].intense[ichan];
+          img[im].pixel[ppi].intense[ichan] = rayData.fluxc[index].image[ichan];
           img[im].pixel[ppi].tau[ichan] = rayData.fluxc[index].tau[ichan];
         }
       }
       else{
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.fluxc[index-1].intense[ichan]),log10(rayData.fluxc[index].intense[ichan]),ro));
+          img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.fluxc[index-1].image[ichan]),log10(rayData.fluxc[index].image[ichan]),ro));
           img[im].pixel[ppi].tau[ichan] = linear_interp(rho_grid[index-1],rho_grid[index],rayData.fluxc[index-1].tau[ichan],rayData.fluxc[index].tau[ichan],ro);
         }
       }
@@ -316,7 +372,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
 
     double pixelSize, imgCentrePixels,minfreq,absDeltaFreq,xs[2],rho_grid[par->pIntensity],radiusarr[par->pIntensity], sorted_radius[par->pIntensity], ro;
     int totalNumImagePixels,ppi, ichan,lastChan,molI,lineI,i,j,k,di, xi, yi,id, index, pixoff,pixoff2,pixshiftx,pixshifty, nsupsamppix,numRays;
-    double local_cmb,cmbFreq,scale,shift,offset,logdz,*zp_grid = NULL,*dz_grid = NULL,*dz_vals = NULL,*posneg = NULL;
+    double local_cmb,cmbFreq,scale,shift,offset,logdz,*vels = NULL,*zp_grid = NULL,*dz_grid = NULL,*dz_vals = NULL,*posneg = NULL;
     int cmbMolI,cmbLineI, ppx,ppy,*dz_indices = NULL;
 
     // Set up the z integration grid. Length of the z grid is double this:
@@ -391,7 +447,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   struct rayData rayData;
   rayData.id = malloc(sizeof(int) * par->pIntensity);
   rayData.flux = malloc(sizeof(*rayData.flux) * par->pIntensity);
-  rayData.fluxc = malloc(sizeof(*rayData.flux) * par->pIntensity);
+  rayData.fluxc = malloc(sizeof(*rayData.fluxc) * par->pIntensity);
   rayData.radius = sorted_radius;
   double current;
   
@@ -413,6 +469,8 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
     rayData.fluxc[i].intense= malloc(sizeof(double) * img[im].nchan);
     rayData.flux[i].tau= malloc(sizeof(double) * img[im].nchan);
     rayData.fluxc[i].tau= malloc(sizeof(double) * img[im].nchan);
+    rayData.fluxc[i].image= malloc(sizeof(double) * img[im].nchan);
+    rayData.fluxc[i].imageRB= malloc(sizeof(double) * img[im].nBins);
 
     for(ichan=0;ichan<img[im].nchan;ichan++){
       rayData.flux[i].intense[ichan] = 0.0;
@@ -456,6 +514,11 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   posneg = malloc(sizeof(*posneg) * dz_grid_size * 2);
   zp_grid = malloc(sizeof(*zp_grid) * dz_grid_size + 1);
   
+  // Channel velocities
+  vels = malloc(sizeof(*vels) * img[im].nchan);
+  for(ichan=0;ichan<img[im].nchan;ichan++){
+      vels[ichan] = (ichan-(img[im].nchan-1)*0.5)*img[im].velres;
+  }
    
   //Creating zp_grid
   logdz=log10(par->radius)/dz_grid_size;
@@ -490,7 +553,12 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   omp_set_num_threads(par->nThreads);
   #pragma omp parallel for schedule (dynamic)
   for(i = 0; i < par->pIntensity; i++){
-    traceray(img,par,gp,md,rayData,im,i,rho_grid,dz_grid_size,dz_grid,dz_vals,dz_indices,posneg);
+    traceray(img,par,gp,md,rayData,im,i,rho_grid,dz_grid_size,dz_grid,dz_vals,dz_indices,posneg,local_cmb,vels);
+  }
+
+  if(img[im].rebinSpec == 1){
+     img[im].nchan = img[im].nBins;
+     img[im].velres = img[im].binWidth;
   }
 
   free(dz_grid);
@@ -499,6 +567,11 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   free(dz_indices);
   
   printf("Interpolating to image grid...\n");
+  
+  // Rebin the spectral axis if required - here, for simplicity we will combine intense and tau grids into a single image vector
+  
+
+  
 
   // Parallel loop over image pixels
   #pragma omp parallel for schedule (dynamic)
@@ -565,7 +638,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
               break;
             }
           for(ichan=0;ichan<img[im].nchan;ichan++){
-              img[im].pixel[ppi].intense[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.fluxc[index-1].intense[ichan]),log10(rayData.fluxc[index].intense[ichan]),ro));
+              img[im].pixel[ppi].intense[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.fluxc[index-1].image[ichan]),log10(rayData.fluxc[index].image[ichan]),ro));
               img[im].pixel[ppi].tau[ichan] += linear_interp(rho_grid[index-1],rho_grid[index],rayData.fluxc[index-1].tau[ichan],rayData.fluxc[index].tau[ichan],ro);
             }
           }
@@ -595,25 +668,6 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   free(rayData.flux);
   free(rayData.mols);
 
-  if(par->polarization){ /* just add cmb to Stokes I, which is the first 'channel' */
-    lastChan = 0;
-  }else{
-    lastChan = img[im].nchan;
-  }
-
-#ifdef FASTEXP
-  for(ppi=0;ppi<totalNumImagePixels;ppi++){
-    for(ichan=0;ichan<lastChan;ichan++){
-      img[im].pixel[ppi].intense[ichan] += (FastExp(img[im].pixel[ppi].tau[ichan])-1.0)*local_cmb;
-    }
-  }
-#else
-  for(ppi=0;ppi<totalNumImagePixels;ppi++){
-    for(ichan=0;ichan<lastChan;ichan++){
-      img[im].pixel[ppi].intense[ichan] += (exp(   -img[im].pixel[ppi].tau[ichan])-1.0)*local_cmb;
-    }
-  }
-#endif
 
 printf("Raytracing done...\n");
 
