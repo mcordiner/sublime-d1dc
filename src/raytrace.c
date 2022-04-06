@@ -147,7 +147,7 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
                 }
                 deltav = vThisChan - img[im].source_vel - lineRedShift;
 
-                /* Calculating the source function for the nearest two radial points, which will later be used to intepolate the jnu and alpha at the current radial point
+                /* Calculating the source function for the nearest two radial points, which will later be used to intepolate the jnu and alpha at the current radial point. Could add some logic here to store the jnu and alpha values as a function of position (and velocity), and look them up if needed again, rather than recalculating them (good idea to test how often the same one gets reused, to know if this would help).
                 */
 
                 //Calculating source function and velocity term for 1st radial point
@@ -191,32 +191,28 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
          for(ichan=0;ichan<img[im].nchan;ichan++){
             avg=0.;
             avgtau=0.;
-            navg=0;
             for(i=-(img[im].psfKernelN-1)/2;i<=(img[im].psfKernelN-1)/2;i++){
                if (ichan+i > -1 && ichan+i < img[im].nchan){
                   avg += rayData.flux[index].intense[ichan+i];
                   avgtau += rayData.flux[index].tau[ichan+i];
-                  navg++;
                }
             }   
-            rayData.fluxc[index].intense[ichan]=avg/navg;
-            rayData.fluxc[index].tau[ichan]=avgtau/navg;
+            rayData.fluxc[index].intense[ichan]=avg/img[im].psfKernelN;
+            rayData.fluxc[index].tau[ichan]=avgtau/img[im].psfKernelN;
          }
       }else{// Even kernel width - have to interpolate the values to find the intermediate points
        //  printf("Boxcar smoothing %d\n",img[im].psfKernelN);
          for(ichan=0;ichan<img[im].nchan;ichan++){
             avg=0.;
             avgtau=0.;
-            navg=0;
             for(i=-img[im].psfKernelN/2;i<img[im].psfKernelN/2;i++){
                if (ichan+i > -1 && ichan+i+1 < img[im].nchan){
                   avg += (rayData.flux[index].intense[ichan+i]+rayData.flux[index].intense[ichan+i+1])/2.0;
                   avgtau += (rayData.flux[index].tau[ichan+i]+rayData.flux[index].tau[ichan+i+1])/2.0;
-                  navg++;
                }
             }   
-            rayData.fluxc[index].intense[ichan]=avg/navg;
-            rayData.fluxc[index].tau[ichan]=avgtau/navg;
+            rayData.fluxc[index].intense[ichan]=avg/img[im].psfKernelN;
+            rayData.fluxc[index].tau[ichan]=avgtau/img[im].psfKernelN;
          }
       }    
     }else if(img[im].psfShape == 2){ // Gaussian smooth - note that the Gaussian kernel size is always odd

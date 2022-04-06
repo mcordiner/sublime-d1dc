@@ -674,6 +674,7 @@ The cutoff will be the value of abs(x) for which the error in the exact expressi
       
     }
   
+   if((*img)[i].psfShape == 2){
       if ((*img)[i].nchan < 2. * (*img)[i].psfWidth){
       if(!silent){
       snprintf(message, STR_LEN_1, "The number of channels is less than twice the requested PSF width", i);
@@ -689,12 +690,16 @@ The cutoff will be the value of abs(x) for which the error in the exact expressi
         }
       exit(1);
       }
-      
+    } 
    
    
       /* Set up the spectral convolution kernels */
       if((*img)[i].psfShape == 1){ // Kernel is a boxcar
          (*img)[i].psfKernelN = (int)round((*img)[i].psfWidth);
+         if(!silent && fabs((*img)[i].psfKernelN - (*img)[i].psfWidth)/(*img)[i].psfWidth > 0.001){
+            snprintf(message, STR_LEN_1, "Requested boxcar smoothing of %.2f channels, but nearest integer value of %d will be used.",(*img)[i].psfWidth,(*img)[i].psfKernelN);
+            warning(message);
+         }
       }else if((*img)[i].psfShape == 2){ // Kernel is Gaussian
          (*img)[i].psfKernelN = (int)(round((*img)[i].psfWidth) * 2.) + 1;
          (*img)[i].psfKernel = malloc(sizeof(double) * (*img)[i].psfKernelN);
