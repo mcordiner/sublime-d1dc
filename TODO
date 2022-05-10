@@ -10,4 +10,4 @@ Move some key parameters from the code to the lime.h file, such as the CVODE tol
 
 Make the input file more user-friendly, and rewrite the code so that it does not have to be compiled every time at runtime.
 
-Update CVODE calls to work with CVODE 6 (or whatever the latest version is).
+Update CVODE calls to work with CVODE 6 (or whatever the latest version is) by adding SUNContext = SUNContext_Create() call, and passing the SUNContext as the last argument to CVODE (see https://computing.llnl.gov/projects/sundials/release-history).
