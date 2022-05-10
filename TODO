@@ -9,3 +9,5 @@ Need to strip out remaining, unnecessary LIME parameters and source code files. 
 Move some key parameters from the code to the lime.h file, such as the CVODE tolerances, optical depth cutoffs for EP method, number of supersamples during raytracting, etc.
 
 Make the input file more user-friendly, and rewrite the code so that it does not have to be compiled every time at runtime.
+
+Update CVODE calls to work with CVODE 6 (or whatever the latest version is).
