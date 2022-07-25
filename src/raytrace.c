@@ -508,7 +508,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   dz_vals = malloc(sizeof(*dz_vals) * dz_grid_size);
   dz_indices = malloc(sizeof(*dz_indices) * dz_grid_size * 2);
   posneg = malloc(sizeof(*posneg) * dz_grid_size * 2);
-  zp_grid = malloc(sizeof(*zp_grid) * dz_grid_size + 1);
+  zp_grid = malloc(sizeof(*zp_grid) * (dz_grid_size + 1));
   
   // Channel velocities
   vels = malloc(sizeof(*vels) * img[im].nchan);
