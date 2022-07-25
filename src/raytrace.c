@@ -97,11 +97,13 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
   // Loop through the z-axis of the coma (from back to front), integrating the source function
   for (zp_i=0;zp_i<(2*dz_grid_size);zp_i++){
   
-    x[2] = posneg[zp_i] * dz_grid[dz_indices[zp_i]];
-    dz = dz_vals[dz_indices[zp_i]];
-    r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
-    
-    
+   x[2] = posneg[zp_i] * dz_grid[dz_indices[zp_i]];
+   dz = dz_vals[dz_indices[zp_i]];
+   r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+  
+  // Only add to the flux if current point is not obscured by the nucleus
+   if(x[0] > par->minScale || x[2] >= 0.0){
+   
     // Find the CVODE grid points that bracket our current radius, and if we are inside the model boundary, add to the integral
     if (r < rayData.radius[par->pIntensity - 1] && r > par->minScale){
       if (r > rayData.radius[0]){
@@ -180,8 +182,8 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
       
       }//end for ichan
      }//check for r<radius[0]
-   }//Move to next z point
-
+    }//Move to next z point
+   }//Check the current z point is not obscured by the nucleus
   }//Loop over z points
 
 /* Convolve the spectral axis by the requested PSF*/
