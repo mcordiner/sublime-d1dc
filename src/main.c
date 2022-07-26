@@ -79,6 +79,7 @@ initParImg(inputPars *par, image **img)
   par->xne = 1.0;
   par->useEP = 0;
   par->fixRNG = 1;
+  par->tNuc = 100;
 
   par->gridOutFiles = malloc(sizeof(char *)*NUM_GRID_STAGES);
   for(i=0;i<NUM_GRID_STAGES;i++)

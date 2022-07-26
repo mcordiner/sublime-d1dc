@@ -347,6 +347,7 @@ Copy over user-set parameters to the configInfo versions. (This seems like dupli
   par->girScale          = inpars.girScale;
   par->useEP             = inpars.useEP;
   par->fixRNG            = inpars.fixRNG;
+  par->tNuc              = inpars.tNuc;
 
   /* Somewhat more carefully copy over the strings:
   */

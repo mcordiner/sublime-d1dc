@@ -79,9 +79,9 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
 
 // Note: this can be sped up considerably by separating the main loop into 2 parts: (1) generating the source function for each channel for each z point, and (2) doing the linear interpolation in a separate loop
 
-  int ichan,stokesId,di,i,j,posn1,posn2,molI,lineI,lineID,zp_i,navg,totalNumImagePixels,lastchan;
+  int ichan,stokesId,di,i,j,posn1,posn2,molI,lineI,lineID,zp_i,navg,totalNumImagePixels,lastchan,ppi;
   double zp,x[DIM],dx[DIM],vel[DIM],dz,dtau,col,r,avg,avgtau,newBinWidth;
-  double contJnu1,contAlpha1,contJnu2,contAlpha2,alpha,jnu,jnu1,alpha1,jnu2,alpha2,r1,r2,lineRedShift,vThisChan,deltav,logdz,vfac=0.0;
+  double contJnu,contAlpha,alpha,jnu,jnu1,alpha1,jnu2,alpha2,r1,r2,lineRedShift,vThisChan,deltav,logdz,vfac=0.0;
   double remnantSnu,expDTau,brightnessIncrement, *newvels=NULL;
 
   totalNumImagePixels = img[im].pxls*img[im].pxls;
@@ -100,10 +100,7 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
    x[2] = posneg[zp_i] * dz_grid[dz_indices[zp_i]];
    dz = dz_vals[dz_indices[zp_i]];
    r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
-  
-  // Only add to the flux if current point is not obscured by the nucleus
-   if(x[0] > par->minScale || x[2] >= 0.0){
-   
+    
     // Find the CVODE grid points that bracket our current radius, and if we are inside the model boundary, add to the integral
     if (r < rayData.radius[par->pIntensity - 1] && r > par->minScale){
       if (r > rayData.radius[0]){
@@ -121,69 +118,93 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
       velocity(x[0],x[1],x[2],vel);
      
       /* Calculate first the continuum stuff because it is the same for all channels:*/
-      contJnu1 = 0.0;
-      contAlpha1 = 0.0; 
-      sourceFunc_cont(gp[posn1].cont, &contJnu1, &contAlpha1);
-
-      contJnu2 = 0.0;
-      contAlpha2 = 0.0; 
-      sourceFunc_cont(gp[posn2].cont, &contJnu2, &contAlpha2);
-
-      for(ichan=0;ichan<img[im].nchan;ichan++){
-        jnu1 = contJnu1;
-        alpha1 = contAlpha1;
-        jnu2 = contJnu2;
-        alpha2 = contAlpha2;
-
-        vThisChan = vels[ichan];
-        if(img[im].doline){
-          for(molI=0;molI<par->nSpecies;molI++){
-            for(lineID=0;lineID<rayData.mols[molI].numLines;lineID++){
-                lineI = rayData.mols[molI].lines[lineID];
-                /* Calculate the red shift of the transition wrt to the frequency specified for the image.
-                */
-                if(img[im].trans > -1){
-                  lineRedShift=(md[img[im].molI].freq[img[im].trans]-md[molI].freq[lineI])/md[img[im].molI].freq[img[im].trans]*CLIGHT;
-                } else {
-                  lineRedShift=(img[im].freq-md[molI].freq[lineI])/img[im].freq*CLIGHT;
-                }
-                deltav = vThisChan - img[im].source_vel - lineRedShift;
-
-                /* Calculating the source function for the nearest two radial points, which will later be used to intepolate the jnu and alpha at the current radial point. Could add some logic here to store the jnu and alpha values as a function of position (and velocity), and look them up if needed again, rather than recalculating them (good idea to test how often the same one gets reused, to know if this would help).
-                */
-
-                //Calculating source function and velocity term for 1st radial point
-                vfac = gaussline(deltav-dotProduct3D(dx,vel),gp[posn1].mol[molI].binv);                  
-                sourceFunc_line(&md[molI],vfac,&(gp[posn1].mol[molI]),lineI,&jnu1,&alpha1);
-
-                //Calculating source function and velocity term for 2nd radial point
-                vfac = gaussline(deltav-dotProduct3D(dx,vel),gp[posn2].mol[molI].binv);       
-                sourceFunc_line(&md[molI],vfac,&(gp[posn2].mol[molI]),lineI,&jnu2,&alpha2);
-
-            }//end for lineI
-          }//end for molI
-        }//end if doline
-
-        alpha = linear_interp(r1, r2, alpha1, alpha2, r);
-        jnu = linear_interp(r1, r2, jnu1, jnu2, r);
-
-        dtau=alpha*dz;
-        calcSourceFn(dtau, par, &remnantSnu, &expDTau);
-        remnantSnu *= jnu*dz;
-
-#ifdef FASTEXP
-        brightnessIncrement = FastExp(rayData.flux[index].tau[ichan])*remnantSnu;
-#else
-        brightnessIncrement =    exp(-rayData.flux[index].tau[ichan])*remnantSnu;
-#endif
-
-        rayData.flux[index].intense[ichan] += brightnessIncrement;
-        rayData.flux[index].tau[ichan] += dtau;
       
-      }//end for ichan
-     }//check for r<radius[0]
-    }//Move to next z point
-   }//Check the current z point is not obscured by the nucleus
+      // If zp is behind the nucleus, set continuum source terms accordingly and do not include any line component
+      if(x[0] < par->minScale && x[2] < 0){
+
+        alpha = 1.0e-2;  // Arbitrarily high opacity (cm^-1) for the solid nucleus
+        jnu = alpha * planckfunc(img[im].freq,par->tNuc);
+      
+        for(ichan=0;ichan<img[im].nchan;ichan++){
+
+            dtau=alpha*dz;
+            calcSourceFn(dtau, par, &remnantSnu, &expDTau);
+            remnantSnu *= jnu*dz;
+
+            #ifdef FASTEXP
+            brightnessIncrement = FastExp(rayData.flux[index].tau[ichan])*remnantSnu;
+            #else
+            brightnessIncrement =    exp(-rayData.flux[index].tau[ichan])*remnantSnu;
+            #endif
+
+            rayData.flux[index].intense[ichan] += brightnessIncrement;
+            rayData.flux[index].tau[ichan] += dtau;
+
+        }
+
+      }else{
+          contJnu = 0.0;
+          contAlpha = 0.0;
+      
+          //printf("%le %le\n", contJnu, contAlpha);
+      
+          sourceFunc_cont(gp[posn1].cont, &contJnu, &contAlpha);
+
+          for(ichan=0;ichan<img[im].nchan;ichan++){
+            jnu1 = contJnu;
+            alpha1 = contAlpha;
+            jnu2 = contJnu;
+            alpha2 = contAlpha;
+
+            vThisChan = vels[ichan];
+            if(img[im].doline){
+              for(molI=0;molI<par->nSpecies;molI++){
+                for(lineID=0;lineID<rayData.mols[molI].numLines;lineID++){
+                    lineI = rayData.mols[molI].lines[lineID];
+                    /* Calculate the red shift of the transition wrt to the frequency specified for the image.
+                    */
+                    if(img[im].trans > -1){
+                      lineRedShift=(md[img[im].molI].freq[img[im].trans]-md[molI].freq[lineI])/md[img[im].molI].freq[img[im].trans]*CLIGHT;
+                    } else {
+                      lineRedShift=(img[im].freq-md[molI].freq[lineI])/img[im].freq*CLIGHT;
+                    }
+                    deltav = vThisChan - img[im].source_vel - lineRedShift;
+
+                    /* Calculating the source function for the nearest two radial points, which will later be used to intepolate the jnu and alpha at the current radial point. Could add some logic here to store the jnu and alpha values as a function of position (and velocity), and look them up if needed again, rather than recalculating them (good idea to test how often the same one gets reused, to know if this would help).
+                    */
+
+                    //Calculating source function and velocity term for 1st radial point
+                    vfac = gaussline(deltav-dotProduct3D(dx,vel),gp[posn1].mol[molI].binv);                  
+                    sourceFunc_line(&md[molI],vfac,&(gp[posn1].mol[molI]),lineI,&jnu1,&alpha1);
+
+                    //Calculating source function and velocity term for 2nd radial point
+                    vfac = gaussline(deltav-dotProduct3D(dx,vel),gp[posn2].mol[molI].binv);       
+                    sourceFunc_line(&md[molI],vfac,&(gp[posn2].mol[molI]),lineI,&jnu2,&alpha2);
+
+                }//end for lineI
+              }//end for molI
+            }//end if doline
+
+            alpha = linear_interp(r1, r2, alpha1, alpha2, r);
+            jnu = linear_interp(r1, r2, jnu1, jnu2, r);
+
+            dtau=alpha*dz;
+            calcSourceFn(dtau, par, &remnantSnu, &expDTau);
+            remnantSnu *= jnu*dz;
+
+        #ifdef FASTEXP
+            brightnessIncrement = FastExp(rayData.flux[index].tau[ichan])*remnantSnu;
+        #else
+            brightnessIncrement =    exp(-rayData.flux[index].tau[ichan])*remnantSnu;
+        #endif
+
+            rayData.flux[index].intense[ichan] += brightnessIncrement;
+            rayData.flux[index].tau[ichan] += dtau;
+      
+          }//end loop over ichan
+         }//check for r<radius[0]
+      }//Check if current point is behind the nucleus
+    }//Check current point is within the model boundary 
   }//Loop over z points
 
 /* Convolve the spectral axis by the requested PSF*/
@@ -259,13 +280,13 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
    //Combine tau and intense to make the image vector:
    
   #ifdef FASTEXP
-  for(int ppi=0;ppi<totalNumImagePixels;ppi++){
+  for(ppi=0;ppi<totalNumImagePixels;ppi++){
     for(ichan=0;ichan<img[im].nchan;ichan++){
       rayData.fluxc[index].image[ichan] = rayData.fluxc[index].intense[ichan] + (FastExp(rayData.fluxc[index].tau[ichan])-1.0)*local_cmb;
     }
   }
   #else
-  for(int ppi=0;ppi<totalNumImagePixels;ppi++){
+  for(ppi=0;ppi<totalNumImagePixels;ppi++){
     for(ichan=0;ichan<img[im].nchan;ichan++){
       rayData.fluxc[index].image[ichan] = rayData.fluxc[index].intense[ichan] + (exp(-rayData.fluxc[index].tau[ichan])-1.0)*local_cmb;
     }
@@ -348,7 +369,7 @@ void rhoGrid2image(int ppi,configInfo *par, double *rho_grid, struct rayData ray
       }
       else{
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.fluxc[index-1].image[ichan]),log10(rayData.fluxc[index].image[ichan]),ro));
+          img[im].pixel[ppi].intense[ichan] = linear_interp(rho_grid[index-1],rho_grid[index],rayData.fluxc[index-1].image[ichan],rayData.fluxc[index].image[ichan],ro);
           img[im].pixel[ppi].tau[ichan] = linear_interp(rho_grid[index-1],rho_grid[index],rayData.fluxc[index-1].tau[ichan],rayData.fluxc[index].tau[ichan],ro);
         }
       }
@@ -636,7 +657,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
               break;
             }
           for(ichan=0;ichan<img[im].nchan;ichan++){
-              img[im].pixel[ppi].intense[ichan] += pow(10.0,linear_interp(rho_grid[index-1],rho_grid[index],log10(rayData.fluxc[index-1].image[ichan]),log10(rayData.fluxc[index].image[ichan]),ro));
+              img[im].pixel[ppi].intense[ichan] += linear_interp(rho_grid[index-1],rho_grid[index],rayData.fluxc[index-1].image[ichan],rayData.fluxc[index].image[ichan],ro); 
               img[im].pixel[ppi].tau[ichan] += linear_interp(rho_grid[index-1],rho_grid[index],rayData.fluxc[index-1].tau[ichan],rayData.fluxc[index].tau[ichan],ro);
             }
           }
@@ -664,6 +685,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   }
   free(rayData.id);
   free(rayData.flux);
+  free(rayData.fluxc);
   free(rayData.mols);
 
 
