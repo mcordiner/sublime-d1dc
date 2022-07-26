@@ -267,7 +267,7 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
   #else
   for(int ppi=0;ppi<totalNumImagePixels;ppi++){
     for(ichan=0;ichan<img[im].nchan;ichan++){
-      rayData.fluxc[index].image[ichan] = rayData.fluxc[index].intense[ichan] + (exp(rayData.fluxc[index].tau[ichan])-1.0)*local_cmb;
+      rayData.fluxc[index].image[ichan] = rayData.fluxc[index].intense[ichan] + (exp(-rayData.fluxc[index].tau[ichan])-1.0)*local_cmb;
     }
   }
   #endif
