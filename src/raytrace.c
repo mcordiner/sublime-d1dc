@@ -80,8 +80,8 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
 // Note: this can be sped up considerably by separating the main loop into 2 parts: (1) generating the source function for each channel for each z point, and (2) doing the linear interpolation in a separate loop
 
   int ichan,stokesId,di,i,j,posn1,posn2,molI,lineI,lineID,zp_i,navg,totalNumImagePixels,lastchan,ppi;
-  double zp,x[DIM],dx[DIM],vel[DIM],dz,dtau,col,r,avg,avgtau,newBinWidth;
-  double contJnu,contAlpha,alpha,jnu,jnu1,alpha1,jnu2,alpha2,r1,r2,lineRedShift,vThisChan,deltav,logdz,vfac=0.0;
+  double zp,x[DIM],dx[DIM],vel[DIM],dz,dtau,col,r,logr,avg,avgtau,newBinWidth;
+  double contJnu,contAlpha,alpha,jnu,jnu1,alpha1,jnu2,alpha2,logr1,logr2,lineRedShift,vThisChan,deltav,logdz,vfac=0.0;
   double remnantSnu,expDTau,brightnessIncrement, *newvels=NULL;
 
   totalNumImagePixels = img[im].pxls*img[im].pxls;
@@ -100,6 +100,7 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
    x[2] = posneg[zp_i] * dz_grid[dz_indices[zp_i]];
    dz = dz_vals[dz_indices[zp_i]];
    r = sqrt(x[0]*x[0] + x[1]*x[1] + x[2]*x[2]);
+   logr=log10(r);
     
     // Find the CVODE grid points that bracket our current radius, and if we are inside the model boundary, add to the integral
     if (r < rayData.radius[par->pIntensity - 1] && r > par->minScale){
@@ -108,8 +109,8 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
          if (rayData.radius[i] > r){
              posn1 = rayData.id[i];
              posn2 = rayData.id[i-1];
-             r1 = rayData.radius[i];
-             r2 = rayData.radius[i-1];
+             logr1 = log10(rayData.radius[i]);
+             logr2 = log10(rayData.radius[i-1]);
              break;
          }
        }
@@ -145,8 +146,6 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
       }else{
           contJnu = 0.0;
           contAlpha = 0.0;
-      
-          //printf("%le %le\n", contJnu, contAlpha);
       
           sourceFunc_cont(gp[posn1].cont, &contJnu, &contAlpha);
 
@@ -185,8 +184,8 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
               }//end for molI
             }//end if doline
 
-            alpha = linear_interp(r1, r2, alpha1, alpha2, r);
-            jnu = linear_interp(r1, r2, jnu1, jnu2, r);
+            alpha = linear_interp(logr1, logr2, alpha1, alpha2, logr);
+            jnu = linear_interp(logr1, logr2, jnu1, jnu2, logr);
 
             dtau=alpha*dz;
             calcSourceFn(dtau, par, &remnantSnu, &expDTau);
@@ -369,8 +368,8 @@ void rhoGrid2image(int ppi,configInfo *par, double *rho_grid, struct rayData ray
       }
       else{
         for(ichan=0;ichan<img[im].nchan;ichan++){
-          img[im].pixel[ppi].intense[ichan] = linear_interp(rho_grid[index-1],rho_grid[index],rayData.fluxc[index-1].image[ichan],rayData.fluxc[index].image[ichan],ro);
-          img[im].pixel[ppi].tau[ichan] = linear_interp(rho_grid[index-1],rho_grid[index],rayData.fluxc[index-1].tau[ichan],rayData.fluxc[index].tau[ichan],ro);
+          img[im].pixel[ppi].intense[ichan] = linear_interp(log10(rho_grid[index-1]),log10(rho_grid[index]),rayData.fluxc[index-1].image[ichan],rayData.fluxc[index].image[ichan],log10(ro));
+          img[im].pixel[ppi].tau[ichan] = linear_interp(log10(rho_grid[index-1]),log10(rho_grid[index]),rayData.fluxc[index-1].tau[ichan],rayData.fluxc[index].tau[ichan],log10(ro));
         }
       }
     }
@@ -470,7 +469,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   rayData.radius = sorted_radius;
   double current;
   
-  offset =  rayData.radius[0];
+  offset =  rayData.radius[0] + 1.0e-30;
   
   for (i = 0; i < par->pIntensity; i++) {
     rho_grid[i] = rayData.radius[i] - offset;
@@ -657,8 +656,8 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
               break;
             }
           for(ichan=0;ichan<img[im].nchan;ichan++){
-              img[im].pixel[ppi].intense[ichan] += linear_interp(rho_grid[index-1],rho_grid[index],rayData.fluxc[index-1].image[ichan],rayData.fluxc[index].image[ichan],ro); 
-              img[im].pixel[ppi].tau[ichan] += linear_interp(rho_grid[index-1],rho_grid[index],rayData.fluxc[index-1].tau[ichan],rayData.fluxc[index].tau[ichan],ro);
+              img[im].pixel[ppi].intense[ichan] += linear_interp(log10(rho_grid[index-1]),log10(rho_grid[index]),rayData.fluxc[index-1].image[ichan],rayData.fluxc[index].image[ichan],log10(ro)); 
+              img[im].pixel[ppi].tau[ichan] += linear_interp(log10(rho_grid[index-1]),log10(rho_grid[index]),rayData.fluxc[index-1].tau[ichan],rayData.fluxc[index].tau[ichan],log10(ro));
             }
           }
         }
