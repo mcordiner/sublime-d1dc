@@ -16,4 +16,4 @@ To generate a reliable coma image, care needs to be taken to correctly set the p
 
 Experience has shown that a good model can be produced with par->pIntensity ~ 300 - 500 radial grid points. Qhull is used to generate the radial (1D) grid, weighted by the density. Radiation trapping effects tend to be very small, so useEP = 0 can be set for most models (apart from H2O), which allows the code to run much faster (in a matter of seconds), particularly for CH3OH. Faster raytracing is achieved for lower values of par->pIntensity.
 
-If CVODE fails but the input model appears physically reasonable, it can usually be fixed by adjusting RTOL and ATOL. Their default values are both 1.0E-9, but some CH3OH models require RTOL = 1.0E-6, ATOL = 1.0E-10, and some CO models require RTOL = ATOL = 1.0E-12.
+If CVODE has an error but the input model appears physically reasonable, it can usually be fixed by adjusting RTOL and ATOL. Their default values are both 1.0E-9, but some CH3OH models require RTOL = ATOL = 1.0E-11, and some CO models require RTOL = ATOL = 1.0E-12. Some models may require RTOL to be increased to 1.0E-6, while ATOL can remain at 1.0E-9.
