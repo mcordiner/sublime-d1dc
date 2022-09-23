@@ -70,6 +70,9 @@
 #define NUM_VEL_COEFFS          (1+2*N_VEL_SEG_PER_HALF) /* This is the number of velocity samples per edge (not including the grid vertices at each end of the edge). Currently this is elsewhere hard-wired at 3, the macro just being used in the file I/O modules. Note that we want an odd number of velocity samples per edge if we want to have the ability to do 2nd-order interpolation of velocity within Delaunay tetrahedra. */
 #define MAX_NEG_OPT_DEPTH	30.0			/* 30 was the original value in LIME. */
 #define NUM_RAN_DENS		100
+#define RTOL 1.0e-9   /* CVODE scalar relative tolerance */
+#define ATOL 1.0e-9   /* CVODE vector absolute tolerance components */
+
 
 /* Bit locations for the grid data-stage mask, that records the information which is present in the grid struct: */
 #define DS_bit_x             0	/* id, x, sink */

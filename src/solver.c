@@ -27,8 +27,6 @@ TODO:
 #include <gsl/gsl_sf_bessel.h>
 
 //###
-#define RTOL RCONST(1.0e-12)   /* scalar relative tolerance            */
-#define ATOL RCONST(1.0e-12)   /* vector absolute tolerance components */
 #define Ith(v,i)    NV_Ith_S(v,i)         /* Ith numbers components 0..NEQ-1 */
 #define IJth(sunMatrix,i,j) SM_ELEMENT_D(sunMatrix,i,j) /* IJth numbers rows,cols 0..NEQ-1 */
 
@@ -1085,9 +1083,13 @@ solveStatEq(struct grid *gp, molData *md, const int ispec, configInfo *par\
 
   //We start at i=1 (instead of i=0) because time_struct.time[i] indicates the first output time, and we are starting the run from time = time_struct.time[0]
   for (i = 1; i < par->pIntensity; i++){
-    retval = CVode(cvode_mem, time_struct.time[i], P, &t, CV_NORMAL);
-    if(check_retval(&retval, "CVode", 1)) exit(0);
-
+    retval = 1;
+    fflush(stdout);
+    while(retval!=0){
+      retval = CVode(cvode_mem, time_struct.time[i], P, &t, CV_NORMAL);
+      if(retval==-3) printf("Continuing anyway (check populations!)\n");
+    }
+    
     if(retval == CV_SUCCESS){
       for(j=0; j < NEQ; ++j) 
         Pops[j] = Ith(P,j);
