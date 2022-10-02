@@ -279,20 +279,16 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
    //Combine tau and intense to make the image vector:
    
   #ifdef FASTEXP
-  for(ppi=0;ppi<totalNumImagePixels;ppi++){
     for(ichan=0;ichan<img[im].nchan;ichan++){
       rayData.fluxc[index].image[ichan] = rayData.fluxc[index].intense[ichan] + (FastExp(rayData.fluxc[index].tau[ichan])-1.0)*local_cmb;
     }
-  }
   #else
-  for(ppi=0;ppi<totalNumImagePixels;ppi++){
     for(ichan=0;ichan<img[im].nchan;ichan++){
       rayData.fluxc[index].image[ichan] = rayData.fluxc[index].intense[ichan] + (exp(-rayData.fluxc[index].tau[ichan])-1.0)*local_cmb;
     }
-  }
   #endif
   
-  // Rebin the image vector spectral axis (if required)
+  // Rebin the image vector spectral axis (if required) 
   if(img[im].rebinSpec == 1){
      newvels = malloc(sizeof(*newvels) * img[im].nBins);
         for(ichan=0;ichan<img[im].nBins;ichan++){
@@ -585,11 +581,6 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   free(dz_indices);
   
   printf("Interpolating to image grid...\n");
-  
-  // Rebin the spectral axis if required - here, for simplicity we will combine intense and tau grids into a single image vector
-  
-
-  
 
   // Parallel loop over image pixels
   #pragma omp parallel for schedule (dynamic)
