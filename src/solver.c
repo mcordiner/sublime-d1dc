@@ -68,9 +68,7 @@ struct transitionParams{
   molData *md;
   int ispec;
   struct grid *gp;
-  int *id;
   configInfo *par;
-  struct time_struct time_struct;
   double *jbar_grid;
   int *nMaserWarnings;
 };
@@ -169,144 +167,6 @@ Note that this is called from within the multi-threaded block.
   }
 }
 
-/*....................................................................*/
-void lineBlend(molData *m, configInfo *par, struct blendInfo *blends){
-  /*
-This obtains information on all the lines of all the radiating species which have other lines within some cutoff velocity separation.
-
-A variable of type 'struct blendInfo' has a nested structure which can be illustrated diagrammaticaly as follows.
-
-  Structs:  blendInfo   molWithBlends   lineWithBlends    blend
-
-  Variables:  blends
-      .numMolsWithBlends     ____________________
-      .*mols--------------->|.molI               |
-                            |.numLinesWithBlends |   ___________
-                            |.*lines--------------->|.lineI     |
-                            |____________________|  |.numBlends |           ________
-                            |        etc         |  |.*blends------------->|.molJ   |
-                                                    |___________|          |.lineJ  |
-                                                    |    etc    |          |.deltaV |
-                                                                           |________|
-                                                                           |   etc  |
-
-Pointers are indicated by a * before the attribute name and an arrow to the memory location pointed to.
-  */
-  int molI, lineI, molJ, lineJ;
-  int nmwb, nlwb, numBlendsFound, li, bi;
-  double deltaV;
-  struct blend *tempBlends=NULL;
-  struct lineWithBlends *tempLines=NULL;
-
-  /* Dimension blends.mols first to the total number of species, then realloc later if need be.
-  */
-  (*blends).mols = malloc(sizeof(struct molWithBlends)*par->nSpecies);
-  (*blends).numMolsWithBlends = 0;
-
-  nmwb = 0;
-  for(molI=0;molI<par->nSpecies;molI++){
-    tempBlends = malloc(sizeof(struct blend)*m[molI].nline);
-    tempLines  = malloc(sizeof(struct lineWithBlends)*m[molI].nline);
-
-    nlwb = 0;
-    for(lineI=0;lineI<m[molI].nline;lineI++){
-      numBlendsFound = 0;
-      for(molJ=0;molJ<par->nSpecies;molJ++){
-        for(lineJ=0;lineJ<m[molJ].nline;lineJ++){
-          if(!(molI==molJ && lineI==lineJ)){
-            deltaV = (m[molJ].freq[lineJ] - m[molI].freq[lineI])*CLIGHT/m[molI].freq[lineI];
-            if(fabs(deltaV)<maxBlendDeltaV){
-              tempBlends[numBlendsFound].molJ   = molJ;
-              tempBlends[numBlendsFound].lineJ  = lineJ;
-              tempBlends[numBlendsFound].deltaV = deltaV;
-              numBlendsFound++;
-            }
-          }
-        }
-      }
-
-      if(numBlendsFound>0){
-        tempLines[nlwb].lineI = lineI;
-        tempLines[nlwb].numBlends = numBlendsFound;
-        tempLines[nlwb].blends = malloc(sizeof(struct blend)*numBlendsFound);
-        for(bi=0;bi<numBlendsFound;bi++)
-          tempLines[nlwb].blends[bi] = tempBlends[bi];
-
-        nlwb++;
-      }
-    }
-
-    if(nlwb>0){
-      (*blends).mols[nmwb].molI = molI;
-      (*blends).mols[nmwb].numLinesWithBlends = nlwb;
-      (*blends).mols[nmwb].lines = malloc(sizeof(struct lineWithBlends)*nlwb);
-      for(li=0;li<nlwb;li++){
-        (*blends).mols[nmwb].lines[li].lineI     = tempLines[li].lineI;
-        (*blends).mols[nmwb].lines[li].numBlends = tempLines[li].numBlends;
-        (*blends).mols[nmwb].lines[li].blends = malloc(sizeof(struct blend)*tempLines[li].numBlends);
-        for(bi=0;bi<tempLines[li].numBlends;bi++)
-          (*blends).mols[nmwb].lines[li].blends[bi] = tempLines[li].blends[bi];
-      }
-
-      nmwb++;
-    }
-
-    free(tempLines);
-    free(tempBlends);
-  }
-
-  (*blends).numMolsWithBlends = nmwb;
-  if(nmwb>0){
-    if(!par->blend)
-      if(!silent) warning("There are blended lines, but line blending is switched off.");
-
-    (*blends).mols = realloc((*blends).mols, sizeof(struct molWithBlends)*nmwb);
-  }else{
-    if(par->blend)
-      if(!silent) warning("Line blending is switched on, but no blended lines were found.");
-
-    free((*blends).mols);
-    (*blends).mols = NULL;
-  }
-}
-
-/*....................................................................*/
-void calcGridCollRates(configInfo *par, molData *md, struct grid *gp){
-  int i,id,ipart,itrans,itemp,tnint=-1;
-  struct cpData part;
-  double fac;
-
-  for(i=0;i<par->nSpecies;i++){
-    for(id=0;id<par->ncell;id++){
-      gp[id].mol[i].partner = malloc(sizeof(struct rates)*md[i].npart);
-    }
-
-    for(ipart=0;ipart<md[i].npart;ipart++){
-      part = md[i].part[ipart];
-      for(id=0;id<par->ncell;id++){
-        for(itrans=0;itrans<part.ntrans;itrans++){
-          if((gp[id].t[0]>part.temp[0])&&(gp[id].t[0]<part.temp[part.ntemp-1])){
-            for(itemp=0;itemp<part.ntemp-1;itemp++){
-              if((gp[id].t[0]>part.temp[itemp])&&(gp[id].t[0]<=part.temp[itemp+1])){
-                tnint=itemp;
-              }
-            }
-            fac=(gp[id].t[0]-part.temp[tnint])/(part.temp[tnint+1]-part.temp[tnint]);
-            gp[id].mol[i].partner[ipart].t_binlow = tnint;
-            gp[id].mol[i].partner[ipart].interp_coeff = fac;
-
-    } else if(gp[id].t[0]<=part.temp[0]) {
-      gp[id].mol[i].partner[ipart].t_binlow = 0;
-      gp[id].mol[i].partner[ipart].interp_coeff = 0.0;
-    } else {
-      gp[id].mol[i].partner[ipart].t_binlow = part.ntemp-2;
-      gp[id].mol[i].partner[ipart].interp_coeff = 1.0;
-    }
-        } /* End loop over transitions. */
-      } /* End loop over grid points. */
-    } /* End loop over collision partners. */
-  } /* End loop over radiating molecules. */
-}
 
 /*....................................................................*/
 void mallocGridCont(configInfo *par, molData *md, struct grid *gp){
@@ -784,20 +644,14 @@ Note that this is called from within the multi-threaded block.
 /*....................................................................*/
 
 void
-getTransitionRates(molData *md, int ispec, struct grid *gp, int id, configInfo *par, int NEQ, double A[NEQ-1], double *p, double time, struct time_struct time_struct, double *jbar_grid, double *Pops, int *nMaserWarnings){
-  int ipart,iline,k,l,ti, li, upper, lower, j;
-  double radius, rnuc, Te, vexp, ne, aij, sigmaij, ve, bessel, ceij, gij, ceji, dens[md[ispec].npart];
-  double jbar[par->pIntensity],molDens[par->nSpecies], tau, beta;
+getTransitionRates(molData *md, int ispec, struct grid *gp, configInfo *par, int NEQ, double A[NEQ-1], double *p, realtype radius, double *jbar_grid, double *Pops, int *nMaserWarnings, double vexp){
+  int itemp,ipart,t_binlow,iline,k,l,ti, li, upper, lower, j,tnint=-1;
+  double rnuc, Te, ne, aij, sigmaij, ve, bessel, ceij, gij, ceji, dens[md[ispec].npart], tkin[md[ispec].npart];
+  double jbar[par->pIntensity],molDens[par->nSpecies], tau, beta, interp_coeff;
 
   rnuc = par->minScale;
-  vexp = sqrt(gp[id].vel[0]* gp[id].vel[0]+gp[id].vel[1]*gp[id].vel[1]+gp[id].vel[2]*gp[id].vel[2]);
-  radius = vexp*time + rnuc;
   density(radius,0.0,0.0,dens);
-
-  if(time<time_struct.time[0])
-    time = time_struct.time[0];
-  else if(time>time_struct.time[par->pIntensity-1])
-    time = time_struct.time[par->pIntensity-1];
+  temperature(radius,0.0,0.0,tkin);
 
   /* Initialize matrix with zeros */
   if(md[ispec].nlev<=0){
@@ -806,8 +660,9 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, int id, configInfo *
   }
 
   for(k=0;k<md[ispec].nlev;k++)
-    for(l=0;l<md[ispec].nlev;l++)
+    for(l=0;l<md[ispec].nlev;l++){
       p[k * NEQ + l] = 0.0;
+    }
 
   /* Populate matrix with collisional transitions */
   for(ipart=0;ipart<md[ispec].npart;ipart++){
@@ -816,23 +671,44 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, int id, configInfo *
     int di = md[ispec].part[ipart].densityIndex;
     if (di<0) continue;
 
+  /* Collision temperature interpolation coefficients */
+    if((tkin[ipart]>part.temp[0])&&(tkin[ipart]<part.temp[part.ntemp-1])){
+            for(itemp=0;itemp<part.ntemp-1;itemp++){
+              if((tkin[ipart]>part.temp[itemp])&&(tkin[ipart]<=part.temp[itemp+1])){
+                tnint=itemp;
+              }
+            }
+            interp_coeff =(tkin[ipart]-part.temp[tnint])/(part.temp[tnint+1]-part.temp[tnint]);
+            t_binlow = tnint;
+
+    } else if(tkin[ipart]<=part.temp[0]) {
+      t_binlow = 0;
+      interp_coeff = 0.0;
+    } else {
+      t_binlow = part.ntemp-2;
+      interp_coeff = 1.0;
+    }
+
+
     for(ti=0;ti<part.ntrans;ti++){
-      int coeff_index = ti*part.ntemp + gp[id].mol[ispec].partner[ipart].t_binlow;
+      int coeff_index = ti*part.ntemp + t_binlow;
       double down = downrates[coeff_index]\
-                  + gp[id].mol[ispec].partner[ipart].interp_coeff*(downrates[coeff_index+1]\
-                  - downrates[coeff_index]);
+                  + interp_coeff*(downrates[coeff_index+1] - downrates[coeff_index]);
       double up = down*md[ispec].gstat[part.lcu[ti]]/md[ispec].gstat[part.lcl[ti]]\
-                *exp(-HCKB*(md[ispec].eterm[part.lcu[ti]]-md[ispec].eterm[part.lcl[ti]])/gp[id].t[0]);
+                *exp(-HCKB*(md[ispec].eterm[part.lcu[ti]]-md[ispec].eterm[part.lcl[ti]])/tkin[ipart]);
 
       p[part.lcu[ti] * NEQ + part.lcl[ti]] = p[part.lcu[ti] * NEQ + part.lcl[ti]] + down*dens[ipart];
       p[part.lcl[ti] * NEQ + part.lcu[ti]] = p[part.lcl[ti] * NEQ + part.lcu[ti]] + up*dens[ipart];
-    }
+  }
 
   }
   
-  /*GENERATE ELECTRON COLLISIONAL RATES (only for gas 0) AND ADD TO MATRIX*/
+  /*GENERATE ELECTRON COLLISIONAL RATES AND ADD TO MATRIX*/
+  //Presently, only electrons produced from collision parter 0 are considered.
+  //It would be easy enough to add others, but the partner production rates would be needed as an input
+  //parameter, like par->Qpartner, and their temperatures can be given as tkin[n] from temperature()
   /*Formalism of Zakharov et al. (2007)*/
-   Te = Telec(radius,par->Qwater,gp[id].t[0]);
+   Te = Telec(radius,par->Qwater,tkin[0]);
    ne = nelec(radius,par->Qwater,vexp,Te,par->rHelio,par->xne);
    
    for(iline=0;iline<md[ispec].nline;iline++){
@@ -918,30 +794,29 @@ LTE(configInfo *par, struct grid *gp, molData *md){
       lteOnePoint(md, ispec, gp[id].t[0], gp[id].mol[ispec].pops);
     }
   }
-  if(par->outputfile) popsout(par,gp,md);
-
 }
 
 
 /*....................................................................*/
 /* Sets the Differential Equation (Pdot) to be solved by CVode */
-int f(realtype t, N_Vector P, N_Vector Pdot, void *data){
+int f(realtype radius, N_Vector P, N_Vector Pdot, void *data){
 
   int i, j, NEQ, id;
   struct transitionParams *user_data = data;
   NEQ = user_data -> array_size;
-  double *p = user_data -> transition_rates;
-  id = *(user_data -> id);
-  double Pops_array[NEQ];
+  double *pij = user_data -> transition_rates;
+  double Pops_array[NEQ], vel[DIM], vexp;
+
+  velocity(0.,0.,radius,vel);
+  vexp = sqrt(vel[0]*vel[0] + vel[1]*vel[1] + vel[2]*vel[2]);
 
   //Pasing P values to Pops_array for readability
   for(i=0; i < NEQ; ++i)
     Pops_array[i] = Ith(P,i);
 
-  getTransitionRates(user_data->md,user_data->ispec,user_data->gp,id,user_data->par, NEQ, user_data -> A_array, p, t, user_data->time_struct, user_data->jbar_grid, Pops_array, user_data ->nMaserWarnings);
+  getTransitionRates(user_data->md,user_data->ispec,user_data->gp,user_data->par, NEQ, user_data -> A_array, pij, radius, user_data->jbar_grid, Pops_array, user_data ->nMaserWarnings, vexp);
 
   //Initializing Pdot (otherwise it stores previous values between calls to CVode)
-  // MAC: This seems unnecessary?
   for(i=0; i < NEQ; ++i)
     Ith(Pdot,i) = 0.0;
 
@@ -949,28 +824,39 @@ int f(realtype t, N_Vector P, N_Vector Pdot, void *data){
   for(i=0; i < NEQ; ++i)
     for(j=0; j < NEQ; ++j){
       if(i != j) 
-        Ith(Pdot,i) = Ith(Pdot,i) + (Pops_array[j] * (p[j* NEQ +i])) - (Pops_array[i] * p[i * NEQ +j]);
+        Ith(Pdot,i) = Ith(Pdot,i) + (Pops_array[j] * (pij[j* NEQ +i])) - (Pops_array[i] * pij[i * NEQ +j]);
     }
+    
+   // Multiply equations by 1/V to get dP/dr     
+   for(i=0; i < NEQ; ++i){
+      Ith(Pdot,i) = Ith(Pdot,i) / vexp;
+    //  Prind the Pdots for debugging
+    //  printf("%d %le\n",i,  Ith(Pdot,i));
+   }
+   
   return(0);
 }
 
-/*....................................................................*/
-double getTime(struct grid *gp, int id, configInfo *par){
-  double radius, time, rnuc, vexp;
+void reduceTol(N_Vector abstol, realtype reltol, void *cvode_mem, double factor, int NEQ){
+   printf("INFO: Reducing RTOL and ATOL by 0.1 and restarting CVODE\n");
+   int i, retval;
 
-  radius = sqrt(gp[id].x[0]* gp[id].x[0]+gp[id].x[1]*gp[id].x[1]+gp[id].x[2]*gp[id].x[2]);
-  rnuc = par->minScale;
-  vexp = sqrt(gp[id].vel[0]* gp[id].vel[0]+gp[id].vel[1]*gp[id].vel[1]+gp[id].vel[2]*gp[id].vel[2]);
-  time = (radius - rnuc)/vexp;
+   for(i=0; i < NEQ; ++i){
+      Ith(abstol,i) = Ith(abstol,i) * factor;
+  }
 
-  return(time);
+   reltol = reltol * factor;
+   
+  retval = CVodeSVtolerances(cvode_mem, reltol, abstol);
+  if (check_retval(&retval, "CVodeSVtolerances", 1)) return;
+
 }
 
 /*....................................................................*/
 void
 solveStatEq(struct grid *gp, molData *md, const int ispec, configInfo *par\
   , struct blendInfo blends, int *nextMolWithBlend, gridPointData **mp\
-  , double **halfFirstDs, int *nMaserWarnings){
+  , double **halfFirstDs, int *nMaserWarnings, double *radii, int *gp_sorter){
 
   int id;
   realtype reltol, t;
@@ -978,46 +864,27 @@ solveStatEq(struct grid *gp, molData *md, const int ispec, configInfo *par\
   SUNMatrix sunMatrix;
   SUNLinearSolver LS;
   void *cvode_mem;
-  int i,j;
-  int retval;
-
-  gsl_vector *newpop = gsl_vector_alloc(md[ispec].nlev);
+  int i,j, cvodeErrs = 0;
+  int retval,cvstatus;
 
   /* Initializing parameters to be used by CVode */
-  int NEQ = md[ispec].nlev; // Number of Equations .
+  int NEQ = md[ispec].nlev; // Number of Equations
   double p[NEQ][NEQ]; //Collisional rates
   double A[md[ispec].nline]; //Einstein As
   double Pops[NEQ]; //Level Populations
+  double logtstep,tout;
   double timearr[par->pIntensity], sorted_timearr[par->pIntensity]; //times through which the solver will iterate (each one corresponds to a specific gridpoint)
 
   for(id=0;id<md[ispec].nline;id++)
     A[id] = md[ispec].aeinst[id];
-  
-  for(id=0;id<par->pIntensity;id++){
-    timearr[id] = getTime(gp,id,par);
-    sorted_timearr[id] = timearr[id]; //Note: not sorted yet
-  }
-  //Sorting time array so that each grid point can be matched to its corresponding time
-  qsort(sorted_timearr, par->pIntensity, sizeof(double), compare);
 
-  struct time_struct time_struct;
-  time_struct.id = malloc(sizeof(int)*par->pIntensity);
-  time_struct.time = sorted_timearr;
-  double current;
-
-  for(i=0;i<par->pIntensity;i++){
-    current = time_struct.time[i];
-    for(j=0;j<par->pIntensity;j++) //TODO: More efficient algorithm than sequential search could be implemented
-      if(current==timearr[j])
-        time_struct.id[i] = j; //holds sorted ids according to the time(radius) of its corresponding gridpoint
-  }
   double (*jbar_grid)[md[ispec].nline] = malloc(sizeof(double[par->pIntensity][md[ispec].nline]));
 
   /*Initializing Pops */
   for(i=0;i<md[ispec].nlev;i++)
-    Pops[i] = gp[time_struct.id[0]].mol[ispec].pops[i]; //we use gp[time_struct.id[0]] since we only need to initialize the level populations for the initial time
+    Pops[i] = gp[gp_sorter[0]].mol[ispec].pops[i];
 
-  struct transitionParams user_data = {NEQ, A, *p, md,ispec,gp,time_struct.id,par,time_struct, *jbar_grid, nMaserWarnings}; 
+  struct transitionParams user_data = {NEQ, A, *p, md,ispec,gp,par, *jbar_grid, nMaserWarnings}; 
 
   P = abstol = NULL;
   sunMatrix = NULL;
@@ -1038,6 +905,7 @@ solveStatEq(struct grid *gp, molData *md, const int ispec, configInfo *par\
     Ith(P,i) = Pops[i];
     Ith(abstol,i) = ATOL;
   }
+  
 
   /* Call CVodeCreate to create the solver memory and specify the 
   * Backward Differentiation Formula */
@@ -1047,7 +915,7 @@ solveStatEq(struct grid *gp, molData *md, const int ispec, configInfo *par\
   /* Call CVodeInit to initialize the integrator memory and specify the
    * user's right hand side function in y'=f(t,y), the inital time T0, and
    * the initial dependent variable vector y. */
-  retval = CVodeInit(cvode_mem, f,  time_struct.time[0], P);
+  retval = CVodeInit(cvode_mem, f,  radii[0], P);
   if (check_retval(&retval, "CVodeInit", 1)) return;
 
   retval = CVodeSetUserData(cvode_mem, &user_data);
@@ -1081,29 +949,44 @@ solveStatEq(struct grid *gp, molData *md, const int ispec, configInfo *par\
   retval = CVodeSetJacFn(cvode_mem, NULL);
   if(check_retval(&retval, "CVodeSetJacFn", 1)) return;
 
-  //We start at i=1 (instead of i=0) because time_struct.time[i] indicates the first output time, and we are starting the run from time = time_struct.time[0]
-  for (i = 1; i < par->pIntensity; i++){
-    retval = 1;
-    fflush(stdout);
-    while(retval!=0){
-      retval = CVode(cvode_mem, time_struct.time[i], P, &t, CV_NORMAL);
-      if(retval==-3) printf("Continuing anyway (check populations!)\n");
-    }
-    
-    if(retval == CV_SUCCESS){
-      for(j=0; j < NEQ; ++j) 
-        Pops[j] = Ith(P,j);
-        
+  printf("Starting CVODE time-dependent solver...\n");
+  fflush(stdout);
 
-      for(j=0;j<md[ispec].nlev;j++){ 
-        gsl_vector_set(newpop,j,Pops[j]);
-        gsl_vector_set(newpop,j,gsl_max(gsl_vector_get(newpop,j),EPS)); 
-        gp[time_struct.id[i]].mol[ispec].pops[j]= gsl_vector_get(newpop,j); 
+  // Call CVODE for each radius
+  // Do/while loop to catch CVODE error test failure status
+  do{
+     for(i=1; i<par->pIntensity; i++){
+         cvstatus = CVode(cvode_mem, radii[i], P, &t, CV_NORMAL);
+        
+       if(cvstatus == CV_SUCCESS){
+         for(j=0;j<md[ispec].nlev;j++){ 
+           gp[gp_sorter[i]].mol[ispec].pops[j]= Ith(P,j); 
+         }
+       }
+      
+      if(cvstatus==-3 && reltol > MINTOL){ // Reduce the tolerances and try again
+         retval = CVodeInit(cvode_mem, f,  radii[0], P);
+         if (check_retval(&retval, "CVodeInit", 1)) printf("Failed to reinitialize CVODE\n");
+         CVodeSetUserData(cvode_mem, &user_data);
+         CVodeSetMaxNumSteps(cvode_mem, 5000);
+         sunMatrix = SUNDenseMatrix(NEQ, NEQ);
+         LS = SUNLinSol_Dense(P, sunMatrix);
+         CVodeSetLinearSolver(cvode_mem, LS, sunMatrix);
+         CVodeSetJacFn(cvode_mem, NULL);
+         reduceTol(abstol, reltol, cvode_mem, 0.1, NEQ);
+         tout=par->minScale;
+         break;
+      }else if(cvstatus!=0){
+      cvodeErrs++;
+      printf("CVODE error %d (continuing to next timestep - check populations!!)\n",cvstatus);
       }
-      user_data.id++;
-    } 
-   
-  }
+    //Next CVODE step
+      if(cvodeErrs>=15){ 
+         bail_out("CVODE solver failure - check physical model and tolerances.");
+         exit(1);
+      }
+    }
+  }while(cvstatus==-3) ;
   
   /* Free P and abstol vectors */
   N_VDestroy(P);
@@ -1118,14 +1001,13 @@ solveStatEq(struct grid *gp, molData *md, const int ispec, configInfo *par\
   /* Free the matrix memory */
   SUNMatDestroy(sunMatrix);
   
-  gsl_vector_free(newpop);
   free(jbar_grid);
 }
 
 
 /*....................................................................*/
 int
-levelPops(molData *md, configInfo *par, struct grid *gp, int *popsdone, double *lamtab, double *kaptab, const int nEntries){
+levelPops(molData *md, configInfo *par, struct grid *gp, int *popsdone, double *lamtab, double *kaptab, const int nEntries, double *radii, int *gp_sorter){
 
   int id,ispec,i,nVerticesDone,nItersDone,nlinetot;
   int totalNMaserWarnings=0;
@@ -1167,18 +1049,12 @@ levelPops(molData *md, configInfo *par, struct grid *gp, int *popsdone, double *
       else gsl_rng_set(threadRans[i],(int)(gsl_rng_uniform(ran)*1e6));
     }
 
-   calcGridCollRates(par,md,gp);
    freeGridCont(par, gp);
    mallocGridCont(par, md, gp);
    calcGridLinesDustOpacity(par, md, lamtab, kaptab, nEntries, gp);
 
-   /* Check for blended lines */
-   lineBlend(md, par, &blends);
-
    /* Initialize populations with Boltzmann distribution (assuming LTE) */
    LTE(par,gp,md);
-
-   if(par->outputfile) popsout(par,gp,md);
 
    defaultErrorHandler = gsl_set_error_handler_off();
 
@@ -1210,8 +1086,9 @@ levelPops(molData *md, configInfo *par, struct grid *gp, int *popsdone, double *
     }
 
   }
+  
   for(ispec=0;ispec<par->nSpecies;ispec++){
-    solveStatEq(gp,md,ispec,par,blends,nextMolWithBlend,mp,halfFirstDs, nMaserWarnings); 
+    solveStatEq(gp,md,ispec,par,blends,nextMolWithBlend,mp,halfFirstDs, nMaserWarnings, radii, gp_sorter); 
     for(i=0;i<par->pIntensity;i++)
       if(par->blend && blends.mols!=NULL && ispec==blends.mols[nextMolWithBlend[i]].molI)
         nextMolWithBlend[i] = nextMolWithBlend[i] + 1;

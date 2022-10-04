@@ -10,6 +10,7 @@ TODO:
  */
 
 #include "lime.h"
+#include "tree_random.h"
 #include "gridio.h"
 #include "defaults.h"
 
@@ -181,7 +182,7 @@ void randomsViaRejection(configInfo *par, const unsigned int desiredNumPoints, g
 
   lograd=log10(par->radius);
   logmin=log10(par->minScale);
-  
+
    //Forcing the smallest grid point radius to be equal to par->minScale
    x[0]=0.0;
    x[1]=0.0;
@@ -189,7 +190,7 @@ void randomsViaRejection(configInfo *par, const unsigned int desiredNumPoints, g
    for(di=0;di<DIM;di++)
       outRandLocations[0][di]=x[di];
    progFraction = 0.0/((double)desiredNumPoints-1);
-   //if(!silent) progressbar(progFraction, 4);
+   if(!silent) progressbar(progFraction, 4);
 
 
   /* Sample pIntensity number of points */
@@ -211,7 +212,7 @@ void randomsViaRejection(configInfo *par, const unsigned int desiredNumPoints, g
           x[0]=0.0;
           x[1]=0.0;
           if(DIM==3)
-            x[2]=r;
+            x[2]=r;   
         pointIsAccepted = pointEvaluation(par, uniformRandom, x);
         j++;
       }
@@ -221,16 +222,36 @@ void randomsViaRejection(configInfo *par, const unsigned int desiredNumPoints, g
     for(di=0;di<DIM;di++)
       outRandLocations[i_u][di]=x[di];
 
-    //progFraction = (double)i_u/((double)desiredNumPoints-1);
-    //if(!silent) progressbar(progFraction, 4);
+    progFraction = (double)i_u/((double)desiredNumPoints-1);
+    if(!silent) progressbar(progFraction, 4);
   }
-  
+
   if(!silent && numSecondRandoms>0){
     snprintf(errStr, STR_LEN_0, ">1 random point needed for %d grid points out of %u.", numSecondRandoms, desiredNumPoints);
     warning(errStr);
   }
 }
 
+/*....................................................................*/
+void
+treePrintMessage(const int status, const char message[TREE_STRLEN]){
+  char errStr[STR_LEN_0];
+
+  if(silent)
+return;
+
+  if(     status==TREE_MSG_MESSAGE)
+    printMessage((char*)message);
+  else if(status==TREE_MSG_WARN)
+    warning((char*)message);
+  else if(status==TREE_MSG_ERROR)
+    bail_out((char*)message);
+  else{
+    snprintf(errStr, STR_LEN_0, "Message status %d not understood.\n", status);
+    bail_out(errStr);
+exit(1);
+  }
+}
 
 /*....................................................................*/
 void
@@ -240,6 +261,7 @@ readOrBuildGrid(configInfo *par, struct grid **gp){
   double theta,semiradius,z,dummyT[2],dummyScalar;
   double *outRandDensities=NULL,*dummyPointer=NULL,x[DIM];
   double (*outRandLocations)[DIM]=NULL;
+  treeRandConstType rinc;
   gsl_rng *randGen;
   struct cell *dc=NULL; /* Not used at present. */
   unsigned long numCells;
@@ -362,11 +384,6 @@ exit(1);
 
     par->dataFlags |= DS_mask_1;
   }
-  
-  for (i = 0;i < par->pIntensity;i++) {
-    (*gp)[i].radius = sqrt((*gp)[i].x[0] * (*gp)[i].x[0] + (*gp)[i].x[1] * (*gp)[i].x[1] + (*gp)[i].x[2] * (*gp)[i].x[2]);
-  }
-
 
   if(onlyBitsSet(par->dataFlags, DS_mask_1)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==1. */
     writeGridIfRequired(par, *gp, NULL, 1);

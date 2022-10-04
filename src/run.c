@@ -15,6 +15,7 @@ TODO:
 
 int defaultFuncFlags = 0;
 double defaultDensyPower = DENSITY_POWER;
+double *radii;
 
 _Bool fixRandomSeeds;
 
@@ -1133,8 +1134,8 @@ run(inputPars inpars, image *inimg, const int nImages){
      programs. In this case, inpars and img must be specified by the
      external program.
   */
-  int i,gi,si,ei,status=0,sigactionStatus=0;
-  int initime=time(0);
+  int i,j,gi,si,ei,status=0,sigactionStatus=0;
+  double initime=time(0);
   int popsdone=0,nExtraSolverIters=0;
   molData *md=NULL;
   configInfo par;
@@ -1143,6 +1144,8 @@ run(inputPars inpars, image *inimg, const int nImages){
   char message[STR_LEN_0];
   int nEntries=0;
   double *lamtab=NULL,*kaptab=NULL;
+  double *radii, current;
+  int *gp_sorted;
 
   struct sigaction sigact = {.sa_handler = sigintHandler};
   sigactionStatus = sigaction(SIGINT, &sigact, NULL);
@@ -1212,7 +1215,7 @@ exit(1);
   if(par.nContImages>0){
     for(i=0;i<par.nImages;i++){
       if(!img[i].doline){
-        raytrace(i, &par, gp, md, img, lamtab, kaptab, nEntries);
+        raytrace(i, &par, gp, md, img, lamtab, kaptab, nEntries, radii);
         writeFitsAllUnits(i, &par, img);
       }
     }
@@ -1236,10 +1239,26 @@ exit(1);
         }
       }
     }
+ 
+    radii = malloc(sizeof(double)*par.pIntensity);
+    gp_sorted = malloc(sizeof(int)*par.pIntensity);
+    
+    for (gi = 0;gi < par.pIntensity;gi++) {
+     radii[gi] = gp[gi].radius; //Note: not sorted yet
+    }
 
+    qsort(radii, par.pIntensity, sizeof(double), compare);
+
+    for(i=0;i<par.pIntensity;i++){
+    current = radii[i];
+    for(j=0;j<par.pIntensity;j++)
+      if(current==gp[j].radius)
+        gp_sorted[i] = j; //holds sorted ids according to the time(radius) of its corresponding gridpoint
+  }
+     
     if(par.doSolveRTE){
       gridPopsInit(&par,md,gp);
-      nExtraSolverIters = levelPops(md, &par, gp, &popsdone, lamtab, kaptab, nEntries);
+      nExtraSolverIters = levelPops(md, &par, gp, &popsdone, lamtab, kaptab, nEntries, radii, gp_sorted);
     }
 
     calcGridMolSpecNumDens(&par,md,gp);
@@ -1263,7 +1282,7 @@ exit(1);
   if(par.nLineImages>0){
     for(i=0;i<par.nImages;i++){
       if(img[i].doline){
-        raytrace(i, &par, gp, md, img, lamtab, kaptab, nEntries);
+        raytrace(i, &par, gp, md, img, lamtab, kaptab, nEntries, radii);
         writeFitsAllUnits(i, &par, img);
       }
     }

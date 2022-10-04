@@ -72,6 +72,7 @@
 #define NUM_RAN_DENS		100
 #define RTOL 1.0e-9   /* CVODE scalar relative tolerance */
 #define ATOL 1.0e-9   /* CVODE vector absolute tolerance components */
+#define MINTOL 1.0e-15 /*Minimum allowed value for RTOL and ATOL*/
 
 
 /* Bit locations for the grid data-stage mask, that records the information which is present in the grid struct: */
@@ -153,6 +154,7 @@ struct grid {
   int id;
   double x[DIM], vel[DIM], B[3]; /* B field only makes physical sense in 3 dimensions. */
   double *v1,*v2,*v3;
+  double radius;
   int numNeigh;
   struct point *dir;
   struct grid **neigh;
@@ -252,7 +254,7 @@ double	geterf(const double, const double);
 void	getEdgeVelocities(configInfo *, struct grid *);
 void	input(inputPars*, image*);
 double	interpolateKappa(const double, double*, double*, const int, gsl_spline*, gsl_interp_accel*);
-int	levelPops(molData*, configInfo*, struct grid*, int*, double*, double*, const int);
+int	levelPops(molData*, configInfo*, struct grid*, int*, double*, double*, const int, double*, int*);
 void	mallocAndSetDefaultGrid(struct grid**, const size_t, const size_t);
 void	mallocAndSetDefaultMolData(const int, molData**);
 void	molInit(configInfo*, molData*);
@@ -262,7 +264,7 @@ void	popsin(configInfo*, struct grid**, molData**, int*);
 void	popsout(configInfo*, struct grid*, molData*);
 void	predefinedGrid(configInfo*, struct grid*);
 void	processFitsError(int);
-void	raytrace(int, configInfo*, struct grid*, molData*, imageInfo*, double*, double*, const int);
+void	raytrace(int, configInfo*, struct grid*, molData*, imageInfo*, double*, double*, const int, double*);
 void	readDustFile(char*, double**, double**, int*);
 void	readMolData(configInfo *par, molData *md, int **allUniqueCollPartIds, int *numUniqueCollPartsFound);
 void	readOrBuildGrid(configInfo*, struct grid**);

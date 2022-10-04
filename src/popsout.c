@@ -14,27 +14,41 @@
 void
 popsout(configInfo *par, struct grid *gp, molData *md){
   FILE *fp;
-  int j,k,l;
+  int i,j,k,l;
   double dens;
+  char outfilename[100], ext[100];
+  
   /* int i,mi,c,q=0,best; */
   /* double vel[3],ra[100],rb[100],za[100],zb[100],min; */
 
-  if((fp=fopen(par->outputfile, "w"))==NULL){
+  for(i=0;i<par->nSpecies;i++){
+    strcpy(outfilename,  par->outputfile); 
+    if(par->nSpecies>1){
+      sprintf(ext, ".%02d", i);
+      strcat(outfilename, ext);
+    }
+
+  if((fp=fopen(outfilename, "w"))==NULL){
     if(!silent) bail_out("Error writing output populations file!");
     exit(1);
   }
+  printf("Writing level populations to %s\n", outfilename);
   fprintf(fp,"# x y z H2_density kinetic_gas_temperature molecular_abundance convergence_flag");
-  for(k=0;k<md[0].nlev;k++) fprintf(fp," pops_%d",k);
+  for(k=0;k<md[i].nlev;k++) fprintf(fp," pops_%d",k);
   fprintf(fp,"\n");
   for(j=0;j<par->pIntensity;j++){
     dens=0.;
     for(l=0;l<par->numDensities;l++) dens+=gp[j].dens[l]*par->nMolWeights[l];
-    fprintf(fp,"%e %e %e %e %e %e %d ", gp[j].x[0], gp[j].x[1], gp[j].x[2], dens, gp[j].t[0], gp[j].mol[0].nmol/dens, gp[j].conv);
-    for(k=0;k<md[0].nlev;k++) fprintf(fp,"%e ",gp[j].mol[0].pops[k]);
+    fprintf(fp,"%e %e %e %e %e %e %d ", gp[j].x[0], gp[j].x[1], gp[j].x[2], dens, gp[j].t[0], gp[j].mol[i].nmol/dens, gp[j].conv);
+    for(k=0;k<md[i].nlev;k++) fprintf(fp,"%e ",gp[j].mol[i].pops[k]);
     fprintf(fp,"\n");
     //fprintf(fp,"%i %lf %lf %lf %lf %lf %lf %lf %lf\n", gp[j].id, gp[j].x[0], gp[j].x[1], gp[j].x[2],  gp[j].dens[0], gp[j].t[0], gp[j].vel[0], gp[j].vel[1], gp[j].vel[2]);
   }
   fclose(fp);
+  
+  }
+
+
 }
 
 void

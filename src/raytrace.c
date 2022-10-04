@@ -374,7 +374,7 @@ void rhoGrid2image(int ppi,configInfo *par, double *rho_grid, struct rayData ray
 /*....................................................................*/
 void
 raytrace(int im, configInfo *par, struct grid *gp, molData *md\
-  , imageInfo *img, double *lamtab, double *kaptab, const int nEntries){
+  , imageInfo *img, double *lamtab, double *kaptab, const int nEntries, double *radii){
 
   /*
 This function constructs an image cube by following sets of rays (at least 1 per image pixel) through the model, solving the radiative transfer equations as appropriate for each ray. The ray locations within each pixel are chosen randomly within the pixel, but the number of rays per pixel is set equal to the number of projected model grid points falling within that pixel, down to a minimum equal to par->alias.
@@ -384,7 +384,7 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
 
   printf("\nRaytracing in progress...\n");
 
-    double pixelSize, imgCentrePixels,minfreq,absDeltaFreq,xs[2],rho_grid[par->pIntensity],radiusarr[par->pIntensity], sorted_radius[par->pIntensity], ro;
+    double pixelSize, imgCentrePixels,minfreq,absDeltaFreq,xs[2],rho_grid[par->pIntensity], sorted_radius[par->pIntensity], ro;
     int totalNumImagePixels,ppi, ichan,lastChan,molI,lineI,i,j,k,di, xi, yi,id, index, pixoff,pixoff2,pixshiftx,pixshifty, nsupsamppix,numRays;
     double local_cmb,cmbFreq,scale,shift,offset,logdz,*vels = NULL,*zp_grid = NULL,*dz_grid = NULL,*dz_vals = NULL,*posneg = NULL;
     int cmbMolI,cmbLineI, ppx,ppy,*dz_indices = NULL;
@@ -451,30 +451,25 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   local_cmb = planckfunc(cmbFreq,LOCAL_CMB_TEMP);
   calcGridContDustOpacity(par, cmbFreq, lamtab, kaptab, nEntries, gp); /* Reads gp attributes x, dens, and t and writes attributes cont.dust and cont.knu. */
 
-  for (id = 0;id < par->pIntensity;id++) {
-    radiusarr[id] = sqrt(gp[id].x[0] * gp[id].x[0] + gp[id].x[1] * gp[id].x[1] + gp[id].x[2] * gp[id].x[2]);
-    sorted_radius[id] = radiusarr[id]; //Note: not sorted yet
-  }
-
-  qsort(sorted_radius, par->pIntensity, sizeof(double), compare);
-
   struct rayData rayData;
   rayData.id = malloc(sizeof(int) * par->pIntensity);
   rayData.flux = malloc(sizeof(*rayData.flux) * par->pIntensity);
   rayData.fluxc = malloc(sizeof(*rayData.fluxc) * par->pIntensity);
-  rayData.radius = sorted_radius;
+  rayData.radius = radii;
   double current;
   
   offset =  rayData.radius[0] + 1.0e-30;
   
   for (i = 0; i < par->pIntensity; i++) {
     rho_grid[i] = rayData.radius[i] - offset;
+    //printf("radius=%le\n",rayData.radius[i]);
   }
 
+  //This code involving a gridpoint lookup table should be overhauled now that we have a sorted radius array (radii)
   for (i = 0; i < par->pIntensity; i++) {
     current = rayData.radius[i];
     for (j = 0; j < par->pIntensity; j++) //TODO: More efficient algorithm than sequential search could be implemented
-      if (current == radiusarr[j])
+      if (current == gp[j].radius)
         rayData.id[i] = j; //holds sorted ids according to the time/radius of its corresponding gridpoint
   }
 
