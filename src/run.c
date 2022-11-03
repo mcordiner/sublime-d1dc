@@ -349,6 +349,7 @@ Copy over user-set parameters to the configInfo versions. (This seems like dupli
   par->useEP             = inpars.useEP;
   par->fixRNG            = inpars.fixRNG;
   par->tNuc              = inpars.tNuc;
+  par->useCKCdata        = inpars.useCKCdata ;
 
   /* Somewhat more carefully copy over the strings:
   */
@@ -359,6 +360,8 @@ Copy over user-set parameters to the configInfo versions. (This seems like dupli
   copyInparStr(inpars.gridfile,      &(par->gridfile));
   copyInparStr(inpars.pregrid,       &(par->pregrid));
   copyInparStr(inpars.gridInFile,    &(par->gridInFile));
+  copyInparStr(inpars.CKCTeFile, 	 &(par->CKCTeFile));
+  copyInparStr(inpars.CKCneFile, 	 &(par->CKCneFile));
 
   if(par->fixRNG){
     fixRandomSeeds = True;

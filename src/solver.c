@@ -61,7 +61,7 @@ struct time_struct{
 
 
 /* Parameters used to determine transition rates */
-struct transitionParams{
+struct cvode_physdata{
   int array_size; //Equal to the number of levels (i.e NEQ)
   double *A_array; //Holds Einstein's As
   double *transition_rates; //Holds transition rates
@@ -71,6 +71,7 @@ struct transitionParams{
   configInfo *par;
   double *jbar_grid;
   int *nMaserWarnings;
+  struct CKCdata CKCdata; 
 };
 
 /* Checks for errors when calling any CVode functions */
@@ -101,8 +102,7 @@ int check_retval(void *returnvalue, const char *funcname, int opt)
   return(0);
 }
 
-
-/*ELECTRON TEMPERATURE FUNCTION*/
+/* ELECTRON TEMPERATURE FUNCTION: ORIGINAL VERSION */
 double Telec(double r, double Q, double Tkin){
   double Te,rcs;
   double Tmax = 1e4;
@@ -119,7 +119,7 @@ double Telec(double r, double Q, double Tkin){
   return Te;
 }
 
-/*ELECTRON DENSITY FUNCTION*/
+/* ELECTRON DENSITY FUNCTION: ORIGINAL VERSION */
 double nelec(double r, double Q, double vexp, double Te, double rH, double xne){
   double Rrec, ne, krec, kion;
   kion = 4.1e-7;
@@ -644,7 +644,7 @@ Note that this is called from within the multi-threaded block.
 /*....................................................................*/
 
 void
-getTransitionRates(molData *md, int ispec, struct grid *gp, configInfo *par, int NEQ, double A[NEQ-1], double *p, realtype radius, double *jbar_grid, double *Pops, int *nMaserWarnings, double vexp){
+getTransitionRates(molData *md, int ispec, struct grid *gp, configInfo *par, int NEQ, double A[NEQ-1], double *p, realtype radius, double *jbar_grid, double *Pops, int *nMaserWarnings, double vexp, struct CKCdata *CKCdata){
   int itemp,ipart,t_binlow,iline,k,l,ti, li, upper, lower, j,tnint=-1;
   double rnuc, Te, ne, aij, sigmaij, ve, bessel, ceij, gij, ceji, dens[md[ispec].npart], tkin[md[ispec].npart];
   double jbar[par->pIntensity],molDens[par->nSpecies], tau, beta, interp_coeff;
@@ -707,9 +707,26 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, configInfo *par, int
   //Presently, only electrons produced from collision parter 0 are considered.
   //It would be easy enough to add others, but the partner production rates would be needed as an input
   //parameter, like par->Qpartner, and their temperatures can be given as tkin[n] from temperature()
-  /*Formalism of Zakharov et al. (2007)*/
-   Te = Telec(radius,par->Qwater,tkin[0]);
-   ne = nelec(radius,par->Qwater,vexp,Te,par->rHelio,par->xne);
+  
+  FILE *fPtr; //For debugging only
+  char *filePath = "elec_data.txt";
+  
+  if (par->useCKCdata == 1 || par->useCKCdata == 2) {
+		/* Interpolating from the CKC code */
+		Te = get_Telec (CKCdata, par->Qwater, par->rHelio, radius);
+		ne = get_nelec (CKCdata, par->Qwater, par->rHelio, radius);
+	}
+	else {
+		/*Formalism of Zakharov et al. (2007)*/
+	   Te = Telec(radius,par->Qwater,tkin[0]);
+	   ne = nelec(radius,par->Qwater,vexp,Te,par->rHelio,par->xne);
+	}
+	
+  fPtr = fopen(filePath, "a");
+  fprintf(fPtr, "%12.3e %12.3e %12.3e\n", radius, Te, ne);
+  fclose(fPtr);
+
+
    
    for(iline=0;iline<md[ispec].nline;iline++){
      aij = HPLANCK*md[ispec].freq[iline]/2./KBOLTZ/Te;
@@ -802,7 +819,7 @@ LTE(configInfo *par, struct grid *gp, molData *md){
 int f(realtype radius, N_Vector P, N_Vector Pdot, void *data){
 
   int i, j, NEQ, id;
-  struct transitionParams *user_data = data;
+  struct cvode_physdata *user_data = data;
   NEQ = user_data -> array_size;
   double *pij = user_data -> transition_rates;
   double Pops_array[NEQ], vel[DIM], vexp;
@@ -814,7 +831,7 @@ int f(realtype radius, N_Vector P, N_Vector Pdot, void *data){
   for(i=0; i < NEQ; ++i)
     Pops_array[i] = Ith(P,i);
 
-  getTransitionRates(user_data->md,user_data->ispec,user_data->gp,user_data->par, NEQ, user_data -> A_array, pij, radius, user_data->jbar_grid, Pops_array, user_data ->nMaserWarnings, vexp);
+  getTransitionRates(user_data->md,user_data->ispec,user_data->gp,user_data->par, NEQ, user_data -> A_array, pij, radius, user_data->jbar_grid, Pops_array, user_data ->nMaserWarnings, vexp, &user_data -> CKCdata);
 
   //Initializing Pdot (otherwise it stores previous values between calls to CVode)
   for(i=0; i < NEQ; ++i)
@@ -884,7 +901,15 @@ solveStatEq(struct grid *gp, molData *md, const int ispec, configInfo *par\
   for(i=0;i<md[ispec].nlev;i++)
     Pops[i] = gp[gp_sorter[0]].mol[ispec].pops[i];
 
-  struct transitionParams user_data = {NEQ, A, *p, md,ispec,gp,par, *jbar_grid, nMaserWarnings}; 
+  struct CKCdata CKCdata;
+	if (par->useCKCdata == 1) {
+		readCKCdata(&CKCdata);
+	}
+	else if (par->useCKCdata == 2) {
+		readCKCfile(&CKCdata, par->CKCTeFile, par->CKCneFile, par->Qwater, par->rHelio);
+	}
+  
+  struct cvode_physdata user_data = {NEQ, A, *p, md,ispec,gp,par, *jbar_grid, nMaserWarnings, CKCdata}; 
 
   P = abstol = NULL;
   sunMatrix = NULL;
@@ -1002,6 +1027,14 @@ solveStatEq(struct grid *gp, molData *md, const int ispec, configInfo *par\
   SUNMatDestroy(sunMatrix);
   
   free(jbar_grid);
+  
+  /* Free CKCdata in memory */
+  if (par->useCKCdata == 1 || par->useCKCdata == 2) {
+  	free(CKCdata.Tedata);
+  	free(CKCdata.nedata);
+  	free(CKCdata.r_values);
+	}
+  
 }
 
 

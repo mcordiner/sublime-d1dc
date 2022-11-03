@@ -128,6 +128,18 @@ typedef struct {
   char molName[80];
 } molData;
 
+/* Struct to store CKC data*/
+typedef struct CKCdata{
+	double ***Tedata; // [q][h][r] 
+	double ***nedata; // [q][h][r] 
+	int nr_values;
+	double *r_values;
+	int nQ_values;
+	double *Q_values;
+	int nH_values;
+	double *H_values;
+} CKCdata;
+
 struct point {
   double x[DIM];
   double xn[DIM];
@@ -284,7 +296,10 @@ void	writeFitsAllUnits(const int, configInfo*, imageInfo*);
 void	writeGridIfRequired(configInfo*, struct grid*, molData*, const int);
 void	writeGridToAscii(char *outFileName, struct grid *gp, const unsigned int nInternalPoints, const int dataFlags);
 void	write_VTK_unstructured_Points(configInfo*, struct grid*);
-
+struct CKCdata readCKCdata(CKCdata *st);
+struct CKCdata readCKCfile(CKCdata *st, char *Tefilename, char *nefilename, double Q_values, double H_values);
+double get_Telec (CKCdata *st, double Q, double rH, double radius);
+double get_nelec (CKCdata *st, double Q, double rH, double radius);
 
 /* Curses functions */
 

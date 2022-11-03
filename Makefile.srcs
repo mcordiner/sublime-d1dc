@@ -22,6 +22,7 @@ CORESOURCES = \
 	src/predefgrid.c\
 	src/raythrucells.c\
 	src/raytrace.c\
+	src/readckc.c\
 	src/run.c\
 	src/smooth.c\
 	src/solver.c\

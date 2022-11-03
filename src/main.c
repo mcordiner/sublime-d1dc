@@ -44,6 +44,8 @@ initParImg(inputPars *par, image **img)
   par->pregrid      = NULL;
   par->restart      = NULL;
   par->gridInFile   = NULL;
+  par->CKCTeFile    = NULL;
+  par->CKCneFile    = NULL;
   
   par->collPartIds  = malloc(sizeof(int)*MAX_N_COLL_PART);
   for(i=0;i<MAX_N_COLL_PART;i++) par->collPartIds[i] = 0; /* Possible values start at 1. */
@@ -80,6 +82,7 @@ initParImg(inputPars *par, image **img)
   par->useEP = 0;
   par->fixRNG = 1;
   par->tNuc = 100;
+  par->useCKCdata = 0;
 
   par->gridOutFiles = malloc(sizeof(char *)*NUM_GRID_STAGES);
   for(i=0;i<NUM_GRID_STAGES;i++)

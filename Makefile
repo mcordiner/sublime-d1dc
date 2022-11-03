@@ -35,13 +35,13 @@ ifneq (,$(wildcard /usr/local/lib/.))
 endif
 
 CPPFLAGS += -I${PREFIX}/include \
-	    -I${PREFIX}/include/libqhull \
-	    -I${PREFIX}/src \
-	    -I${HOME}/include \
-	    -I/opt/local/include \
-	    -I/opt/local/include/qhull \
-	    -I/sw//include \
-	    ${EXTRACPPFLAGS}
+            -I${PREFIX}/include/libqhull \
+            -I${PREFIX}/src \
+            -I${HOME}/include \
+            -I/Users/kdarnell/macports/include \
+            -I/Users/kdarnell/macports/include/qhull \
+            -I/sw//include \
+            ${EXTRACPPFLAGS}
 
 
 # Names of source files included:
