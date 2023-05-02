@@ -6,4 +6,4 @@ LDFLAGS += -Wl,-rpath,/Users/kdarnell/macports/lib
 LDFLAGS += -Wl,-rpath,/Users/kdarnell/macports/lib/libgcc
 LIBS += -L/Users/kdarnell/macports/lib
 LIBS += -L/Users/kdarnell/macports/lib/libgcc
-CC      = /Users/kdarnell/macports/bin/gcc-mp-11 -fopenmp
+CC      = /opt/local/bin/gcc-mp-12 -fopenmp
