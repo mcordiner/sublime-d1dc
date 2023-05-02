@@ -1,7 +1,5 @@
 #include "lime.h"
 
-char	inputfile = 'input.txt'
-
 double beta= 1.042e-5;
 double betahcn= 1.5e-5;
 
@@ -18,8 +16,15 @@ input(inputPars *par, image *img){
 /*
  * Basic parameters. See cheat sheet for details.
  */
+  par->beta = 1.042e-5;
+  par->betamol = 1.5e-5;
+  par->vexp = 700.;
+  par->tkin = 50;
+  par->rnuc = 2.5e2;
+  par->abund = 0.001;
+   
   par->useEP       = 0;
-  par->Qwater       = Qwater;
+  par->Qwater       = 1e27;
   par->xne = 0.2;
   par->rHelio       = 1.0;
   par->radius           = 2e8;
