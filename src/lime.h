@@ -118,6 +118,32 @@ struct cpData {
   char *name;
 };
 
+/* Previously declared in gridio.h. I moved it here so I could remove the unused file*/
+struct linkType {
+  unsigned int id, gis[2];
+  double *vels;
+};
+
+struct molInfoType{
+  char *molName;
+  int nLevels, nLines;
+};
+
+struct gridInfoType{
+  unsigned int nInternalPoints, nSinkPoints, nLinks, nNNIndices;
+  unsigned short nDims, nSpecies, nDensities, nLinkVels;
+  struct molInfoType *mols;
+};
+
+struct keywordType{
+  int datatype; /* Codes given above. */
+  char *keyname,*comment,*charValue;
+  int intValue;
+  float floatValue;
+  double doubleValue;
+  _Bool boolValue;
+};
+
 /* Molecular data: shared attributes */
 typedef struct {
   int nlev,nline,npart;
@@ -270,11 +296,8 @@ int	levelPops(molData*, configInfo*, struct grid*, int*, double*, double*, const
 void	mallocAndSetDefaultGrid(struct grid**, const size_t, const size_t);
 void	mallocAndSetDefaultMolData(const int, molData**);
 void	molInit(configInfo*, molData*);
-void	openSocket(char*);
 double	planckfunc(const double, const double);
-void	popsin(configInfo*, struct grid**, molData**, int*);
 void	popsout(configInfo*, struct grid*, molData*);
-void	predefinedGrid(configInfo*, struct grid*);
 void	processFitsError(int);
 void	raytrace(int, configInfo*, struct grid*, molData*, imageInfo*, double*, double*, const int, double*);
 void	readDustFile(char*, double**, double**, int*);
@@ -288,13 +311,11 @@ void	setUpDensityAux(configInfo*, int*, const int);
 void	sigintHandler(int sigI);
 int   compare(const void *a,const void *b);
 double linear_interp(double x0, double x1, double y0, double y1, double value);
-void	smooth(configInfo*, struct grid*);
 void	sourceFunc_line(const molData*, const double, const struct populations*, const int, double*, double*);
 void	sourceFunc_cont(const struct continuumLine, double*, double*);
 void	sourceFunc_pol(double*, const struct continuumLine, double (*rotMat)[3], double*, double*);
 void	writeFitsAllUnits(const int, configInfo*, imageInfo*);
 void	writeGridIfRequired(configInfo*, struct grid*, molData*, const int);
-void	writeGridToAscii(char *outFileName, struct grid *gp, const unsigned int nInternalPoints, const int dataFlags);
 void	write_VTK_unstructured_Points(configInfo*, struct grid*);
 struct CKCdata readCKCdata(CKCdata *st);
 struct CKCdata readCKCfile(CKCdata *st, char *Tefilename, char *nefilename, double Q_values, double H_values);

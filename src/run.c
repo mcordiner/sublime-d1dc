@@ -10,7 +10,6 @@ TODO:
 
 #include "lime.h"
 #include <locale.h>
-#include "gridio.h" /* For countDensityCols() */
 #include "defaults.h"
 
 int defaultFuncFlags = 0;
@@ -378,7 +377,7 @@ Copy over user-set parameters to the configInfo versions. (This seems like dupli
     par->writeGridAtStage[i] = 0;
 
   if(par->pregrid==NULL && par->restart){
-    par->nSpecies=0; /* This will get set during popsin(). */
+    par->nSpecies=0;
     par->girdatfile = NULL;
   }else{
     /* If the user has provided a list of moldatfile names, the corresponding elements of par->moldatfile will be non-NULL. Thus we can deduce the number of files (species) from the number of non-NULL elements.
@@ -419,10 +418,9 @@ exit(1);
     for(id=0;id<par->nSpecies;id++){
       if((fp=fopen(par->moldatfile[id], "r"))==NULL){
         if(!silent){
-          snprintf(message, STR_LEN_1, "Moldat file %s not found locally - fetching it from LAMDA", par->moldatfile[id]);
-          printMessage(message);
+          snprintf(message, STR_LEN_1, "Molecular data file %s not found.", par->moldatfile[id]);
+          bail_out(message);
         }
-        openSocket(par->moldatfile[id]);
       } else {
         checkFirstLineMolDat(fp, par->moldatfile[id]);
         fclose(fp);
@@ -497,16 +495,7 @@ exit(1);
   */
   if(!(par->doPregrid || par->restart)){ /* These switches cause par->numDensities to be set in routines they call. */
     par->numDensities = 0; /* default. */
-    if(par->gridInFile!=NULL){
-      status = countDensityCols(par->gridInFile, &(par->numDensities));
-      if (status){
-        if(!silent){
-          snprintf(message, STR_LEN_1, "countDensityCols() status return %d", status);
-          bail_out(message);
-        }
-exit(1);
-      }
-    }
+//     removed unused function countDensityCols()
 
     if(par->numDensities<=0){
       if(bitIsSet(defaultFuncFlags, USERFUNC_density)){
@@ -1197,18 +1186,9 @@ exit(1);
 exit(1);
   }
 
-  if(par.doPregrid){
-    mallocAndSetDefaultGrid(&gp, (size_t)par.ncell, (size_t)par.nSpecies);
-    predefinedGrid(&par,gp); /* Sets par.numDensities. */
-    checkUserDensWeights(&par); /* In collparts.c. Needs par.numDensities. */
-
-  }else if(par.restart){
-    popsin(&par,&gp,&md,&popsdone);
-
-  }else{
+/*Original if-else statement contained dead code and was deleted*/
     checkUserDensWeights(&par); /* In collparts.c. Needs par.numDensities. */
     readOrBuildGrid(&par,&gp);
-  }
 
   if(par.dust != NULL)
     readDustFile(par.dust, &lamtab, &kaptab, &nEntries);

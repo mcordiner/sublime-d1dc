@@ -1,0 +1,230 @@
+        -:    0:Source:src/main.c
+        -:    0:Graph:src/main.gcno
+        -:    0:Data:src/main.gcda
+        -:    0:Runs:1
+        -:    1:/*
+        -:    2: *  main.c
+        -:    3: *  This file is part of LIME, the versatile line modeling engine
+        -:    4: *
+        -:    5: *  Copyright (C) 2006-2014 Christian Brinch
+        -:    6: *  Copyright (C) 2015-2017 The LIME development team
+        -:    7: *
+        -:    8: */
+        -:    9:
+        -:   10:#include "lime.h"
+        -:   11:
+        -:   12:#ifdef NOVERBOSE
+        -:   13:int silent = 1;
+        -:   14:#else
+        -:   15:int silent = 0;
+        -:   16:#endif
+        -:   17:
+        -:   18:/*....................................................................*/
+        -:   19:int
+function initParImg called 1 returned 100% blocks executed 100%
+        1:   20:initParImg(inputPars *par, image **img)
+        -:   21:{
+        -:   22:  /* Initialize par with default values, allocate space for the
+        -:   23:     output fits images, initialize the images with default values,
+        -:   24:     and finally call the input() routine from model.c to set both the
+        -:   25:     par and image values.
+        -:   26:  */
+        -:   27:
+        -:   28:  int i,j,id,nImages;
+        -:   29:  const double defaultAngle=-999.0;
+        -:   30:
+        -:   31:  /* Set 'impossible' default values for mandatory parameters */
+        1:   32:  par->radius    = 0;
+        1:   33:  par->minScale  = 0;
+        1:   34:  par->pIntensity= 0;
+        1:   35:  par->sinkPoints= 0;
+        1:   36:  par->Qwater    = 0;
+        1:   37:  par->rHelio    = 0; 
+        1:   38:  par->beta 	 = 0;
+        1:   39:  par->betamol 	 = 0;
+        1:   40:  par->vexp 	 = 0;
+        1:   41:  par->tkin 	 = 0;
+        1:   42:  par->rnuc 	 = 0;
+        1:   43:  par->abund 	 = 0;
+        -:   44:
+        -:   45:  /* Set default values for optional parameters */
+        1:   46:  par->dust  	    = NULL;
+        1:   47:  par->outputfile   = NULL;
+        1:   48:  par->binoutputfile= NULL;
+        1:   49:  par->gridfile     = NULL;
+        1:   50:  par->pregrid      = NULL;
+        1:   51:  par->restart      = NULL;
+        1:   52:  par->gridInFile   = NULL;
+        1:   53:  par->CKCTeFile    = NULL;
+        1:   54:  par->CKCneFile    = NULL;
+        -:   55:  
+        1:   56:  par->collPartIds  = malloc(sizeof(int)*MAX_N_COLL_PART);
+       21:   57:  for(i=0;i<MAX_N_COLL_PART;i++) par->collPartIds[i] = 0; /* Possible values start at 1. */
+branch  0 taken 95%
+branch  1 taken 5% (fallthrough)
+        1:   58:  par->nMolWeights  = malloc(sizeof(double)*MAX_N_COLL_PART);
+       21:   59:  for(i=0;i<MAX_N_COLL_PART;i++) par->nMolWeights[i] = -1.0;
+branch  0 taken 95%
+branch  1 taken 5% (fallthrough)
+        1:   60:  par->dustWeights  = malloc(sizeof(double)*MAX_N_COLL_PART); /* This param no longer has any effect. */
+       21:   61:  for(i=0;i<MAX_N_COLL_PART;i++) par->dustWeights[i] = -1.0;
+branch  0 taken 95%
+branch  1 taken 5% (fallthrough)
+        1:   62:  par->collPartMolWeights = malloc(sizeof(double)*MAX_N_COLL_PART);
+       21:   63:  for(i=0;i<MAX_N_COLL_PART;i++) par->collPartMolWeights[i] = -1.0;
+branch  0 taken 95%
+branch  1 taken 5% (fallthrough)
+        -:   64:
+        1:   65:  par->gridDensMaxValues = malloc(sizeof(*(par->gridDensMaxValues))*MAX_N_HIGH);
+        1:   66:  par->gridDensMaxLoc    = malloc(sizeof(*(par->gridDensMaxLoc))*MAX_N_HIGH);
+       11:   67:  for(i=0;i<MAX_N_HIGH;i++){
+branch  0 taken 91%
+branch  1 taken 9% (fallthrough)
+       10:   68:    par->gridDensMaxValues[i] = -1.0; /* Impossible default value. */
+       40:   69:    for(j=0;j<DIM;j++) par->gridDensMaxLoc[i][j] = 0.0;
+branch  0 taken 75%
+branch  1 taken 25% (fallthrough)
+        -:   70:  }
+        -:   71:
+        1:   72:  par->tcmb = LOCAL_CMB_TEMP;
+        1:   73:  par->lte_only=0;
+        1:   74:  par->init_lte=0;
+        1:   75:  par->samplingAlgorithm=0;
+        1:   76:  par->sampling=2; /* Now only accessed if par->samplingAlgorithm==0. */
+        1:   77:  par->blend=0;
+        1:   78:  par->antialias=1;
+        1:   79:  par->polarization=0;
+        1:   80:  par->nThreads = NTHREADS;
+        1:   81:  par->nSolveIters=1;
+        1:   82:  par->traceRayAlgorithm=0;
+        1:   83:  par->resetRNG=0;
+        1:   84:  par->doSolveRTE=0;
+        1:   85:  par->colliScale = 1.0;
+        1:   86:  par->girScale = 1.0;
+        1:   87:  par->xne = 1.0;
+        1:   88:  par->useEP = 0;
+        1:   89:  par->fixRNG = 1;
+        1:   90:  par->tNuc = 100;
+        1:   91:  par->dopplerb=0;
+        1:   92:  par->useCKCdata = 0;
+        -:   93:
+        1:   94:  par->gridOutFiles = malloc(sizeof(char *)*NUM_GRID_STAGES);
+        6:   95:  for(i=0;i<NUM_GRID_STAGES;i++)
+branch  0 taken 83%
+branch  1 taken 17% (fallthrough)
+        5:   96:    par->gridOutFiles[i] = NULL;
+        -:   97:
+        -:   98:  /* Allocate initial space for molecular data file names */
+        1:   99:  par->moldatfile=malloc(sizeof(char *)*MAX_NSPECIES);
+        1:  100:  par->girdatfile=malloc(sizeof(char *)*MAX_NSPECIES);
+      101:  101:  for(id=0;id<MAX_NSPECIES;id++){
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+      100:  102:    par->moldatfile[id]=NULL;
+      100:  103:    par->girdatfile[id]=NULL;
+        -:  104:  }
+        -:  105:
+        -:  106:  /* Allocate initial space for (non-LAMDA) collision partner names */
+        1:  107:  par->collPartNames=malloc(sizeof(char *)*MAX_N_COLL_PART);
+       21:  108:  for(i=0;i<MAX_N_COLL_PART;i++){
+branch  0 taken 95%
+branch  1 taken 5% (fallthrough)
+       20:  109:    par->collPartNames[i]=NULL;
+        -:  110:  }
+        -:  111:
+        -:  112:  /* Allocate initial space for output fits images */
+        1:  113:  (*img)=malloc(sizeof(**img)*MAX_NIMAGES);
+      101:  114:  for(i=0;i<MAX_NIMAGES;i++){
+branch  0 taken 99%
+branch  1 taken 1% (fallthrough)
+      100:  115:    (*img)[i].filename=NULL;
+      100:  116:    (*img)[i].units=NULL;
+        -:  117:  }
+        -:  118:
+        -:  119:  /* First call to the user function which sets par, img values. Note that, as far as img is concerned, here we just want to find out how many images the user wants, so we can malloc the array properly. We call input() a second time then to get the actual per-image parameter values.
+        -:  120:  */
+        1:  121:  input(par, *img);
+call    0 returned 100%
+        -:  122:
+        -:  123:  /* If the user has provided a list of image filenames, the corresponding elements of (*img).filename will be non-NULL. Thus we can deduce the number of images from the number of non-NULL elements. */
+        -:  124:  nImages=0;
+        2:  125:  while((*img)[nImages].filename!=NULL && nImages<MAX_NIMAGES)
+branch  0 taken 50% (fallthrough)
+branch  1 taken 50%
+branch  2 taken 100%
+branch  3 taken 0%
+        1:  126:    nImages++;
+        -:  127:
+        -:  128:  /* Set img defaults. */
+        2:  129:  for(i=0;i<nImages;i++) {
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+        1:  130:    (*img)[i].nchan      =  0;
+        1:  131:    (*img)[i].trans      = -1;
+        1:  132:    (*img)[i].molI       = -1;
+        1:  133:    (*img)[i].velres     = -1.0;
+        1:  134:    (*img)[i].imgres     = -1.0;
+        1:  135:    (*img)[i].pxls       = -1;
+        1:  136:    (*img)[i].unit       =  0;
+        1:  137:    (*img)[i].freq       = -1.0;
+        1:  138:    (*img)[i].bandwidth  = -1.0;
+        1:  139:    (*img)[i].psfShape   = 0;
+        1:  140:    (*img)[i].psfWidth   = 0.0;
+        1:  141:    (*img)[i].rebinSpec   = 0;
+        1:  142:    (*img)[i].nBins      = 0;
+        1:  143:    (*img)[i].binWidth   = 0;
+        1:  144:    (*img)[i].source_vel =  0.0;
+        1:  145:    (*img)[i].theta      =  0.0;
+        1:  146:    (*img)[i].phi        =  0.0;
+        1:  147:    (*img)[i].incl       = defaultAngle;
+        1:  148:    (*img)[i].posang     = defaultAngle;
+        1:  149:    (*img)[i].azimuth    = defaultAngle;
+        1:  150:    (*img)[i].distance   = -1.0;
+        1:  151:    (*img)[i].doInterpolateVels = FALSE;
+        -:  152:  }
+        -:  153:
+        -:  154:  /* Second-pass reading of the user-set parameters (this time just to read the par->moldatfile and img stuff). */
+        1:  155:  input(par,*img);
+call    0 returned 100%
+        -:  156:
+        1:  157:  return nImages;
+        -:  158:}
+        -:  159:
+        -:  160:/*....................................................................*/
+function main called 1 returned 100% blocks executed 62%
+        1:  161:int main() {
+        -:  162:  /* Main program for stand-alone LIME */
+        -:  163:
+        -:  164:  inputPars par;
+        1:  165:  image *img = NULL;
+        -:  166:  int nImages,status=0;
+        -:  167:  char message[STR_LEN_0];
+        -:  168:
+        -:  169:  (void)status; // just to stop compiler warnings because this return value is currently unused.
+        -:  170:
+        1:  171:  nImages = initParImg(&par, &img);
+call    0 returned 100%
+        -:  172:
+        1:  173:  status = run(par, img, nImages);
+call    0 returned 100%
+        1:  174:  if(status){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  175:    if(!silent){
+branch  0 never executed
+branch  1 never executed
+    #####:  176:      sprintf(message, "Function run() returned with status %d", status);
+    #####:  177:      bail_out(message);
+call    0 never executed
+        -:  178:    }
+    #####:  179:exit(1);
+call    0 never executed
+        -:  180:  }
+        -:  181:
+        1:  182:  free(img);
+        1:  183:  freeInputPars(&par);
+call    0 returned 100%
+        -:  184:
+        -:  185:  return 0;
+        -:  186:}
+        -:  187:

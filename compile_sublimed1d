@@ -96,7 +96,7 @@ export WORKDIR=$PWD
 
 # Compile the code
 pushd ${PATHTOLIME} >> /dev/null
-make -s EXTRACPPFLAGS="${cpp_flags}" MODELS=$WORKDIR/src/model.c TARGET=$WORKDIR/sublimed1dc DOTEST=$do_test VERBOSE=$verbose
+make -s EXTRACPPFLAGS="-DNO_NCURSES -DFASTEXP" MODELS=$WORKDIR/src/model.c TARGET=$WORKDIR/sublimed1dc DOTEST=$do_test VERBOSE=$verbose
 # USEHDF5="yes"
 make -s limeclean
 

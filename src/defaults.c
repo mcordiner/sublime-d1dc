@@ -11,44 +11,11 @@
 #include "defaults.h" /* includes lime_config.h which defines configInfo */
 #include "ufunc_types.h" /* for the USERFUNC_* macros */
 
-void
-default_density(double x, double y, double z, double *density){
-  density[0] = 0.0;
-  defaultFuncFlags |= (1 << USERFUNC_density);
-}
-
-void
-default_temperature(double x, double y, double z, double *temperature){
-  temperature[0] = 0.0;
-  temperature[1] = 0.0;
-  defaultFuncFlags |= (1 << USERFUNC_temperature);
-}
 
 void
 default_abundance(double x, double y, double z, double *abundance){
   abundance[0] = -1.0;
   defaultFuncFlags |= (1 << USERFUNC_abundance);
-}
-
-void
-default_molNumDensity(double x, double y, double z, double *dummy){
-  dummy[0] = -1.0;
-  defaultFuncFlags |= (1 << USERFUNC_molNumDensity);
-}
-
-void
-default_doppler(double x, double y, double z, double *doppler){
-  *doppler = 0.0;
-  defaultFuncFlags |= (1 << USERFUNC_doppler);
-}
-
-void
-default_velocity(double x, double y, double z, double *vel){
-  vel[0] = 0.0;
-  vel[1] = 0.0;
-  vel[2] = 0.0;
-//*** probably not good to hard-wire DIM to 3 in this way.
-  defaultFuncFlags |= (1 << USERFUNC_velocity);
 }
 
 void

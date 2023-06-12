@@ -1,0 +1,914 @@
+        -:    0:Source:src/grid.c
+        -:    0:Graph:src/grid.gcno
+        -:    0:Data:src/grid.gcda
+        -:    0:Runs:1
+        -:    1:/*
+        -:    2: *  grid.c
+        -:    3: *  This file is part of LIME, the versatile line modeling engine
+        -:    4: *
+        -:    5: *  Copyright (C) 2006-2014 Christian Brinch
+        -:    6: *  Copyright (C) 2015-2017 The LIME development team
+        -:    7: *
+        -:    8:TODO:
+        -:    9:  - In readOrBuildGrid(), test for the presence of the 5 mandatory functions (actually 4, since velocity() is already tested in aux.c:parseInput() ) before doing smoothing.
+        -:   10: */
+        -:   11:
+        -:   12:#include "lime.h"
+        -:   13:#include "gridio.h"
+        -:   14:#include "defaults.h"
+        -:   15:
+        -:   16:
+        -:   17:/*....................................................................*/
+        -:   18:void
+function sanityCheckOfRead called 0 returned 0% blocks executed 0%
+    #####:   19:sanityCheckOfRead(const int status, configInfo *par, struct gridInfoType gridInfoRead){
+        -:   20:  char message[STR_LEN_0];
+        -:   21:
+    #####:   22:  if(status){
+branch  0 never executed
+branch  1 never executed
+    #####:   23:    if(!silent){
+branch  0 never executed
+branch  1 never executed
+    #####:   24:      snprintf(message, STR_LEN_0, "Read of grid file failed with status return %d", status);
+    #####:   25:      bail_out(message);
+call    0 never executed
+        -:   26:    }
+    #####:   27:exit(1);
+call    0 never executed
+        -:   28:  }
+        -:   29:
+        -:   30:  /* Test that dataFlags obeys the rules. */
+        -:   31:  /* No other bit may be set if DS_bit_x is not: */
+    #####:   32:  if(anyBitSet(par->dataFlags, (DS_mask_all & ~(1 << DS_bit_x))) && !bitIsSet(par->dataFlags, DS_bit_x)){
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:   33:    if(!silent) bail_out("You may not read a grid file without X, ID or IS_SINK data.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:   34:exit(1);
+call    0 never executed
+        -:   35:  }
+        -:   36:
+        -:   37:  /* DS_bit_ACOEFF may not be set if either DS_bit_neighbours or DS_bit_velocity is not: */
+    #####:   38:  if(bitIsSet(par->dataFlags, DS_bit_ACOEFF)\
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   39:  && !(bitIsSet(par->dataFlags, DS_bit_neighbours) && bitIsSet(par->dataFlags, DS_bit_velocity))){
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:   40:    if(!silent) bail_out("You may not read a grid file with ACOEFF but no VEL or neighbour data.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:   41:exit(1);
+call    0 never executed
+        -:   42:  }
+        -:   43:
+        -:   44:  /* DS_bit_populations may not be set unless all the others (except DS_bit_magfield) are set as well: */
+    #####:   45:  if(bitIsSet(par->dataFlags, DS_bit_populations)\
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   46:  && !allBitsSet(par->dataFlags & DS_mask_all_but_mag, DS_mask_populations)){
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   47:    if(!silent) bail_out("You may not read a grid file with pop data unless all other data is present.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:   48:exit(1);
+call    0 never executed
+        -:   49:  }
+        -:   50:
+        -:   51:  /* Test gridInfoRead values against par values and overwrite the latter, with a warning, if necessary.
+        -:   52:  */
+    #####:   53:  if(gridInfoRead.nSinkPoints>0 && par->sinkPoints>0){
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:   54:    if((int)gridInfoRead.nSinkPoints!=par->sinkPoints){
+branch  0 never executed
+branch  1 never executed
+    #####:   55:      if(!silent) warning("par->sinkPoints will be overwritten");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+        -:   56:    }
+    #####:   57:    if((int)gridInfoRead.nInternalPoints!=par->pIntensity){
+branch  0 never executed
+branch  1 never executed
+    #####:   58:      if(!silent) warning("par->pIntensity will be overwritten");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+        -:   59:    }
+        -:   60:  }
+    #####:   61:  par->sinkPoints = 0;//(int)gridInfoRead.nSinkPoints;
+    #####:   62:  par->pIntensity = (int)gridInfoRead.nInternalPoints;
+    #####:   63:  par->ncell = par->pIntensity;
+        -:   64:
+    #####:   65:  if(gridInfoRead.nDims!=DIM){ /* At present this situation is already detected and handled inside readGridExtFromFits(), but it may not be in future. The test here has no present functionality but saves trouble later if we change grid.x from an array to a pointer. */
+branch  0 never executed
+branch  1 never executed
+    #####:   66:    if(!silent){
+branch  0 never executed
+branch  1 never executed
+    #####:   67:      snprintf(message, STR_LEN_0, "Grid file had %d dimensions but there should be %d.", (int)gridInfoRead.nDims, DIM);
+    #####:   68:      bail_out(message);
+call    0 never executed
+        -:   69:    }
+    #####:   70:exit(1);
+call    0 never executed
+        -:   71:  }
+    #####:   72:  if(gridInfoRead.nSpecies > 0){
+branch  0 never executed
+branch  1 never executed
+    #####:   73:    if((int)gridInfoRead.nSpecies!=par->nSpecies && par->doMolCalcs){
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:   74:      if(!silent){
+branch  0 never executed
+branch  1 never executed
+    #####:   75:        snprintf(message, STR_LEN_0, "Grid file had %d species but you have provided moldata files for %d."\
+        -:   76:          , (int)gridInfoRead.nSpecies, par->nSpecies);
+    #####:   77:        bail_out(message);
+call    0 never executed
+        -:   78:      }
+    #####:   79:exit(1);
+call    0 never executed
+        -:   80:/**** should compare name to name - at some later time after we have read these from the moldata files? */
+        -:   81:    }
+        -:   82:  }
+    #####:   83:  if(gridInfoRead.nDensities>0 && par->numDensities>0 && (int)gridInfoRead.nDensities!=par->numDensities){
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:   84:    if(!silent){
+branch  0 never executed
+branch  1 never executed
+    #####:   85:      snprintf(message, STR_LEN_0, "Grid file had %d densities but you have provided %d."\
+        -:   86:        , (int)gridInfoRead.nDensities, par->numDensities);
+    #####:   87:      bail_out(message);
+call    0 never executed
+        -:   88:    }
+    #####:   89:exit(1);
+call    0 never executed
+        -:   90:  }
+        -:   91:
+    #####:   92:  if(par->nSolveItersDone>0 && (par->init_lte || par->lte_only)){
+branch  0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+    #####:   93:    if(!silent)
+branch  0 never executed
+branch  1 never executed
+    #####:   94:      warning("Your choice of LTE calculation will erase the RTE solution you read from file.");
+call    0 never executed
+        -:   95:  }
+        -:   96:
+    #####:   97:  if(allBitsSet(par->dataFlags, DS_mask_populations) && par->nSolveItersDone<=0){
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+branch  3 never executed
+branch  4 never executed
+    #####:   98:    if(!silent)
+branch  0 never executed
+branch  1 never executed
+    #####:   99:      bail_out("Populations were read but par->nSolveItersDone<=0.");
+call    0 never executed
+    #####:  100:exit(1);
+call    0 never executed
+        -:  101:  }
+    #####:  102:}
+        -:  103:
+        -:  104:/*....................................................................*/
+        -:  105:void
+function readGridWrapper called 0 returned 0% blocks executed 0%
+    #####:  106:readGridWrapper(configInfo *par, struct grid **gp, char ***collPartNames, int *numCollPartRead){
+        -:  107:
+        -:  108:  const int numDesiredKwds=3;
+    #####:  109:  struct keywordType *desiredKwds=malloc(sizeof(struct keywordType)*numDesiredKwds);
+        -:  110:  int i,status=0;
+        -:  111:  struct gridInfoType gridInfoRead;
+        -:  112:
+        -:  113://   I removed the unused function readGrid()
+        -:  114:
+    #####:  115:  par->radius          = desiredKwds[0].doubleValue;
+    #####:  116:  par->minScale        = desiredKwds[1].doubleValue;
+    #####:  117:  par->nSolveItersDone = desiredKwds[2].intValue;
+        -:  118:
+    #####:  119:  par->radiusSqu   = par->radius*par->radius;
+    #####:  120:  par->minScaleSqu = par->minScale*par->minScale;
+        -:  121:
+    #####:  122:  sanityCheckOfRead(status, par, gridInfoRead);
+call    0 never executed
+        -:  123:
+        -:  124:/**** Ideally we should also have a test on nACoeffs.
+        -:  125:
+        -:  126:**** Ideally we should also have a test on the mols entries - at some later time after we have read the corresponding values from the moldata files?
+        -:  127:*/
+    #####:  128:}
+        -:  129:
+        -:  130:/*....................................................................*/
+        -:  131:void
+function dumpGrid called 0 returned 0% blocks executed 0%
+    #####:  132:dumpGrid(configInfo *par, struct grid *g){
+       1*:  133:  if(par->gridfile) write_VTK_unstructured_Points(par, g);
+call    0 returned 100%
+branch  1 never executed
+branch  2 never executed
+call    3 never executed
+    #####:  134:}
+        -:  135:
+        -:  136:/*....................................................................*/
+function pointEvaluation called 0 returned 0% blocks executed 0%
+    #####:  137:int pointEvaluation(configInfo *par, const double uniformRandom, double *r){
+        -:  138:  double fracDensity;
+        -:  139:
+    #####:  140:  fracDensity = gridDensity(par, r);
+call    0 never executed
+        -:  141:
+     499*:  142:  if(uniformRandom < fracDensity) return 1;
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+branch  2 never executed
+branch  3 never executed
+    #####:  143:  else return 0;
+        -:  144:}
+        -:  145:
+        -:  146:/*....................................................................*/
+function randomsViaRejection called 1 returned 100% blocks executed 85%
+        1:  147:void randomsViaRejection(configInfo *par, const unsigned int desiredNumPoints, gsl_rng *randGen\
+        -:  148:  , double (*outRandLocations)[DIM]){
+        -:  149:
+        -:  150:  double lograd; /* The logarithm of the model radius. */
+        -:  151:  double logmin; /* Logarithm of par->minScale. */
+        -:  152:  double r,theta,phi,sinPhi,z,semiradius,progFraction;
+        -:  153:  double uniformRandom;
+        -:  154:  int j,di;
+        -:  155:  unsigned int i_u;
+        -:  156:  int pointIsAccepted;
+        -:  157:  double x[DIM];
+        -:  158:  const int maxNumAttempts=1000;
+        -:  159:  int numRandomsThisPoint,numSecondRandoms=0;
+        -:  160:  char errStr[STR_LEN_0];
+        -:  161:
+        1:  162:  lograd=log10(par->radius);
+        1:  163:  logmin=log10(par->minScale);
+        -:  164:  
+        -:  165:   //Forcing the smallest grid point radius to be equal to par->minScale
+        1:  166:   x[0]=0.0;
+        1:  167:   x[1]=0.0;
+        1:  168:   x[2]=par->minScale;
+        4:  169:   for(di=0;di<DIM;di++)
+branch  0 taken 75%
+branch  1 taken 25% (fallthrough)
+        3:  170:      outRandLocations[0][di]=x[di];
+        -:  171:   progFraction = 0.0/((double)desiredNumPoints-1);
+        -:  172:   //if(!silent) progressbar(progFraction, 4);
+        -:  173:
+        -:  174:
+        -:  175:  /* Sample pIntensity number of points */
+      500:  176:  for(i_u=1;i_u<desiredNumPoints;i_u++){
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+        -:  177:    pointIsAccepted=0;
+        -:  178:    numRandomsThisPoint=0;
+        -:  179:    do{
+      499:  180:      uniformRandom=gsl_rng_uniform(randGen);
+call    0 returned 100%
+        -:  181:
+      499:  182:      if(numRandomsThisPoint==1)
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  183:        numSecondRandoms++;
+      499:  184:      numRandomsThisPoint++;
+        -:  185:
+        -:  186:      /* Pick a point and check if we like it or not */
+        -:  187:      j=0;
+      998:  188:      while(!pointIsAccepted && j<maxNumAttempts){
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+        -:  189:
+      499:  190:          r=pow(10,logmin+gsl_rng_uniform(randGen)*(lograd-logmin));
+call    0 returned 100%
+      499:  191:          x[0]=0.0;
+      499:  192:          x[1]=0.0;
+        -:  193:          if(DIM==3)
+      499:  194:            x[2]=r;
+call    0 returned 100%
+        -:  195:        pointIsAccepted = pointEvaluation(par, uniformRandom, x);
+      499:  196:        j++;
+        -:  197:      }
+      499:  198:    } while(!pointIsAccepted);
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+        -:  199:    /* Now pointEvaluation has decided that we like the point */
+        -:  200:
+     1996:  201:    for(di=0;di<DIM;di++)
+branch  0 taken 75%
+branch  1 taken 25% (fallthrough)
+     1497:  202:      outRandLocations[i_u][di]=x[di];
+        -:  203:
+        -:  204:    //progFraction = (double)i_u/((double)desiredNumPoints-1);
+        -:  205:    //if(!silent) progressbar(progFraction, 4);
+        -:  206:  }
+        -:  207:  
+        1:  208:  if(!silent && numSecondRandoms>0){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+branch  2 taken 0% (fallthrough)
+branch  3 taken 100%
+    #####:  209:    snprintf(errStr, STR_LEN_0, ">1 random point needed for %d grid points out of %u.", numSecondRandoms, desiredNumPoints);
+    #####:  210:    warning(errStr);
+call    0 never executed
+        -:  211:  }
+        1:  212:}
+        -:  213:
+        -:  214:
+        -:  215:/*....................................................................*/
+        -:  216:void
+function readOrBuildGrid called 1 returned 100% blocks executed 63%
+        1:  217:readOrBuildGrid(configInfo *par, struct grid **gp){
+        1:  218:  const gsl_rng_type *ranNumGenType = gsl_rng_ranlxs2;
+        1:  219:  int i,j,k,di,si,numCollPartRead=0;
+        -:  220:  double theta,semiradius,z,dummyT[2],dummyScalar;
+        -:  221:  double *outRandDensities=NULL,*dummyPointer=NULL,x[DIM];
+        -:  222:  double (*outRandLocations)[DIM]=NULL;
+        -:  223:  gsl_rng *randGen;
+        -:  224:  struct cell *dc=NULL; /* Not used at present. */
+        -:  225:  unsigned long numCells;
+        1:  226:  char **collPartNames=NULL,message[STR_LEN_0];
+        -:  227:
+        1:  228:  par->dataFlags = 0;
+        1:  229:  if(par->gridInFile!=NULL){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  230:    readGridWrapper(par, gp, &collPartNames, &numCollPartRead);
+call    0 never executed
+        -:  231:  } /* End of read grid file. Whether and what we subsequently calculate will depend on the value of par->dataStageI returned. */
+        -:  232:
+        -:  233:  /* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        -:  234:Check for the existence of any mandatory functions we have not supplied grid values for.
+        -:  235:
+        -:  236:Note that we need density and temperature values whether par->doMolCalcs or not.
+        -:  237:  */
+        1:  238:  if(!allBitsSet(par->dataFlags, DS_mask_density)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  239:    if(bitIsSet(defaultFuncFlags, USERFUNC_density)){
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+    #####:  240:      if(!silent) bail_out("You need to supply a density() function.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  241:exit(1);
+call    0 never executed
+        -:  242:    }
+        -:  243:  }
+        -:  244:
+        1:  245:  if(!allBitsSet(par->dataFlags, DS_mask_temperatures)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  246:    if(bitIsSet(defaultFuncFlags, USERFUNC_temperature)){
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+    #####:  247:      if(!silent) bail_out("You need to supply a temperature() function.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  248:exit(1);
+call    0 never executed
+        -:  249:    }
+        -:  250:  }
+        -:  251:
+        1:  252:  par->useAbun = 1; /* This will remain so if the abun values have been read from file. */
+        1:  253:  if(par->doMolCalcs){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        1:  254:    if(!allBitsSet(par->dataFlags, DS_mask_abundance)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  255:      if(bitIsSet(defaultFuncFlags, USERFUNC_abundance)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  256:        if(bitIsSet(defaultFuncFlags, USERFUNC_molNumDensity)){
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+    #####:  257:          if(!silent) bail_out("You must provide either an abundance() or a molNumDensity() function.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  258:exit(1);
+call    0 never executed
+        -:  259:        }
+        -:  260:
+        1:  261:        par->useAbun = 0;
+        -:  262:
+        -:  263:      }else{
+    #####:  264:        if(!bitIsSet(defaultFuncFlags, USERFUNC_molNumDensity)){
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:  265:          if(!silent) warning("abundance() function takes precendence, molNumDensity() ignored.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+        -:  266:        }
+        -:  267:
+    #####:  268:        par->useAbun = 1;
+        -:  269:      }
+        -:  270:    }
+        -:  271:
+        1:  272:    if(!allBitsSet(par->dataFlags, DS_mask_turb_doppler)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  273:      if(bitIsSet(defaultFuncFlags, USERFUNC_doppler)){
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+    #####:  274:        if(!silent) bail_out("You need to supply a doppler() function.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  275:exit(1);
+call    0 never executed
+        -:  276:      }
+        -:  277:    }
+        -:  278:
+        1:  279:    if(!allBitsSet(par->dataFlags, DS_mask_velocity)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  280:      if(bitIsSet(defaultFuncFlags, USERFUNC_velocity)){
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+    #####:  281:        if(!silent) bail_out("You need to supply a velocity() function.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  282:exit(1);
+call    0 never executed
+        -:  283:      }
+        -:  284:    }
+        -:  285:
+        1:  286:    if(!allBitsSet(par->dataFlags, DS_mask_ACOEFF)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  287:      if(bitIsSet(defaultFuncFlags, USERFUNC_velocity)){
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+    #####:  288:        if(!silent) warning("There were no edge velocities in the file, and you haven't supplied a velocity() function.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+        -:  289:      }
+        -:  290:    }
+        -:  291:
+        -:  292://    if(!par->restart && !(par->lte_only && !allBitsSet(par->dataFlags, DS_mask_populations))){
+       1*:  293:    if(!par->lte_only && allBitsSet(par->dataFlags, DS_mask_populations) && par->doSolveRTE){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+call    2 never executed
+branch  3 never executed
+branch  4 never executed
+branch  5 never executed
+branch  6 never executed
+        -:  294:      /*
+        -:  295:I don't understand the basis of the commented-out variant (e.g. we certainly won't arrive at this point if par->restart==TRUE), thus I can't be certain if it was right to modify it or not.
+        -:  296:      */
+    #####:  297:      if(par->nSolveIters<=par->nSolveItersDone){
+branch  0 never executed
+branch  1 never executed
+    #####:  298:        if(!silent){
+branch  0 never executed
+branch  1 never executed
+    #####:  299:          snprintf(message, STR_LEN_0, "par->nSolveIters %d must be > par->nSolveItersDone %d", par->nSolveIters, par->nSolveItersDone);
+    #####:  300:          bail_out(message);
+call    0 never executed
+        -:  301:        }
+    #####:  302:exit(1);
+call    0 never executed
+        -:  303:      }
+        -:  304:    }
+        -:  305:  } /* End if par->doMolCalcs */
+        -:  306:
+        -:  307:  /* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        -:  308:Generate the grid point locations.
+        -:  309:  */
+        1:  310:  if(!anyBitSet(par->dataFlags, DS_mask_x)){ /* This should only happen if we did not read a file. Generate the grid point locations. */
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  311:    mallocAndSetDefaultGrid(gp, (size_t)par->ncell, (size_t)par->nSpecies);
+call    0 returned 100%
+        -:  312:
+        1:  313:    outRandDensities = malloc(sizeof(double   )*par->pIntensity); /* Not used at present; and in fact they are not useful outside this routine, because they are not the values of the physical density at that point, just what densityFunc3D() returns, which is not necessarily the same thing. */
+        1:  314:    outRandLocations = malloc(sizeof(*outRandLocations)*par->pIntensity);
+        -:  315:
+        1:  316:    randGen = gsl_rng_alloc(ranNumGenType); /* Random number generator */
+call    0 returned 100%
+        1:  317:    if(fixRandomSeeds)
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        1:  318:      gsl_rng_set(randGen,342971);
+call    0 returned 100%
+        -:  319:    else
+    #####:  320:      gsl_rng_set(randGen,time(0));
+call    0 never executed
+call    1 never executed
+        -:  321:
+        1:  322:    if(par->samplingAlgorithm==0){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        1:  323:      randomsViaRejection(par, (unsigned int)par->pIntensity, randGen, outRandLocations);
+call    0 returned 100%
+        -:  324:
+        -:  325:    }  else {
+    #####:  326:      if(!silent) bail_out("Unrecognized sampling algorithm.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  327:exit(1);
+call    0 never executed
+        -:  328:    }
+        -:  329:
+      501:  330:    for(k=0;k<par->pIntensity;k++){
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+        -:  331:      /* Assign values to the k'th grid point */
+      500:  332:      (*gp)[k].id=k;
+      500:  333:      (*gp)[k].x[0]=outRandLocations[k][0];
+      500:  334:      (*gp)[k].x[1]=outRandLocations[k][1];
+      500:  335:      if(DIM==3) (*gp)[k].x[2]=outRandLocations[k][2];
+      500:  336:      (*gp)[k].sink=0;
+        -:  337:    }
+        -:  338:
+        1:  339:    free(outRandLocations);
+        -:  340:    free(outRandDensities);
+        1:  341:    gsl_rng_free(randGen);
+call    0 returned 100%
+        -:  342:
+        1:  343:    par->dataFlags |= DS_mask_1;
+        -:  344:  }
+        -:  345:  
+      501:  346:  for (i = 0;i < par->pIntensity;i++) {
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+      500:  347:    (*gp)[i].radius = sqrt((*gp)[i].x[0] * (*gp)[i].x[0] + (*gp)[i].x[1] * (*gp)[i].x[1] + (*gp)[i].x[2] * (*gp)[i].x[2]);
+        -:  348:  }
+        -:  349:
+        -:  350:
+        1:  351:  if(onlyBitsSet(par->dataFlags, DS_mask_1)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==1. */
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  352:    writeGridIfRequired(par, *gp, NULL, 1);
+call    0 returned 100%
+        -:  353:
+        -:  354:  /* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+        -:  355:Generate the remaining values if needed. **Note** that we check a few of them to make sure the user has set the appropriate values.
+        -:  356:  */
+        1:  357:   if(!allBitsSet(par->dataFlags, DS_mask_neighbours)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        -:  358:
+        1:  359:     par->dataFlags |= DS_mask_neighbours;
+        -:  360:   }
+        -:  361:
+        1:  362:  if(onlyBitsSet(par->dataFlags, DS_mask_2)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==2. */
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  363:    writeGridIfRequired(par, *gp, NULL, 2);
+call    0 returned 100%
+        -:  364:
+        1:  365:  if(!allBitsSet(par->dataFlags, DS_mask_density)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        -:  366:    /* Note that we have checked in parseInput() that the user has defined sufficient values. */
+      501:  367:    for(i=0;i<par->ncell; i++)
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+      500:  368:      (*gp)[i].dens = malloc(sizeof(double)*par->numDensities);
+      501:  369:    for(i=0;i<par->pIntensity;i++)
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+      500:  370:      density((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].dens);
+call    0 returned 100%
+       1*:  371:    for(i=par->pIntensity;i<par->ncell;i++){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  372:      for(j=0;j<par->numDensities;j++)
+branch  0 never executed
+branch  1 never executed
+    #####:  373:        (*gp)[i].dens[j]=EPS; //************** what is the low but non zero value for? Probably to make sure no ills happen in case something gets divided by this?
+        -:  374:    }
+        -:  375:
+        1:  376:    par->dataFlags |= DS_mask_density;
+        -:  377:  }
+        -:  378:
+        1:  379:  if(!allBitsSet(par->dataFlags, DS_mask_temperatures)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  380:    if(!bitIsSet(defaultFuncFlags, USERFUNC_temperature)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        -:  381:      /* Check that the user has defined gas temperatures at least (if the dust temp was not defined, it is taken to be the same as the gas temp).
+        -:  382:      */
+        1:  383:      dummyT[0] = -1.0; /* a non-physical temperature. */
+        1:  384:      temperature(0.0,0.0,0.0, dummyT);
+call    0 returned 100%
+        1:  385:      if(dummyT[0]<0.0){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+    #####:  386:        if(!silent) bail_out("You need to set gas temperatures in your model.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  387:exit(1);
+call    0 never executed
+        -:  388:      }
+        -:  389:    }
+        -:  390:
+      501:  391:    for(i=0;i<par->pIntensity;i++)
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+      500:  392:      temperature((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].t);
+call    0 returned 100%
+       1*:  393:    for(i=par->pIntensity;i<par->ncell;i++){
+branch  0 taken 0%
+branch  1 taken 100% (fallthrough)
+    #####:  394:      (*gp)[i].t[0]=par->tcmb;
+    #####:  395:      (*gp)[i].t[1]=par->tcmb;
+        -:  396:    }
+        -:  397:
+        1:  398:    par->dataFlags |= DS_mask_temperatures;
+        -:  399:  }
+        -:  400:
+        1:  401:  if(onlyBitsSet(par->dataFlags, DS_mask_3)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==3. */
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  402:    writeGridIfRequired(par, *gp, NULL, 3); /* Sufficient information for a continuum image. */
+call    0 returned 100%
+        -:  403:
+        1:  404:  if(par->doMolCalcs){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        1:  405:    if(!allBitsSet(par->dataFlags, DS_mask_abundance)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        -:  406:      /* Means we didn't read abun values from file, we have to calculate them via the user-supplied fuction. */
+        1:  407:      dummyPointer = malloc(sizeof(*dummyPointer)*par->nSpecies);
+        1:  408:      if(par->useAbun){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  409:        if(!bitIsSet(defaultFuncFlags, USERFUNC_abundance)){
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+        -:  410:          /* Check that the user set reasonable values for all species.
+        -:  411:          */
+    #####:  412:          for(si=0;si<par->nSpecies;si++)
+branch  0 never executed
+branch  1 never executed
+    #####:  413:            dummyPointer[si] = -1.0; /* non-physical values. */
+    #####:  414:          abundance(0.0,0.0,0.0, dummyPointer);
+call    0 never executed
+    #####:  415:          for(si=0;si<par->nSpecies;si++){
+branch  0 never executed
+branch  1 never executed
+    #####:  416:            if(dummyPointer[si]<0.0){
+branch  0 never executed
+branch  1 never executed
+    #####:  417:              if(!silent) bail_out("You need to set abundances for all species in your model.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  418:exit(1);
+call    0 never executed
+        -:  419:            }
+        -:  420:          }
+        -:  421:        }
+        -:  422:
+    #####:  423:        for(i=0;i<par->pIntensity;i++){
+branch  0 never executed
+branch  1 never executed
+    #####:  424:          abundance((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],dummyPointer);
+call    0 never executed
+    #####:  425:          for(si=0;si<par->nSpecies;si++)
+branch  0 never executed
+branch  1 never executed
+    #####:  426:            (*gp)[i].mol[si].abun = dummyPointer[si];
+        -:  427:        }
+    #####:  428:        for(i=par->pIntensity;i<par->ncell;i++){
+branch  0 never executed
+branch  1 never executed
+    #####:  429:          for(si=0;si<par->nSpecies;si++)
+branch  0 never executed
+branch  1 never executed
+    #####:  430:            (*gp)[i].mol[si].abun = 0.0;
+        -:  431:        }
+        -:  432:      }else{
+        1:  433:        if(!bitIsSet(defaultFuncFlags, USERFUNC_molNumDensity)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        -:  434:          /* Check that the user set reasonable values for all species.
+        -:  435:          */
+        2:  436:          for(si=0;si<par->nSpecies;si++)
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+        1:  437:            dummyPointer[si] = -1.0; /* non-physical values. */
+        1:  438:          molNumDensity(0.0,0.0,0.0, dummyPointer);
+call    0 returned 100%
+        2:  439:          for(si=0;si<par->nSpecies;si++){
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+        1:  440:            if(dummyPointer[si]<0.0){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  441:              if(!silent) bail_out("You need to set molNumDensity for all species in your model.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  442:exit(1);
+call    0 never executed
+        -:  443:            }
+        -:  444:          }
+        -:  445:        }
+        -:  446:
+      501:  447:        for(i=0;i<par->pIntensity;i++){
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+      500:  448:          molNumDensity((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],dummyPointer);
+call    0 returned 100%
+     1000:  449:          for(si=0;si<par->nSpecies;si++)
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+      500:  450:            (*gp)[i].mol[si].nmol = dummyPointer[si];
+        -:  451:        }
+       1*:  452:        for(i=par->pIntensity;i<par->ncell;i++){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:  453:          for(si=0;si<par->nSpecies;si++)
+branch  0 never executed
+branch  1 never executed
+    #####:  454:            (*gp)[i].mol[si].nmol = 0.0;
+        -:  455:        }
+        -:  456:      }
+        1:  457:      free(dummyPointer);
+        -:  458:
+        1:  459:      par->dataFlags |= DS_mask_abundance;
+        -:  460:    }
+        -:  461:
+        1:  462:    if(!allBitsSet(par->dataFlags, DS_mask_turb_doppler)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  463:      if(!bitIsSet(defaultFuncFlags, USERFUNC_doppler)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        -:  464:        /* Check that the user set reasonable values.
+        -:  465:        */
+        1:  466:        dummyScalar = -1.0; /* a non-physical value. */
+        1:  467:        doppler(0.0,0.0,0.0, &dummyScalar);
+call    0 returned 100%
+        1:  468:        if(dummyScalar<0.0){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+    #####:  469:          if(!silent) bail_out("You need to set gas turbulence doppler values in your model.");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:  470:exit(1);
+call    0 never executed
+        -:  471:        }
+        -:  472:      }
+        -:  473:
+      501:  474:      for(i=0;i<par->pIntensity;i++)
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+      500:  475:        doppler((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],&(*gp)[i].dopb_turb); 
+call    0 returned 100%
+       1*:  476:      for(i=par->pIntensity;i<par->ncell;i++)
+branch  0 taken 0%
+branch  1 taken 100% (fallthrough)
+    #####:  477:        (*gp)[i].dopb_turb=0.;
+        -:  478:
+        1:  479:      par->dataFlags |= DS_mask_turb_doppler;
+        -:  480:    }
+        -:  481:
+        1:  482:    if(!allBitsSet(par->dataFlags, DS_mask_velocity)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        -:  483:      /* There seems to be no way we can test if the user has set velocities properly because -ve component values are of course possible. */
+      501:  484:      for(i=0;i<par->pIntensity;i++)
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+      500:  485:        velocity((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].vel);
+call    0 returned 100%
+        -:  486:
+        1:  487:      par->dataFlags |= DS_mask_velocity;
+        -:  488:    }
+        -:  489:
+        1:  490:    if(!allBitsSet(par->dataFlags, DS_mask_ACOEFF)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  491:      par->dataFlags |= DS_mask_ACOEFF;
+        -:  492:    }
+        -:  493:  } /* End if(par->doMolCalcs) */
+        -:  494:
+        1:  495:  if(!allBitsSet(par->dataFlags, DS_mask_magfield)){
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  496:    if(par->polarization){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        -:  497:      /* There seems to be no way we can test if the user has set B field values properly because -ve component values are of course possible. */
+    #####:  498:      for(i=0;i<par->pIntensity;i++)
+branch  0 never executed
+branch  1 never executed
+    #####:  499:        magfield((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].B);
+call    0 never executed
+        -:  500:
+    #####:  501:      par->dataFlags |= DS_mask_magfield;
+        -:  502:
+        -:  503:    }else{
+      501:  504:      for(i=0;i<par->pIntensity;i++){
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+      500:  505:        (*gp)[i].B[0]=0.0;
+      500:  506:        (*gp)[i].B[1]=0.0;
+      500:  507:        (*gp)[i].B[2]=0.0;
+        -:  508:      }
+        -:  509:    }
+        -:  510:
+       1*:  511:    for(i=par->pIntensity;i<par->ncell;i++){
+branch  0 taken 0%
+branch  1 taken 100% (fallthrough)
+    #####:  512:      (*gp)[i].B[0]=0.0;
+    #####:  513:      (*gp)[i].B[1]=0.0;
+    #####:  514:      (*gp)[i].B[2]=0.0;
+        -:  515:    }
+        -:  516:  }
+        -:  517:
+        1:  518:  if(onlyBitsSet(par->dataFlags & DS_mask_all_but_mag, DS_mask_4)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==4. */
+call    0 returned 100%
+branch  1 taken 100% (fallthrough)
+branch  2 taken 0%
+        1:  519:    writeGridIfRequired(par, *gp, NULL, 4);
+call    0 returned 100%
+        -:  520:
+        1:  521:  dumpGrid(par,*gp);
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        -:  522:  free(dc);
+        -:  523:
+        1:  524:  freeArrayOfStrings(collPartNames, numCollPartRead);
+call    0 returned 100%
+        1:  525:}

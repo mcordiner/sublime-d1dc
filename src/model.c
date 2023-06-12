@@ -22,6 +22,7 @@ input(inputPars *par, image *img){
   par->tkin = 50;
   par->rnuc = 2.5e2;
   par->abund = 0.001;
+  par->dopplerb = 0;
    
   par->useEP       = 0;
   par->Qwater       = 1e27;
@@ -33,7 +34,10 @@ input(inputPars *par, image *img){
   par->moldatfile[0]    = "data/moldat/hcn.dat";
   par->girdatfile[0]    = "data/girdat/g_hcn_1au.dat";
   par->girScale = 1.0;
-  par->lte_only         = 0;
+  par->lte_only         = 1;
+  par->useCKCdata		= 1;
+  par->CKCTeFile        = "na";
+  par->CKCneFile        = "na";
 
   par->outputfile = "output/hcn.pop";
   par->gridfile         = "output/grid.vtk";

@@ -1,0 +1,160 @@
+        -:    0:Source:src/sourcefunc.c
+        -:    0:Graph:src/sourcefunc.gcno
+        -:    0:Data:src/sourcefunc.gcda
+        -:    0:Runs:1
+        -:    1:/*
+        -:    2: *  sourcefunc.c
+        -:    3: *  This file is part of LIME, the versatile line modeling engine
+        -:    4: *
+        -:    5: *  Copyright (C) 2006-2014 Christian Brinch
+        -:    6: *  Copyright (C) 2015-2017 The LIME development team
+        -:    7: *
+        -:    8: */
+        -:    9:
+        -:   10:#include "lime.h"
+        -:   11:
+        -:   12:/*....................................................................*/
+function stokesangles called 0 returned 0% blocks executed 0%
+    #####:   13:void stokesangles(double B[3], double (*rotMat)[3], double *trigFuncs){
+        -:   14:  /*
+        -:   15:This function rotates the B-field vector from the model frame to the observer frame, then calculates and returns some useful values which will in function sourceFunc_pol() make it easy to obtain the Stokes parameters of polarized submillimetre dust emission. (For an explanation of the reasons for choosing the particular quantities we do, see the comment in that function.)
+        -:   16:
+        -:   17:Whenever one deals with polarized light, it is important to specify the coordinate systems carefully. In LIME the observer frame is defined such that, when the observer looks at the sky, the frame axes appear as follows:
+        -:   18:
+        -:   19:	       ^ Y
+        -:   20:	       |
+        -:   21:	       |
+        -:   22:	       |
+        -:   23:	<------+
+        -:   24:	X
+        -:   25:
+        -:   26:The Z axis points into the page, away from the observer. Comparing this to normal astronomical coordinates one can see that X is in the direction of +ve right ascension and Y in the direction of +ve declination.
+        -:   27:
+        -:   28:The IAU-recommended coordinate frame for expressing polarized light however is
+        -:   29:
+        -:   30:	       ^ X
+        -:   31:	       |
+        -:   32:	       |
+        -:   33:	       |
+        -:   34:	<------O
+        -:   35:	Y
+        -:   36:
+        -:   37:with Z now emerging from the page (i.e pointing in the direction of propagation, towards the observer).
+        -:   38:
+        -:   39:A vector defined in the LIME model basis can be converted to the observer basis by post-multiplying it with the image rotation matrix rotMat. (Another way of putting this is that the rows of rotMat are the unit vectors of the model coordinate frame expressed in the observer basis.) For the B field, this is expressed symbolically as
+        -:   40:
+        -:   41:	Bp^T = B^T * rotMat
+        -:   42:
+        -:   43:where ^T denotes transpose.
+        -:   44:
+        -:   45:Note that this is called from within a multi-threaded block.
+        -:   46:  */
+        -:   47:  const int nDim=3;
+        -:   48:  double Bp[nDim];
+        -:   49:  int i, j;
+        -:   50:  double BxySquared, BSquared;
+        -:   51:	
+        -:   52:  /* Rotate B to the observer frame.
+        -:   53:  */
+    #####:   54:  for(i=0;i<nDim;i++){
+branch  0 never executed
+branch  1 never executed
+    #####:   55:    Bp[i] = 0.0;
+    #####:   56:    for(j=0;j<nDim;j++)
+branch  0 never executed
+branch  1 never executed
+    #####:   57:      Bp[i] += B[j]*rotMat[j][i];
+        -:   58:  }
+        -:   59:
+        -:   60:  /* Square of length of B projected into the observer XY plane:
+        -:   61:  */
+    #####:   62:  BxySquared = Bp[0]*Bp[0] + Bp[1]*Bp[1];
+    #####:   63:  if(BxySquared==0.0){
+branch  0 never executed
+branch  1 never executed
+    #####:   64:    trigFuncs[0] = 0.0;
+    #####:   65:    trigFuncs[1] = 0.0;
+    #####:   66:    trigFuncs[2] = 0.0;
+    #####:   67:    return;
+        -:   68:  }
+        -:   69:
+    #####:   70:  BSquared = BxySquared + Bp[2]*Bp[2];
+    #####:   71:  trigFuncs[0] = BxySquared / BSquared; /* cos^2 of the angle which Bp makes to the XY plane */
+        -:   72:
+        -:   73:  /* cos(2*phi) = cos^2(phi) - sin^2(phi) */
+    #####:   74:  trigFuncs[1] = (Bp[0]*Bp[0] - Bp[1]*Bp[1])/BxySquared;
+        -:   75:
+        -:   76:  /* sin(2*phi) = 2*cos(phi)*sin(phi) */
+    #####:   77:  trigFuncs[2] = 2.0*Bp[0]*Bp[1]/BxySquared;
+        -:   78:}
+        -:   79:
+        -:   80:/*....................................................................*/
+function sourceFunc_line called 4874700 returned 100% blocks executed 100%
+  4874700:   81:void sourceFunc_line(const molData *md, const double vfac, const struct populations *mol\
+        -:   82:  , const int lineI, double *jnu, double *alpha){
+        -:   83:  /*
+        -:   84:Note that this is called from within a multi-threaded block.
+        -:   85:  */
+        -:   86:
+        -:   87:  /* Line part:		j_nu = v*consts*1/b*rho*n_i*A_ij */
+  4874700:   88:  *jnu   += vfac*HPIP*mol->specNumDens[md->lau[lineI]]*md->aeinst[lineI];
+        -:   89:
+        -:   90:  /* Line part: alpha_nu = v*const*1/b*rho*(n_j*B_ij-n_i*B_ji) */
+  4874700:   91:  *alpha += vfac*HPIP*(mol->specNumDens[md->lal[lineI]]*md->beinstl[lineI]
+  4874700:   92:                      -mol->specNumDens[md->lau[lineI]]*md->beinstu[lineI]);
+        -:   93:
+  4874700:   94:  return;
+        -:   95:}
+        -:   96:
+        -:   97:/*....................................................................*/
+function sourceFunc_cont called 48747 returned 100% blocks executed 100%
+    48747:   98:void sourceFunc_cont(const struct continuumLine cont, double *jnu\
+        -:   99:  , double *alpha){
+        -:  100:  /*
+        -:  101:Note that this is called from within a multi-threaded block.
+        -:  102:  */
+        -:  103:
+        -:  104:  /* Emission */
+        -:  105:  /* Continuum part:	j_nu = T_dust * kappa_nu */
+    48747:  106:  *jnu   += cont.dust*cont.knu;
+        -:  107:
+        -:  108:  /* Absorption */
+        -:  109:  /* Continuum part: Dust opacity */
+    48747:  110:  *alpha += cont.knu;
+        -:  111:
+    48747:  112:  return;
+        -:  113:}
+        -:  114:
+        -:  115:/*....................................................................*/
+function sourceFunc_pol called 0 returned 0% blocks executed 0%
+    #####:  116:void sourceFunc_pol(double B[3], const struct continuumLine cont\
+        -:  117:  , double (*rotMat)[3], double *snu, double *alpha){
+        -:  118:  /*
+        -:  119:The theory behind this was originally drawn from
+        -:  120:
+        -:  121:  Padovani, M. et al, A&A 543, A16 (2012)
+        -:  122:
+        -:  123:and references therein. However, as pointed out in Ade, P. A. R. et al, A&A 576, A105 (2015), Padovani's expression for sigma2 is too small by a factor of 2. This correction has been propagated here.
+        -:  124:
+        -:  125:Note that this is called from within a multi-threaded block.
+        -:  126:  */
+        -:  127:
+        -:  128:  double jnu, trigFuncs[3];
+        -:  129:  const double max_polarization = 0.15;
+        -:  130:
+    #####:  131:  stokesangles(B, rotMat, trigFuncs);
+call    0 never executed
+        -:  132:
+        -:  133:  /* Emission */
+        -:  134:  /* Continuum part:	j_nu = rho_dust * kappa_nu */
+    #####:  135:  jnu = cont.dust*cont.knu;
+    #####:  136:  snu[0] = jnu*(1.0 - max_polarization*(trigFuncs[0] - (2.0/3.0)));
+    #####:  137:  snu[1] = jnu*max_polarization*trigFuncs[1]*trigFuncs[0];
+    #####:  138:  snu[2] = jnu*max_polarization*trigFuncs[2]*trigFuncs[0];
+        -:  139:  
+        -:  140:  /* Absorption */
+        -:  141:  /* Continuum part: Dust opacity */
+    #####:  142:  *alpha = cont.knu;
+    #####:  143:}
+        -:  144:
+        -:  145:

@@ -708,13 +708,17 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, configInfo *par, int
   //It would be easy enough to add others, but the partner production rates would be needed as an input
   //parameter, like par->Qpartner, and their temperatures can be given as tkin[n] from temperature()
   
-//   FILE *fPtr; //For debugging only
-//   char *filePath = "elec_data.txt";
   
   if (par->useCKCdata == 1 || par->useCKCdata == 2) {
 		/* Interpolating from the CKC code */
 		Te = get_Telec (CKCdata, par->Qwater, par->rHelio, radius);
 		ne = get_nelec (CKCdata, par->Qwater, par->rHelio, radius);
+		//Below is for debugging only
+		FILE *fPtr; 
+		char *filePath = "output/elec_data.txt";
+		fPtr = fopen(filePath, "a");
+		fprintf(fPtr, "%12.3e %12.3e %12.3e\n", radius, Te, ne);
+		fclose(fPtr);
 	}
 	else {
 		/*Formalism of Zakharov et al. (2007)*/
@@ -722,10 +726,6 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, configInfo *par, int
 	   ne = nelec(radius,par->Qwater,vexp,Te,par->rHelio,par->xne);
 	}
 	
-  // fPtr = fopen(filePath, "a");
-//   fprintf(fPtr, "%12.3e %12.3e %12.3e\n", radius, Te, ne);
-//   fclose(fPtr);
-
 
    
    for(iline=0;iline<md[ispec].nline;iline++){

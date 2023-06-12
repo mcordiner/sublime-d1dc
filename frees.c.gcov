@@ -1,0 +1,260 @@
+        -:    0:Source:src/frees.c
+        -:    0:Graph:src/frees.gcno
+        -:    0:Data:src/frees.gcda
+        -:    0:Runs:1
+        -:    1:/*
+        -:    2: *  frees.c
+        -:    3: *  This file is part of LIME, the versatile line modeling engine
+        -:    4: *
+        -:    5: *  Copyright (C) 2006-2014 Christian Brinch
+        -:    6: *  Copyright (C) 2015-2017 The LIME development team
+        -:    7: *
+        -:    8: */
+        -:    9:
+        -:   10:#include "lime.h"
+        -:   11:
+        -:   12:/*....................................................................*/
+        -:   13:void
+function freeArrayOfStrings called 1 returned 100% blocks executed 50%
+        1:   14:freeArrayOfStrings(char **arrayOfStrings, const int numStrings){
+        -:   15:  int i;
+        -:   16:
+        1:   17:  if(arrayOfStrings==NULL)
+branch  0 taken 0%
+branch  1 taken 100%
+        -:   18:return;
+        -:   19:
+    #####:   20:  for(i=0;i<numStrings;i++){
+branch  0 never executed
+branch  1 never executed
+    #####:   21:    free(arrayOfStrings[i]);
+        -:   22:  }
+        -:   23:}
+        -:   24:
+        -:   25:/*....................................................................*/
+        -:   26:void
+function freeConfigInfo called 1 returned 100% blocks executed 100%
+        1:   27:freeConfigInfo(configInfo *par){
+        -:   28:  int i;
+        -:   29:
+        1:   30:  free(par->nMolWeights);
+        1:   31:  free(par->collPartMolWeights);
+        1:   32:  free(par->collPartIds);
+        1:   33:  free(par->outputfile);
+        1:   34:  free(par->binoutputfile);
+        1:   35:  free(par->gridfile);
+        1:   36:  free(par->pregrid);
+        1:   37:  free(par->restart);
+        1:   38:  free(par->dust);
+        1:   39:  free(par->gridDensMaxValues);
+        1:   40:  free(par->gridDensMaxLoc);
+        1:   41:  free(par->gridInFile);
+        -:   42:
+        1:   43:  if(par->collPartNames!= NULL){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        2:   44:    for(i=0;i<par->numDensities;i++)
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+        1:   45:      free(par->collPartNames[i]);
+        1:   46:    free(par->collPartNames);
+        -:   47:  }
+        1:   48:  if(par->moldatfile!= NULL){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        2:   49:    for(i=0;i<par->nSpecies;i++)
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+        1:   50:      free(par->moldatfile[i]);
+        1:   51:    free(par->moldatfile);
+        -:   52:  }
+        1:   53:  if(par->girdatfile!= NULL){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        2:   54:    for(i=0;i<par->nSpecies;i++)
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+        1:   55:      free(par->girdatfile[i]);
+        1:   56:    free(par->girdatfile);
+        -:   57:  }
+        1:   58:  if(par->gridOutFiles!= NULL){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        6:   59:    for(i=0;i<NUM_GRID_STAGES;i++)
+branch  0 taken 83%
+branch  1 taken 17% (fallthrough)
+        5:   60:      free(par->gridOutFiles[i]);
+        1:   61:    free(par->gridOutFiles);
+        -:   62:  }
+        1:   63:}
+        -:   64:
+        -:   65:/*....................................................................*/
+        -:   66:void
+function freeGrid called 1 returned 100% blocks executed 100%
+        1:   67:freeGrid(const unsigned int numPoints, const unsigned short numSpecies\
+        -:   68:  , struct grid *gp){
+        -:   69:
+        -:   70:  unsigned int i_u;
+        -:   71:
+        1:   72:  if(gp != NULL){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+      501:   73:    for(i_u=0;i_u<numPoints;i_u++){
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+      500:   74:      free(gp[i_u].v1);
+      500:   75:      free(gp[i_u].v2);
+      500:   76:      free(gp[i_u].v3);
+      500:   77:      free(gp[i_u].dir);
+      500:   78:      free(gp[i_u].neigh);
+      500:   79:      free(gp[i_u].w);
+      500:   80:      free(gp[i_u].dens);
+      500:   81:      free(gp[i_u].ds);
+      500:   82:      freePopulation(numSpecies, gp[i_u].mol);
+call    0 returned 100%
+        -:   83:    }
+        1:   84:    free(gp);
+        -:   85:  }
+        1:   86:}
+        -:   87:
+        -:   88:/*....................................................................*/
+        -:   89:void
+function freeImgInfo called 1 returned 100% blocks executed 100%
+        1:   90:freeImgInfo(const int nImages, imageInfo *img){
+        -:   91:  int i,id;
+        -:   92:
+        1:   93:  if(img==NULL)
+branch  0 taken 100%
+branch  1 taken 0%
+        -:   94:return;
+        -:   95:
+        2:   96:  for(i=0;i<nImages;i++){
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+    65537:   97:    for(id=0;id<(img[i].pxls*img[i].pxls);id++){
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+    65536:   98:      free( img[i].pixel[id].intense );
+    65536:   99:      free( img[i].pixel[id].tau );
+        -:  100:    }
+        1:  101:    free(img[i].pixel);
+        1:  102:    free(img[i].filename);
+        1:  103:    free(img[i].imgunits);
+        -:  104:  }
+        1:  105:  free(img);
+        -:  106:}
+        -:  107:
+        -:  108:/*....................................................................*/
+        -:  109:void
+function freeInputPars called 1 returned 100% blocks executed 100%
+        1:  110:freeInputPars(inputPars *par){
+        1:  111:  free(par->collPartIds);
+        1:  112:  free(par->nMolWeights);
+        1:  113:  free(par->dustWeights);
+        1:  114:  free(par->collPartMolWeights);
+        1:  115:  free(par->moldatfile);
+        1:  116:  free(par->girdatfile);
+        1:  117:  free(par->collPartNames);
+        1:  118:  free(par->gridOutFiles);
+        1:  119:  free(par->gridDensMaxValues);
+        1:  120:  free(par->gridDensMaxLoc);
+        1:  121:}
+        -:  122:
+        -:  123:/*....................................................................*/
+        -:  124:void
+function freeMolData called 1 returned 100% blocks executed 100%
+        1:  125:freeMolData(const int nSpecies, molData *md){
+        -:  126:  int i,j;
+        1:  127:  if(md!= NULL){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        2:  128:    for(i=0;i<nSpecies;i++){
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+        1:  129:      if(md[i].part != NULL){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        2:  130:        for(j=0; j<md[i].npart; j++){
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+        1:  131:          free(md[i].part[j].down);
+        1:  132:          free(md[i].part[j].temp);
+        1:  133:          free(md[i].part[j].lcl);
+        1:  134:          free(md[i].part[j].lcu);
+        1:  135:          free(md[i].part[j].name);
+        -:  136:        }
+        1:  137:        free(md[i].part);
+        -:  138:      }
+        1:  139:      free(md[i].lal);
+        1:  140:      free(md[i].lau);
+        1:  141:      free(md[i].aeinst);
+        1:  142:      free(md[i].gir);
+        1:  143:      free(md[i].freq);
+        1:  144:      free(md[i].beinstu);
+        1:  145:      free(md[i].beinstl);
+        1:  146:      free(md[i].eterm);
+        1:  147:      free(md[i].gstat);
+        1:  148:      free(md[i].cmb);
+        -:  149:    }
+        1:  150:    free(md);
+        -:  151:  }
+        1:  152:}
+        -:  153:
+        -:  154:/*....................................................................*/
+        -:  155:void
+function freePopulation called 500 returned 100% blocks executed 100%
+      500:  156:freePopulation(const unsigned short numSpecies, struct populations *pop){
+      500:  157:  if(pop != NULL){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+        -:  158:    unsigned short i_s;
+     1000:  159:    for(i_s=0;i_s<numSpecies;i_s++){
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+      500:  160:      free(pop[i_s].pops);
+      500:  161:      free(pop[i_s].partner);
+      500:  162:      free(pop[i_s].specNumDens);
+      500:  163:      free(pop[i_s].cont);
+        -:  164:    }
+      500:  165:    free(pop);
+        -:  166:  }
+      500:  167:}
+        -:  168:
+        -:  169:/*....................................................................*/
+        -:  170:void
+function freeSomeGridFields called 1 returned 100% blocks executed 100%
+        1:  171:freeSomeGridFields(const unsigned int numPoints, const unsigned short numSpecies\
+        -:  172:  , struct grid *gp){
+        -:  173:
+        -:  174:  unsigned int i_u;
+        -:  175:  unsigned short i_s;
+        -:  176:
+        1:  177:  if(gp != NULL){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+      501:  178:    for(i_u=0;i_u<numPoints;i_u++){
+branch  0 taken 100%
+branch  1 taken 1% (fallthrough)
+      500:  179:      free(gp[i_u].w);
+      500:  180:      gp[i_u].w    = NULL;
+      500:  181:      free(gp[i_u].ds);
+      500:  182:      gp[i_u].ds   = NULL;
+        -:  183:
+      500:  184:      if(gp[i_u].mol != NULL){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 0%
+     1000:  185:        for(i_s=0;i_s<numSpecies;i_s++){
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+      500:  186:          free(gp[i_u].mol[i_s].pops);
+      500:  187:          gp[i_u].mol[i_s].pops = NULL;
+      500:  188:          free(gp[i_u].mol[i_s].partner);
+      500:  189:          gp[i_u].mol[i_s].partner = NULL;
+      500:  190:          free(gp[i_u].mol[i_s].cont);
+      500:  191:          gp[i_u].mol[i_s].cont = NULL;
+        -:  192:        }
+        -:  193:      }
+        -:  194:    }
+        -:  195:  }
+        1:  196:}
+        -:  197:

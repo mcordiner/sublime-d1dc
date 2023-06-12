@@ -14,7 +14,7 @@
 
 /* input parameters */
 typedef struct {
-  double beta,betamol,vexp,tkin,rnuc,abund; // Formerly magic numbers in model.c
+  double beta,betamol,vexp,tkin,rnuc,abund,dopplerb; // Formerly magic numbers in model.c
   double radius,minScale,tcmb,Qwater,rHelio,xne,colliScale,girScale,tNuc,*nMolWeights,*dustWeights;
   double (*gridDensMaxLoc)[DIM],*gridDensMaxValues,*collPartMolWeights;
   int sinkPoints,pIntensity,blend,*collPartIds,traceRayAlgorithm,samplingAlgorithm;

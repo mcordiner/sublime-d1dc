@@ -1,0 +1,258 @@
+        -:    0:Source:src/popsout.c
+        -:    0:Graph:src/popsout.gcno
+        -:    0:Data:src/popsout.gcda
+        -:    0:Runs:1
+        -:    1:/*
+        -:    2: *  popsout.c
+        -:    3: *  This file is part of LIME, the versatile line modeling engine
+        -:    4: *
+        -:    5: *  Copyright (C) 2006-2014 Christian Brinch
+        -:    6: *  Copyright (C) 2015-2017 The LIME development team
+        -:    7: *
+        -:    8:***TODO:
+        -:    9:	- Change the definition of the file format so that nmol is now read with the other mol[] scalars.
+        -:   10: */
+        -:   11:
+        -:   12:#include "lime.h"
+        -:   13:
+        -:   14:void
+function popsout called 1 returned 100% blocks executed 87%
+        1:   15:popsout(configInfo *par, struct grid *gp, molData *md){
+        -:   16:  FILE *fp;
+        -:   17:  int i,j,k,l;
+        -:   18:  double dens;
+        -:   19:  char outfilename[100], ext[100];
+        -:   20:  
+        -:   21:  /* int i,mi,c,q=0,best; */
+        -:   22:  /* double vel[3],ra[100],rb[100],za[100],zb[100],min; */
+        -:   23:
+        2:   24:  for(i=0;i<par->nSpecies;i++){
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+        1:   25:    strcpy(outfilename,  par->outputfile); 
+        1:   26:    if(par->nSpecies>1){
+branch  0 taken 0% (fallthrough)
+branch  1 taken 100%
+    #####:   27:      sprintf(ext, ".%02d", i);
+    #####:   28:      strcat(outfilename, ext);
+        -:   29:    }
+        -:   30:
+        1:   31:  if((fp=fopen(outfilename, "w"))==NULL){
+call    0 returned 100%
+branch  1 taken 0% (fallthrough)
+branch  2 taken 100%
+    #####:   32:    if(!silent) bail_out("Error writing output populations file!");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:   33:    exit(1);
+call    0 never executed
+        -:   34:  }
+        1:   35:  printf("Writing level populations to %s\n", outfilename);
+call    0 returned 100%
+        1:   36:  fprintf(fp,"# x y z H2_density kinetic_gas_temperature molecular_abundance convergence_flag");
+call    0 returned 100%
+       27:   37:  for(k=0;k<md[i].nlev;k++) fprintf(fp," pops_%d",k);
+call    0 returned 100%
+branch  1 taken 96%
+branch  2 taken 4% (fallthrough)
+        1:   38:  fprintf(fp,"\n");
+call    0 returned 100%
+      501:   39:  for(j=0;j<par->pIntensity;j++){
+branch  0 taken 100% (fallthrough)
+branch  1 taken 1%
+        -:   40:    dens=0.;
+     1000:   41:    for(l=0;l<par->numDensities;l++) dens+=gp[j].dens[l]*par->nMolWeights[l];
+branch  0 taken 50%
+branch  1 taken 50% (fallthrough)
+      500:   42:    fprintf(fp,"%e %e %e %e %e %e %d ", gp[j].x[0], gp[j].x[1], gp[j].x[2], dens, gp[j].t[0], gp[j].mol[i].nmol/dens, gp[j].conv);
+call    0 returned 100%
+    13500:   43:    for(k=0;k<md[i].nlev;k++) fprintf(fp,"%e ",gp[j].mol[i].pops[k]);
+call    0 returned 100%
+branch  1 taken 96%
+branch  2 taken 4% (fallthrough)
+      500:   44:    fprintf(fp,"\n");
+call    0 returned 100%
+        -:   45:    //fprintf(fp,"%i %lf %lf %lf %lf %lf %lf %lf %lf\n", gp[j].id, gp[j].x[0], gp[j].x[1], gp[j].x[2],  gp[j].dens[0], gp[j].t[0], gp[j].vel[0], gp[j].vel[1], gp[j].vel[2]);
+        -:   46:  }
+        1:   47:  fclose(fp);
+call    0 returned 100%
+        -:   48:  
+        -:   49:  }
+        -:   50:
+        -:   51:
+        1:   52:}
+        -:   53:
+        -:   54:void
+function binpopsout called 0 returned 0% blocks executed 0%
+    #####:   55:binpopsout(configInfo *par, struct grid *gp, molData *md){
+        -:   56:  FILE *fp;
+        -:   57:  int i,j,k,*nTrans=NULL;
+    #####:   58:  double dummy=-1.0;
+        -:   59:  struct oldPop {
+        -:   60:    double *dust, *knu;
+        -:   61:  } *dummyMol=NULL;
+        -:   62:  double **dummy2=NULL;
+        -:   63:
+    #####:   64:  nTrans = malloc(sizeof(int)*1);
+        -:   65:
+    #####:   66:  dummyMol = malloc(sizeof(*dummyMol)*par->nSpecies);
+    #####:   67:  dummy2 = malloc(sizeof(*dummy2)*par->nSpecies);
+    #####:   68:  for(j=0;j<par->nSpecies;j++){
+branch  0 never executed
+branch  1 never executed
+    #####:   69:    dummyMol[j].dust = malloc(sizeof(double)*md[j].nline);
+    #####:   70:    dummyMol[j].knu  = malloc(sizeof(double)*md[j].nline);
+    #####:   71:    dummy2[  j]      = malloc(sizeof(double)*md[j].nline);
+    #####:   72:    for(k=0;k<md[j].nline;k++){
+branch  0 never executed
+branch  1 never executed
+    #####:   73:      dummyMol[j].dust[k] = 0.0;
+    #####:   74:      dummyMol[j].knu[ k] = 0.0;
+    #####:   75:      dummy2[  j][     k] = 0.0;
+        -:   76:    } 
+        -:   77:  }
+        -:   78:
+    #####:   79:  if((fp=fopen(par->binoutputfile, "wb"))==NULL){
+call    0 never executed
+branch  1 never executed
+branch  2 never executed
+    #####:   80:    if(!silent) bail_out("Error writing binary output populations file!");
+branch  0 never executed
+branch  1 never executed
+call    2 never executed
+    #####:   81:    exit(1);
+call    0 never executed
+        -:   82:  }
+        -:   83:
+    #####:   84:  checkFwrite(fwrite(&par->radius,   sizeof(double), 1, fp), 1, "radius");
+call    0 never executed
+call    1 never executed
+    #####:   85:  checkFwrite(fwrite(&par->ncell,    sizeof(int),    1, fp), 1, "ncell");
+call    0 never executed
+call    1 never executed
+    #####:   86:  checkFwrite(fwrite(&par->nSpecies, sizeof(int),    1, fp), 1, "nSpecies");
+call    0 never executed
+call    1 never executed
+        -:   87:
+    #####:   88:  for(i=0;i<par->nSpecies;i++){
+branch  0 never executed
+branch  1 never executed
+    #####:   89:    if(md[i].part==NULL)
+branch  0 never executed
+branch  1 never executed
+    #####:   90:      nTrans[0] = 1;
+        -:   91:    else
+    #####:   92:      nTrans[0] = md[i].part[0].ntrans;
+        -:   93:
+    #####:   94:    checkFwrite(fwrite(&md[i].nlev,  sizeof(int),                1,fp), 1, "nlev");
+call    0 never executed
+call    1 never executed
+    #####:   95:    checkFwrite(fwrite(&md[i].nline, sizeof(int),                1,fp), 1, "nline");
+call    0 never executed
+call    1 never executed
+    #####:   96:    checkFwrite(fwrite(&md[i].npart, sizeof(int),                1,fp), 1, "npart");
+call    0 never executed
+call    1 never executed
+    #####:   97:    checkFwrite(fwrite(nTrans,       sizeof(int),                1,fp), 1, "nTrans");
+call    0 never executed
+call    1 never executed
+    #####:   98:    checkFwrite(fwrite(md[i].lal,    sizeof(int)   *md[i].nline, 1,fp), 1, "lal");
+call    0 never executed
+call    1 never executed
+    #####:   99:    checkFwrite(fwrite(md[i].lau,    sizeof(int)   *md[i].nline, 1,fp), 1, "lau");
+call    0 never executed
+call    1 never executed
+    #####:  100:    checkFwrite(fwrite(md[i].aeinst, sizeof(double)*md[i].nline, 1,fp), 1, "aeinst");
+call    0 never executed
+call    1 never executed
+    #####:  101:    checkFwrite(fwrite(md[i].freq,   sizeof(double)*md[i].nline, 1,fp), 1, "freq");
+call    0 never executed
+call    1 never executed
+    #####:  102:    checkFwrite(fwrite(md[i].beinstl,sizeof(double)*md[i].nline, 1,fp), 1, "beinstl");
+call    0 never executed
+call    1 never executed
+    #####:  103:    checkFwrite(fwrite(md[i].beinstu,sizeof(double)*md[i].nline, 1,fp), 1, "beinstu");
+call    0 never executed
+call    1 never executed
+    #####:  104:    checkFwrite(fwrite(dummy2[i],    sizeof(double)*md[i].nline, 1,fp), 1, "dummy2");
+call    0 never executed
+call    1 never executed
+    #####:  105:    checkFwrite(fwrite(&dummy,       sizeof(double),             1,fp), 1, "dummy");
+call    0 never executed
+call    1 never executed
+    #####:  106:    checkFwrite(fwrite(&dummy,       sizeof(double),             1,fp), 1, "dummy");
+call    0 never executed
+call    1 never executed
+        -:  107:  }
+        -:  108:
+    #####:  109:  for(i=0;i<par->ncell;i++){
+branch  0 never executed
+branch  1 never executed
+    #####:  110:    checkFwrite(fwrite(&gp[i].id,     sizeof(int),      1, fp), 1, "id");
+call    0 never executed
+call    1 never executed
+    #####:  111:    checkFwrite(fwrite(&gp[i].x,  DIM*sizeof(double),   1, fp), 1, "x");
+call    0 never executed
+call    1 never executed
+    #####:  112:    checkFwrite(fwrite(&gp[i].vel,DIM*sizeof(double),   1, fp), 1, "vel");
+call    0 never executed
+call    1 never executed
+    #####:  113:    checkFwrite(fwrite(&gp[i].sink,   sizeof(int),      1, fp), 1, "sink");
+call    0 never executed
+call    1 never executed
+    #####:  114:    for(j=0;j<par->nSpecies;j++)
+branch  0 never executed
+branch  1 never executed
+    #####:  115:      checkFwrite(fwrite(&gp[i].mol[j].nmol,  sizeof(double), 1, fp), 1, "nmol");
+call    0 never executed
+call    1 never executed
+    #####:  116:    checkFwrite(fwrite(&gp[i].dopb_turb, sizeof(double), 1, fp), 1, "dopb_turb");
+call    0 never executed
+call    1 never executed
+    #####:  117:    for(j=0;j<par->nSpecies;j++){
+branch  0 never executed
+branch  1 never executed
+    #####:  118:      checkFwrite(fwrite(gp[i].mol[j].pops,  sizeof(double)*md[j].nlev, 1, fp), 1, "pops");
+call    0 never executed
+call    1 never executed
+    #####:  119:      checkFwrite(fwrite(dummyMol[j].knu,    sizeof(double)*md[j].nline,1, fp), 1, "knu");
+call    0 never executed
+call    1 never executed
+    #####:  120:      checkFwrite(fwrite(dummyMol[j].dust,   sizeof(double)*md[j].nline,1, fp), 1, "dust");
+call    0 never executed
+call    1 never executed
+    #####:  121:      checkFwrite(fwrite(&gp[i].mol[j].dopb, sizeof(double),            1, fp), 1, "dopb");
+call    0 never executed
+call    1 never executed
+    #####:  122:      checkFwrite(fwrite(&gp[i].mol[j].binv, sizeof(double),            1, fp), 1, "binv");
+call    0 never executed
+call    1 never executed
+        -:  123:    }
+    #####:  124:    checkFwrite(fwrite(&gp[i].dens[0],     sizeof(double), 1, fp), 1, "dens");
+call    0 never executed
+call    1 never executed
+    #####:  125:    checkFwrite(fwrite(&gp[i].t[0],        sizeof(double), 1, fp), 1, "t");
+call    0 never executed
+call    1 never executed
+    #####:  126:    checkFwrite(fwrite(&gp[i].mol[0].abun, sizeof(double), 1, fp), 1, "abun");
+call    0 never executed
+call    1 never executed
+        -:  127:  }
+        -:  128:
+    #####:  129:  fclose(fp);
+call    0 never executed
+        -:  130:
+    #####:  131:  for(j=0;j<par->nSpecies;j++){
+branch  0 never executed
+branch  1 never executed
+    #####:  132:    free(dummyMol[j].dust);
+    #####:  133:    free(dummyMol[j].knu);
+    #####:  134:    free(dummy2[j]);
+        -:  135:  }
+    #####:  136:  free(dummyMol);
+    #####:  137:  free(dummy2);
+        -:  138:
+    #####:  139:  free(nTrans);
+    #####:  140:}
+        -:  141:

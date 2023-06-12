@@ -10,7 +10,6 @@ TODO:
  */
 
 #include "lime.h"
-#include "gridio.h"
 #include "defaults.h"
 
 
@@ -110,23 +109,7 @@ readGridWrapper(configInfo *par, struct grid **gp, char ***collPartNames, int *n
   int i,status=0;
   struct gridInfoType gridInfoRead;
 
-  i = 0;
-  initializeKeyword(&desiredKwds[i]);
-  desiredKwds[i].datatype = lime_DOUBLE;
-  snprintf(desiredKwds[i].keyname, STRLEN_KNAME, "RADIUS  ");
-
-  i++;
-  initializeKeyword(&desiredKwds[i]);
-  desiredKwds[i].datatype = lime_DOUBLE;
-  snprintf(desiredKwds[i].keyname, STRLEN_KNAME, "MINSCALE");
-
-  i++;
-  initializeKeyword(&desiredKwds[i]);
-  desiredKwds[i].datatype = lime_INT;
-  snprintf(desiredKwds[i].keyname, STRLEN_KNAME, "NSOLITER");
-
-  status = readGrid(par->gridInFile, &gridInfoRead, desiredKwds\
-    , numDesiredKwds, gp, collPartNames, numCollPartRead, &(par->dataFlags));
+//   I removed the unused function readGrid()
 
   par->radius          = desiredKwds[0].doubleValue;
   par->minScale        = desiredKwds[1].doubleValue;
@@ -137,11 +120,7 @@ readGridWrapper(configInfo *par, struct grid **gp, char ***collPartNames, int *n
 
   sanityCheckOfRead(status, par, gridInfoRead);
 
-  freeKeywords(desiredKwds, numDesiredKwds);
-  freeGridInfo(&gridInfoRead);
-
-/*
-**** Ideally we should also have a test on nACoeffs.
+/**** Ideally we should also have a test on nACoeffs.
 
 **** Ideally we should also have a test on the mols entries - at some later time after we have read the corresponding values from the moldata files?
 */

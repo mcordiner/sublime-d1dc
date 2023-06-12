@@ -1,5 +1,4 @@
 #include "lime.h"
-#include "raythrucells.h"
 #include <math.h>
 
 struct flux{

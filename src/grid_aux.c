@@ -9,7 +9,6 @@ TODO:
  */
 
 #include "lime.h"
-#include "gridio.h" /* For struct gridInfoType, struct keywordType etc */
 
 /*....................................................................*/
 void mallocAndSetDefaultGrid(struct grid **gp, const size_t numPoints, const size_t numSpecies){
@@ -479,58 +478,8 @@ getEdgeVelocities(configInfo *par, struct grid *gp){
 
 /*....................................................................*/
 int setupAndWriteGrid(configInfo *par, struct grid *gp, molData *md, char *outFileName){
-  const int numKwds=3;
-  int i,status = 0;
-  struct gridInfoType gridInfo;
-  unsigned short i_us;
-  struct keywordType *primaryKwds=malloc(sizeof(struct keywordType)*numKwds);
-
-  gridInfo.nInternalPoints = par->pIntensity;
-  gridInfo.nSinkPoints     = par->sinkPoints;
-  gridInfo.nLinks          = 0; /* This quantity is calculated when writing to file. */
-  gridInfo.nNNIndices      = 0; /* This quantity is calculated when writing to file. */
-  gridInfo.nDims           = DIM;
-  gridInfo.nSpecies        = par->nSpecies;
-  gridInfo.nDensities      = par->numDensities;
-  gridInfo.nLinkVels       = NUM_VEL_COEFFS;
-  if(md==NULL)
-    gridInfo.mols = NULL;
-  else{
-    gridInfo.mols = malloc(sizeof(*(gridInfo.mols))*gridInfo.nSpecies);
-    for(i_us=0;i_us<gridInfo.nSpecies;i_us++){ /* md should only ==NULL if gridInfo.nSpecies==0. */
-      copyInparStr(md[i_us].molName, &gridInfo.mols[i_us].molName);
-      gridInfo.mols[i_us].nLevels = md[i_us].nlev;
-      gridInfo.mols[i_us].nLines  = md[i_us].nline;
-    }
-  }
-
-  i = 0;
-  initializeKeyword(&primaryKwds[i]);
-  primaryKwds[i].datatype = lime_DOUBLE;
-  sprintf(primaryKwds[i].keyname, "RADIUS  ");
-  primaryKwds[i].doubleValue = par->radius;
-  sprintf(primaryKwds[i].comment, "[m] Model radius.");
-
-  i++;
-  initializeKeyword(&primaryKwds[i]);
-  primaryKwds[i].datatype = lime_DOUBLE;
-  sprintf(primaryKwds[i].keyname, "MINSCALE");
-  primaryKwds[i].doubleValue = par->minScale;
-  sprintf(primaryKwds[i].comment, "[m] Minimum model scale.");
-
-  i++;
-  initializeKeyword(&primaryKwds[i]);
-  primaryKwds[i].datatype = lime_INT;
-  sprintf(primaryKwds[i].keyname, "NSOLITER");
-  primaryKwds[i].intValue = par->nSolveItersDone;
-  sprintf(primaryKwds[i].comment, "Number of RTE iterations performed.");
-
-  status = writeGrid(outFileName\
-    , gridInfo, primaryKwds, numKwds, gp, par->collPartNames, par->dataFlags);
-
-  freeKeywords(primaryKwds, numKwds);
-  freeGridInfo(&gridInfo);
-
+  // I removed an unused function from this function
+  int status = 0;
   return status;
 }
 

@@ -1,0 +1,79 @@
+        -:    0:Source:src/lime_defaults.c
+        -:    0:Graph:src/lime_defaults.gcno
+        -:    0:Data:src/lime_defaults.gcda
+        -:    0:Runs:1
+        -:    1:/*
+        -:    2: *  lime_defaults.c
+        -:    3: *  This file is part of LIME, the versatile line modeling engine
+        -:    4: *
+        -:    5: *  Copyright (C) 2006-2014 Christian Brinch
+        -:    6: *  Copyright (C) 2015-2017 The LIME development team
+        -:    7: *
+        -:    8: */
+        -:    9:
+        -:   10:#include "lime.h" /* includes defaults.h */
+        -:   11:
+        -:   12:void __attribute__((weak))
+function density called 0 returned 0% blocks executed 0%
+    #####:   13:density(double x, double y, double z, double *density){
+    #####:   14:  default_density(x,y,z, density);
+call    0 never executed
+    #####:   15:}
+        -:   16:
+        -:   17:void __attribute__((weak))
+function temperature called 0 returned 0% blocks executed 0%
+    #####:   18:temperature(double x, double y, double z, double *temperature){
+    #####:   19:  default_temperature(x,y,z, temperature);
+call    0 never executed
+    #####:   20:}
+        -:   21:
+        -:   22:/* One of the following two must be defined by the user: */
+        -:   23:void __attribute__((weak))
+function abundance called 1 returned 100% blocks executed 100%
+        1:   24:abundance(double x, double y, double z, double *abun){
+        1:   25:  default_abundance(x,y,z, abun);
+call    0 returned 100%
+        1:   26:}
+        -:   27:
+        -:   28:void __attribute__((weak))
+function molNumDensity called 0 returned 0% blocks executed 0%
+    #####:   29:molNumDensity(double x, double y, double z, double *nDensity){
+    #####:   30:  default_molNumDensity(x,y,z, nDensity);
+call    0 never executed
+    #####:   31:}
+        -:   32:
+        -:   33:void __attribute__((weak))
+function doppler called 0 returned 0% blocks executed 0%
+    #####:   34:doppler(double x, double y, double z, double *doppler){
+    #####:   35:  default_doppler(x,y,z, doppler);
+call    0 never executed
+    #####:   36:}
+        -:   37:
+        -:   38:void __attribute__((weak))
+function velocity called 0 returned 0% blocks executed 0%
+    #####:   39:velocity(double x, double y, double z, double *vel){
+    #####:   40:  default_velocity(x,y,z, vel);
+call    0 never executed
+    #####:   41:}
+        -:   42:
+        -:   43:void __attribute__((weak))
+function magfield called 1 returned 100% blocks executed 100%
+        1:   44:magfield(double x, double y, double z, double *B){
+        1:   45:  default_magfield(x,y,z, B);
+call    0 returned 100%
+        1:   46:}
+        -:   47:
+        -:   48:void __attribute__((weak))
+function gasIIdust called 501 returned 100% blocks executed 100%
+      501:   49:gasIIdust(double x, double y, double z, double *gas2dust){
+      501:   50:  default_gasIIdust(x,y,z, gas2dust);
+call    0 returned 100%
+      501:   51:}
+        -:   52:
+        -:   53:double __attribute__((weak))
+function gridDensity called 501 returned 100% blocks executed 100%
+      501:   54:gridDensity(configInfo *par, double *r){
+      501:   55:  return default_gridDensity(par, r, density);
+call    0 returned 100%
+        -:   56:}
+        -:   57:

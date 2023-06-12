@@ -88,6 +88,7 @@ initParImg(inputPars *par, image **img)
   par->useEP = 0;
   par->fixRNG = 1;
   par->tNuc = 100;
+  par->dopplerb=0;
   par->useCKCdata = 0;
 
   par->gridOutFiles = malloc(sizeof(char *)*NUM_GRID_STAGES);

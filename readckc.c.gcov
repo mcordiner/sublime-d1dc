@@ -1,0 +1,809 @@
+        -:    0:Source:src/readckc.c
+        -:    0:Graph:src/readckc.gcno
+        -:    0:Data:src/readckc.gcda
+        -:    0:Runs:1
+        -:    1:#include <stdio.h>
+        -:    2:#include <stdlib.h>
+        -:    3:#include <string.h>
+        -:    4:#include <math.h>
+        -:    5:#include "lime.h"
+        -:    6:
+        -:    7:/* FUNCTION TO READ CKC DATA: LOOKUP TABLES */
+function readCKCdata called 0 returned 0% blocks executed 0%
+    #####:    8:struct CKCdata readCKCdata(CKCdata *st){
+        -:    9:
+    #####:   10:	char *ParentDircPath = getenv("SUBLIMEDATA");
+call    0 never executed
+        -:   11:	//char *ParentDircPath = "/Users/kdarnell/code/sublimed1d/data/";
+        -:   12:	char FILEPATH[250];
+        -:   13:	
+        -:   14:	int nfiles=35;
+    #####:   15:	char *Tefilename[35] = { 
+        -:   16:		"ckc_data/Te_Q1e+27_H0.5.dat", 
+        -:   17:		"ckc_data/Te_Q1e+27_H1.0.dat", 
+        -:   18:		"ckc_data/Te_Q1e+27_H1.5.dat", 
+        -:   19:		"ckc_data/Te_Q1e+27_H2.0.dat", 
+        -:   20:		"ckc_data/Te_Q1e+27_H2.5.dat", 
+        -:   21:		"ckc_data/Te_Q5e+27_H0.5.dat", 
+        -:   22:		"ckc_data/Te_Q5e+27_H1.0.dat", 
+        -:   23:		"ckc_data/Te_Q5e+27_H1.5.dat", 
+        -:   24:		"ckc_data/Te_Q5e+27_H2.0.dat", 
+        -:   25:		"ckc_data/Te_Q5e+27_H2.5.dat", 
+        -:   26:		"ckc_data/Te_Q1e+28_H0.5.dat", 
+        -:   27:		"ckc_data/Te_Q1e+28_H1.0.dat", 
+        -:   28:		"ckc_data/Te_Q1e+28_H1.5.dat", 
+        -:   29:		"ckc_data/Te_Q1e+28_H2.0.dat", 
+        -:   30:		"ckc_data/Te_Q1e+28_H2.5.dat", 
+        -:   31:		"ckc_data/Te_Q5e+28_H0.5.dat", 
+        -:   32:		"ckc_data/Te_Q5e+28_H1.0.dat", 
+        -:   33:		"ckc_data/Te_Q5e+28_H1.5.dat", 
+        -:   34:		"ckc_data/Te_Q5e+28_H2.0.dat", 
+        -:   35:		"ckc_data/Te_Q5e+28_H2.5.dat", 
+        -:   36:		"ckc_data/Te_Q1e+29_H0.5.dat", 
+        -:   37:		"ckc_data/Te_Q1e+29_H1.0.dat", 
+        -:   38:		"ckc_data/Te_Q1e+29_H1.5.dat", 
+        -:   39:		"ckc_data/Te_Q1e+29_H2.0.dat", 
+        -:   40:		"ckc_data/Te_Q1e+29_H2.5.dat", 
+        -:   41:		"ckc_data/Te_Q5e+29_H0.5.dat", 
+        -:   42:		"ckc_data/Te_Q5e+29_H1.0.dat", 
+        -:   43:		"ckc_data/Te_Q5e+29_H1.5.dat", 
+        -:   44:		"ckc_data/Te_Q5e+29_H2.0.dat", 
+        -:   45:		"ckc_data/Te_Q5e+29_H2.5.dat", 
+        -:   46:		"ckc_data/Te_Q1e+30_H0.5.dat", 
+        -:   47:		"ckc_data/Te_Q1e+30_H1.0.dat", 
+        -:   48:		"ckc_data/Te_Q1e+30_H1.5.dat", 
+        -:   49:		"ckc_data/Te_Q1e+30_H2.0.dat", 
+        -:   50:		"ckc_data/Te_Q1e+30_H2.5.dat" 
+        -:   51:		};
+    #####:   52:	char *nefilename[35] = { 
+        -:   53:		"ckc_data/ne_Q1e+27_H0.5.dat", 
+        -:   54:		"ckc_data/ne_Q1e+27_H1.0.dat", 
+        -:   55:		"ckc_data/ne_Q1e+27_H1.5.dat", 
+        -:   56:		"ckc_data/ne_Q1e+27_H2.0.dat", 
+        -:   57:		"ckc_data/ne_Q1e+27_H2.5.dat", 
+        -:   58:		"ckc_data/ne_Q5e+27_H0.5.dat", 
+        -:   59:		"ckc_data/ne_Q5e+27_H1.0.dat", 
+        -:   60:		"ckc_data/ne_Q5e+27_H1.5.dat", 
+        -:   61:		"ckc_data/ne_Q5e+27_H2.0.dat", 
+        -:   62:		"ckc_data/ne_Q5e+27_H2.5.dat", 
+        -:   63:		"ckc_data/ne_Q1e+28_H0.5.dat", 
+        -:   64:		"ckc_data/ne_Q1e+28_H1.0.dat", 
+        -:   65:		"ckc_data/ne_Q1e+28_H1.5.dat", 
+        -:   66:		"ckc_data/ne_Q1e+28_H2.0.dat", 
+        -:   67:		"ckc_data/ne_Q1e+28_H2.5.dat", 
+        -:   68:		"ckc_data/ne_Q5e+28_H0.5.dat", 
+        -:   69:		"ckc_data/ne_Q5e+28_H1.0.dat", 
+        -:   70:		"ckc_data/ne_Q5e+28_H1.5.dat", 
+        -:   71:		"ckc_data/ne_Q5e+28_H2.0.dat", 
+        -:   72:		"ckc_data/ne_Q5e+28_H2.5.dat", 
+        -:   73:		"ckc_data/ne_Q1e+29_H0.5.dat", 
+        -:   74:		"ckc_data/ne_Q1e+29_H1.0.dat", 
+        -:   75:		"ckc_data/ne_Q1e+29_H1.5.dat", 
+        -:   76:		"ckc_data/ne_Q1e+29_H2.0.dat", 
+        -:   77:		"ckc_data/ne_Q1e+29_H2.5.dat", 
+        -:   78:		"ckc_data/ne_Q5e+29_H0.5.dat", 
+        -:   79:		"ckc_data/ne_Q5e+29_H1.0.dat", 
+        -:   80:		"ckc_data/ne_Q5e+29_H1.5.dat", 
+        -:   81:		"ckc_data/ne_Q5e+29_H2.0.dat", 
+        -:   82:		"ckc_data/ne_Q5e+29_H2.5.dat", 
+        -:   83:		"ckc_data/ne_Q1e+30_H0.5.dat", 
+        -:   84:		"ckc_data/ne_Q1e+30_H1.0.dat", 
+        -:   85:		"ckc_data/ne_Q1e+30_H1.5.dat", 
+        -:   86:		"ckc_data/ne_Q1e+30_H2.0.dat", 
+        -:   87:		"ckc_data/ne_Q1e+30_H2.5.dat" 
+        -:   88:		};
+        -:   89:	int nQ_values=7;
+    #####:   90:	double Q_values[7] = { 
+        -:   91:		1.00e+27, 
+        -:   92:		5.00e+27, 
+        -:   93:		1.00e+28, 
+        -:   94:		5.00e+28, 
+        -:   95:		1.00e+29, 
+        -:   96:		5.00e+29, 
+        -:   97:		1.00e+30 
+        -:   98:		};
+        -:   99:	int nH_values=5;
+    #####:  100:	double H_values[5] = { 
+        -:  101:		5.00e-01, 
+        -:  102:		1.00e+00, 
+        -:  103:		1.50e+00, 
+        -:  104:		2.00e+00, 
+        -:  105:		2.50e+00 
+        -:  106:		};
+        -:  107:	
+        -:  108:	int nr_values;
+        -:  109:	double *r_values;
+        -:  110:	
+        -:  111:   	double ***Tedata; // [q][h][r] 
+        -:  112:	double ***nedata; // [q][h][r] 
+        -:  113:
+        -:  114:   	int nrows=-1, ncolumns=1;
+        -:  115:   	int headerrows=3; // 4-1 
+        -:  116:   
+        -:  117:   	int i, j, k, ir=0, iq=0, ih=0; //counters
+        -:  118:   	char c;  // To store a character read from file
+        -:  119:   
+    #####:  120:   	FILE * fp[nfiles];
+        -:  121:   		
+        -:  122:   	ncolumns = nfiles + 1;
+        -:  123:  	
+        -:  124:	// Counting the number of rowss
+    #####:  125:	strcpy(FILEPATH, ParentDircPath);
+    #####:  126:	strcat(FILEPATH, "/");
+    #####:  127:	strcat(FILEPATH, Tefilename[0]);
+        -:  128:	
+    #####:  129:	fp[0] = fopen (FILEPATH, "r+");
+call    0 never executed
+        -:  130:	
+    #####:  131:	for (c = getc(fp[0]); c != EOF; c = getc(fp[0]))
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:  132:    	if (c == '\n') // Increment count if this character is newline
+branch  0 never executed
+branch  1 never executed
+    #####:  133:       		nrows = nrows + 1;
+        -:  134:    
+    #####:  135:    nr_values = nrows - headerrows -2; // there were two extra rows being added to the array so I decreased nrows by 2
+        -:  136:    
+    #####:  137:	rewind(fp[0]); //Returns to start of file
+call    0 never executed
+    #####:  138:	fclose(fp[0]);
+call    0 never executed
+        -:  139:	
+        -:  140:	// allocate the memory for the array, code from: http://www.eskimo.com/~scs/cclass/int/sx9b.html
+    #####:  141:	r_values = malloc(nr_values * sizeof(double));
+        -:  142:	
+    #####:  143:	Tedata = malloc(nQ_values * sizeof(double));
+    #####:  144:	nedata = malloc(nQ_values * sizeof(double));
+    #####:  145:	for(iq = 0; iq < nQ_values; iq++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  146:		Tedata[iq] = malloc(nH_values * sizeof(double));
+    #####:  147:		nedata[iq] = malloc(nH_values * sizeof(double));
+    #####:  148:		for(ih = 0; ih < nH_values; ih++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  149:			Tedata[iq][ih] = malloc(nr_values * sizeof(double));
+    #####:  150:			nedata[iq][ih] = malloc(nr_values * sizeof(double));
+        -:  151:		}
+        -:  152:	}
+        -:  153:	
+        -:  154:	
+        -:  155:	// Reading the Te files
+        -:  156:	ir = 0;
+        -:  157:	iq = 0;
+        -:  158:	ih = 0;
+        -:  159:	
+    #####:  160:	for(int i=0; i < nfiles; i++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  161:		strcpy(FILEPATH, ParentDircPath);
+    #####:  162:		strcat(FILEPATH, "/");
+    #####:  163:		strcat(FILEPATH, Tefilename[i]);
+        -:  164:	
+    #####:  165:		fp[i] = fopen (FILEPATH, "r+");
+call    0 never executed
+        -:  166:
+        -:  167:		//Skips the header rows
+    #####:  168:		for(j = 0; j < headerrows; j++){
+branch  0 never executed
+branch  1 never executed
+    #####:  169:		    fscanf(fp[i], "%*[^\n]\n"); 
+call    0 never executed
+        -:  170:		}
+        -:  171:	
+        -:  172:		// Reads the data into the 2D array line by line
+    #####:  173:		for(ir = 0; ir < nr_values; ir++){
+branch  0 never executed
+branch  1 never executed
+    #####:  174:    		fscanf(fp[i], "%le %le", &r_values[ir], &Tedata[iq][ih][ir]);
+call    0 never executed
+        -:  175:  		}
+        -:  176: 		
+        -:  177:  		// Incriments and resets q and h indicies
+    #####:  178:  		ih++;
+    #####:  179:  		if (ih >= nH_values) {
+branch  0 never executed
+branch  1 never executed
+        -:  180:  			ih = 0;
+    #####:  181:  			iq++;
+        -:  182:  		} 		
+    #####:  183:  		if (iq >= nQ_values) iq=0;
+branch  0 never executed
+branch  1 never executed
+        -:  184:  		
+    #####:  185:	  	fclose(fp[i]);
+call    0 never executed
+        -:  186:	  } 
+        -:  187:	
+        -:  188:	// Reading ne files
+        -:  189:	ir = 0;
+        -:  190:	iq = 0;
+        -:  191:	ih = 0;
+        -:  192:	
+    #####:  193:	for(int i=0; i < nfiles; i++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  194:		strcpy(FILEPATH, ParentDircPath);
+    #####:  195:		strcat(FILEPATH, "/");
+    #####:  196:		strcat(FILEPATH, nefilename[i]);
+        -:  197:		
+    #####:  198:		fp[i] = fopen (FILEPATH, "r+");
+call    0 never executed
+        -:  199:
+        -:  200:		//Skips the header rows
+    #####:  201:		for(j = 0; j < headerrows; j++){
+branch  0 never executed
+branch  1 never executed
+    #####:  202:		    fscanf(fp[i], "%*[^\n]\n"); 
+call    0 never executed
+        -:  203:		}
+        -:  204:	
+        -:  205:		// Reads the data into the 2D array line by line
+    #####:  206:		for(ir = 0; ir < nr_values; ir++){
+branch  0 never executed
+branch  1 never executed
+    #####:  207:    		fscanf(fp[i], "%le %le", &r_values[ir], &nedata[iq][ih][ir]);
+call    0 never executed
+        -:  208:  		}
+        -:  209:  		
+        -:  210:  		// Incriments and resets q and h indicies
+    #####:  211:  		ih++;
+    #####:  212:  		if (ih >= nH_values) {
+branch  0 never executed
+branch  1 never executed
+        -:  213:  			ih = 0;
+    #####:  214:  			iq++;
+        -:  215:  		} 		
+    #####:  216:  		if (iq >= nQ_values) iq=0;
+branch  0 never executed
+branch  1 never executed
+        -:  217:
+    #####:  218:	  	fclose(fp[i]);
+call    0 never executed
+        -:  219:	  }   
+        -:  220:    
+        -:  221:    //Saving values into the structure to be retuned
+        -:  222:    
+    #####:  223:    st->Tedata = Tedata;
+    #####:  224:    st->nedata = nedata;
+    #####:  225:	st->nr_values = nr_values;
+    #####:  226:	st->r_values = r_values; 
+    #####:  227:	st->nQ_values = nQ_values;
+    #####:  228:	st->Q_values = Q_values;
+    #####:  229:	st->nH_values = nH_values;
+    #####:  230:	st->H_values = H_values;
+        -:  231:	    
+    #####:  232:	return *st;
+        -:  233:}
+        -:  234:
+        -:  235:/* FUNCTION TO READ CKC DATA: SINGLE TABLE */
+        -:  236:/* TODO: Remove unnecessary loops */
+function readCKCfile called 0 returned 0% blocks executed 0%
+    #####:  237:struct CKCdata readCKCfile(CKCdata *st, char *Tefilename, char *nefilename, double Q_values, double H_values){
+        -:  238:
+        -:  239:	//char *ParentDircPath = getenv("SUBLIMEDATA");
+        -:  240:	//char *ParentDircPath = "/Users/kdarnell/code/sublimed1d/data/";
+        -:  241:	char FILEPATH[250];
+        -:  242:	
+        -:  243:	int nfiles=1;
+        -:  244:	int nQ_values=1;
+        -:  245:	int nH_values=1;
+        -:  246:	
+        -:  247:	int nr_values;
+        -:  248:	double *r_values;
+        -:  249:	
+        -:  250:   	double ***Tedata; // [q][h][r] 
+        -:  251:	double ***nedata; // [q][h][r] 
+        -:  252:
+        -:  253:   	int nrows=-1, ncolumns=1;
+        -:  254:   	int headerrows=3; // 4-1 
+        -:  255:   
+        -:  256:   	int i, j, k, ir=0, iq=0, ih=0; //counters
+        -:  257:   	char c;  // To store a character read from file
+        -:  258:   
+        -:  259:   	FILE * fp[nfiles];
+        -:  260:   		
+        -:  261:   	ncolumns = nfiles + 1;
+        -:  262:   	  	
+        -:  263:	// Counting the number of rowss
+        -:  264:	//strcpy(FILEPATH, ParentDircPath);
+        -:  265:	//strcat(FILEPATH, "/");
+        -:  266:	//strcat(FILEPATH, Tefilename);
+    #####:  267:	strcpy(FILEPATH, Tefilename);
+        -:  268:	
+    #####:  269:	fp[0] = fopen (FILEPATH, "r+");
+call    0 never executed
+        -:  270:	
+    #####:  271:	for (c = getc(fp[0]); c != EOF; c = getc(fp[0]))
+call    0 never executed
+call    1 never executed
+branch  2 never executed
+branch  3 never executed
+    #####:  272:    	if (c == '\n') // Increment count if this character is newline
+branch  0 never executed
+branch  1 never executed
+    #####:  273:       		nrows = nrows + 1;
+        -:  274:    
+    #####:  275:    nr_values = nrows - headerrows -2; // there were two extra rows being added to the array so I decreased nrows by 2
+        -:  276:    //printf("nr_values = %d \n", nr_values);
+        -:  277:    
+    #####:  278:	rewind(fp[0]); //Returns to start of file
+call    0 never executed
+    #####:  279:	fclose(fp[0]);
+call    0 never executed
+        -:  280:	
+        -:  281:	// allocate the memory for the array, code from: http://www.eskimo.com/~scs/cclass/int/sx9b.html
+    #####:  282:	r_values = malloc(nr_values * sizeof(double));
+        -:  283:	
+    #####:  284:	Tedata = malloc(nQ_values * sizeof(double));
+    #####:  285:	nedata = malloc(nQ_values * sizeof(double));
+    #####:  286:	for(iq = 0; iq < nQ_values; iq++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  287:		Tedata[iq] = malloc(nH_values * sizeof(double));
+    #####:  288:		nedata[iq] = malloc(nH_values * sizeof(double));
+    #####:  289:		for(ih = 0; ih < nH_values; ih++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  290:			Tedata[iq][ih] = malloc(nr_values * sizeof(double));
+    #####:  291:			nedata[iq][ih] = malloc(nr_values * sizeof(double));
+        -:  292:		}
+        -:  293:	}
+        -:  294:	
+        -:  295:	
+        -:  296:	// Reading the Te files
+        -:  297:	ir = 0;
+        -:  298:	iq = 0;
+        -:  299:	ih = 0;
+        -:  300:	
+    #####:  301:	for(int i=0; i < nfiles; i++) {
+branch  0 never executed
+branch  1 never executed
+        -:  302:		//strcpy(FILEPATH, ParentDircPath);
+        -:  303:		//strcat(FILEPATH, "/");
+        -:  304:		//strcat(FILEPATH, Tefilename);
+    #####:  305:		strcpy(FILEPATH, Tefilename);
+        -:  306:	
+    #####:  307:		fp[i] = fopen (FILEPATH, "r+");
+call    0 never executed
+        -:  308:
+        -:  309:		//Skips the header rows
+    #####:  310:		for(j = 0; j < headerrows; j++){
+branch  0 never executed
+branch  1 never executed
+    #####:  311:		    fscanf(fp[i], "%*[^\n]\n"); 
+call    0 never executed
+        -:  312:		}
+        -:  313:	
+        -:  314:		// Reads the data into the 2D array line by line
+    #####:  315:		for(ir = 0; ir < nr_values; ir++){
+branch  0 never executed
+branch  1 never executed
+    #####:  316:    		fscanf(fp[i], "%le %le", &r_values[ir], &Tedata[iq][ih][ir]);
+call    0 never executed
+        -:  317:  		}
+        -:  318: 		
+        -:  319:  		// Incriments and resets q and h indicies
+        -:  320:  		ih++;
+        -:  321:  		if (ih >= nH_values) {
+        -:  322:  			ih = 0;
+        -:  323:  			iq++;
+        -:  324:  		} 		
+        -:  325:  		if (iq >= nQ_values) iq=0;
+        -:  326:
+    #####:  327:	  	fclose(fp[i]);
+call    0 never executed
+        -:  328:	  } 
+        -:  329:	
+        -:  330:	// Reading ne files
+        -:  331:	ir = 0;
+        -:  332:	iq = 0;
+        -:  333:	ih = 0;
+        -:  334:	
+    #####:  335:	for(int i=0; i < nfiles; i++) {
+branch  0 never executed
+branch  1 never executed
+        -:  336:		//strcpy(FILEPATH, ParentDircPath);
+        -:  337:		//strcat(FILEPATH, "/");
+        -:  338:		//strcat(FILEPATH, nefilename);
+    #####:  339:		strcpy(FILEPATH, nefilename);
+        -:  340:		
+    #####:  341:		fp[i] = fopen (FILEPATH, "r+");
+call    0 never executed
+        -:  342:
+        -:  343:		//Skips the header rows
+    #####:  344:		for(j = 0; j < headerrows; j++){
+branch  0 never executed
+branch  1 never executed
+    #####:  345:		    fscanf(fp[i], "%*[^\n]\n"); 
+call    0 never executed
+        -:  346:		}
+        -:  347:	
+        -:  348:		// Reads the data into the 2D array line by line
+    #####:  349:		for(ir = 0; ir < nr_values; ir++){
+branch  0 never executed
+branch  1 never executed
+    #####:  350:    		fscanf(fp[i], "%le %le", &r_values[ir], &nedata[iq][ih][ir]);
+call    0 never executed
+        -:  351:  		}
+        -:  352:  		
+        -:  353:  		// Incriments and resets q and h indicies
+        -:  354:  		ih++;
+        -:  355:  		if (ih >= nH_values) {
+        -:  356:  			ih = 0;
+        -:  357:  			iq++;
+        -:  358:  		} 		
+        -:  359:  		if (iq >= nQ_values) iq=0;
+        -:  360:
+    #####:  361:	  	fclose(fp[i]);
+call    0 never executed
+        -:  362:	  }   
+        -:  363:    
+        -:  364:    //Saving values into the structure to be retuned
+        -:  365:    
+    #####:  366:    st->Tedata = Tedata;
+    #####:  367:    st->nedata = nedata;
+    #####:  368:	st->nr_values = nr_values;
+    #####:  369:	st->r_values = r_values; 
+    #####:  370:	st->nQ_values = nQ_values;
+    #####:  371:	st->Q_values = &Q_values;
+    #####:  372:	st->nH_values = nH_values;
+    #####:  373:	st->H_values = &H_values;
+        -:  374:	    
+    #####:  375:	return *st;
+        -:  376:}
+        -:  377:
+        -:  378:/* ELECTRON TEMPERATURE FUNCTION: CKC VERSION 1 */
+function get_Telec called 0 returned 0% blocks executed 0%
+    #####:  379:double get_Telec (CKCdata *st, double Q, double rH, double radius) {
+        -:  380:    int iQ0, iQ1, ir0, ir1, iH0, iH1; 	// Indicies
+        -:  381:    double Qd, Hd, rd; 					// Percent difference
+        -:  382:    double T000, T001, T010, T011; 		// T_qhr
+        -:  383:    double T100, T101, T110, T111; 		// T_qhr
+        -:  384:    double T00, T01, T10, T11; 			// T_hr
+        -:  385:    double T0, T1; 						// T_r
+        -:  386:    
+        -:  387:    int i;
+        -:  388:    
+        -:  389:    double H = rH;
+    #####:  390:    int nQ = st->nQ_values;
+    #####:  391:    int nH = st->nH_values;
+    #####:  392:    int nr = st->nr_values;
+        -:  393:    
+    #####:  394:    double r = radius * 1e-3; //Converts from m in SUBLIME to km in CKC
+        -:  395:       
+        -:  396:    double Telec;
+        -:  397: 	
+    #####:  398:    if (Q <= st->Q_values[0]) {
+branch  0 never executed
+branch  1 never executed
+        -:  399:    	iQ1 = 0;
+        -:  400:    	iQ0 = 0;
+        -:  401:    	Qd = 0;
+        -:  402:    	//printf("Case 1: Q = %.2le <= Q%d = %.2le \n", Q, iQ1, st->Q_values[iQ1]);
+        -:  403:    }
+    #####:  404:    else if (Q >= st->Q_values[nQ-1]) {
+branch  0 never executed
+branch  1 never executed
+    #####:  405:    	iQ1 = nQ-1;
+        -:  406:    	iQ0 = nQ-1;
+        -:  407:    	Qd = 0;
+        -:  408:    	//printf("Case 2: Q = %.2le >= Q%d = %.2le \n", Q, iQ1, st->Q_values[iQ1]);
+        -:  409:    }
+        -:  410:    else {
+    #####:  411:    	for (i = 0; i < nQ; i++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  412:			if (Q < st->Q_values[i]) {
+branch  0 never executed
+branch  1 never executed
+        -:  413:				break;
+        -:  414:			}
+        -:  415: 		}
+        -:  416:    	iQ1 = i;
+    #####:  417:    	iQ0 = iQ1 - 1;
+    #####:  418:    	Qd = (Q - st->Q_values[iQ0])/(st->Q_values[iQ1] - st->Q_values[iQ0]);
+        -:  419:    	//printf("Case 3: Q = %.2le lies between Q%d = %.2le and Q%d = %.2le \n", Q, iQ0, st->Q_values[iQ0], iQ1, st->Q_values[iQ1]);
+        -:  420:    }
+        -:  421:    
+        -:  422:    //printf("Qd = %.2le \n", Qd);
+        -:  423:    
+    #####:  424:    if (H <= st->H_values[0]) {
+branch  0 never executed
+branch  1 never executed
+        -:  425:    	iH1 = 0;
+        -:  426:    	iH0 = 0;
+        -:  427:    	Hd = 0;
+        -:  428:    	//printf("Case A: H = %.2le <= H%d = %.2le \n", H, iH1, st->H_values[iH1]);
+        -:  429:    }
+    #####:  430:    else if (H >= st->H_values[nH-1]) {
+branch  0 never executed
+branch  1 never executed
+    #####:  431:    	iH1 = nH-1;
+        -:  432:    	iH0 = nH-1;
+        -:  433:    	Hd = 0;
+        -:  434:    	//printf("Case B: H = %.2le >= H%d = %.2le \n", H, iH1, st->H_values[iH1]);
+        -:  435:    }
+        -:  436:    else {
+    #####:  437:    	for (i = 0; i < nH; i++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  438:			if (H < st->H_values[i]) {
+branch  0 never executed
+branch  1 never executed
+        -:  439:				break;
+        -:  440:			}
+        -:  441: 		}
+        -:  442:    	iH1 = i;
+    #####:  443:    	iH0 = iH1 - 1;
+    #####:  444:    	Hd = (H - st->H_values[iH0])/(st->H_values[iH1] - st->H_values[iH0]);
+        -:  445:    	//printf("Case C: H = %.2le lies between H%d = %.2le and H%d = %.2le \n", H, iH0, st->H_values[iH0], iH1, st->H_values[iH1]);
+        -:  446:    }
+        -:  447:    
+        -:  448:    //printf("Hd = %.2le \n", Hd);
+        -:  449:        
+    #####:  450:    if (r <= st->r_values[0]) {
+branch  0 never executed
+branch  1 never executed
+        -:  451:    	ir1 = 0;
+        -:  452:    	ir0 = 0;
+        -:  453:    	rd = 0;
+        -:  454:    	//printf("Case alpha: r = %.2le <= r%d = %.2le \n", r, ir1, st->r_values[ir1]);
+        -:  455:    }
+    #####:  456:    else if (r >= st->r_values[nr-1]) {
+branch  0 never executed
+branch  1 never executed
+    #####:  457:    	ir1 = nr-1;
+        -:  458:    	ir0 = nr-1;
+        -:  459:    	rd = 0;
+        -:  460:    	//printf("Case beta: r = %.2le >= r%d = %.2le \n", r, ir1, st->r_values[ir1]);
+        -:  461:    }
+        -:  462:    else {
+    #####:  463:    	for (i = 0; i < nr; i++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  464:			if (r < st->r_values[i]) {
+branch  0 never executed
+branch  1 never executed
+        -:  465:				break;
+        -:  466:			}
+        -:  467: 		}
+        -:  468:    	ir1 = i;
+        -:  469:    	//ir1 = upper_index(r, st->r_values, nr);
+    #####:  470:    	ir0 = ir1 - 1;
+    #####:  471:    	rd = (r - st->r_values[ir0])/(st->r_values[ir1] - st->r_values[ir0]);
+        -:  472:    	//printf("Case gamma: r = %.2le lies between r%d = %.2le and r%d = %.2le \n", r, ir0, st->r_values[ir0], ir1, st->r_values[ir1]);
+        -:  473:    }
+        -:  474:    
+        -:  475:    //printf("rd = %.2le \n", rd);
+        -:  476:
+        -:  477:    // Identify values to interpolate
+    #####:  478:    T000 = st->Tedata[iQ0][iH0][ir0];
+    #####:  479:    T001 = st->Tedata[iQ0][iH0][ir1];
+    #####:  480:    T010 = st->Tedata[iQ0][iH1][ir0];
+    #####:  481:    T011 = st->Tedata[iQ0][iH1][ir1];
+    #####:  482:    T100 = st->Tedata[iQ1][iH0][ir0];
+    #####:  483:    T101 = st->Tedata[iQ1][iH0][ir1];
+    #####:  484:    T110 = st->Tedata[iQ1][iH1][ir0];
+    #####:  485:    T111 = st->Tedata[iQ1][iH1][ir1];
+        -:  486:    
+        -:  487:    //printf("T000 = %.2le \n", T000);
+        -:  488:    //printf("T001 = %.2le \n", T001);
+        -:  489:    //printf("T010 = %.2le \n", T010);
+        -:  490:    //printf("T011 = %.2le \n", T011);
+        -:  491:    //printf("T100 = %.2le \n", T100);
+        -:  492:    //printf("T101 = %.2le \n", T101);
+        -:  493:    //printf("T110 = %.2le \n", T110);
+        -:  494:    //printf("T111 = %.2le \n", T111);
+        -:  495:    
+        -:  496:    //Begin interpolation
+        -:  497:    
+        -:  498:    //Thr = T0hr * (1 - Qd) + T1hr * Qd;
+    #####:  499:    T00 = T000 * (1 - Qd) + T100 * Qd;
+    #####:  500:    T01 = T001 * (1 - Qd) + T101 * Qd;
+    #####:  501:    T10 = T010 * (1 - Qd) + T110 * Qd;
+    #####:  502:    T11 = T011 * (1 - Qd) + T111 * Qd;
+        -:  503:    
+        -:  504:    //printf("T00 = %.2le \n", T00);
+        -:  505:    //printf("T01 = %.2le \n", T01);
+        -:  506:    //printf("T10 = %.2le \n", T10);
+        -:  507:    //printf("T11 = %.2le \n", T11);
+        -:  508:    
+    #####:  509:    T0 = T00 * (1 - Hd) + T10 * Hd;
+    #####:  510:    T1 = T01 * (1 - Hd) + T11 * Hd;
+        -:  511:    
+        -:  512:    //printf("T0 = %.2le \n", T0);
+        -:  513:    //printf("T1 = %.2le \n", T1);
+        -:  514:    
+    #####:  515:    Telec = T0 * (1 - rd) + T1 * rd;
+        -:  516:    
+        -:  517:    /*
+        -:  518:    printf("T000 = %.2le \n", T000);
+        -:  519:    printf("T100 = %.2le \t T00 = %.2le \n", T100, T00);
+        -:  520:    printf("T010 = %.2le \n", T010);
+        -:  521:    printf("T110 = %.2le \t T10 = %.2le \t T0 = %.2le \n", T110, T10, T0);
+        -:  522:    printf("T001 = %.2le \n", T001);
+        -:  523:    printf("T101 = %.2le \t T01 = %.2le \n", T101, T01);
+        -:  524:    printf("T011 = %.2le \n", T011);
+        -:  525:    printf("T111 = %.2le \t T11 = %.2le \t T1 = %.2le \n", T111, T11, T1);
+        -:  526:    */
+    #####:  527:	return Telec;
+        -:  528:}
+        -:  529:
+        -:  530:/* ELECTRON DENSITY FUNCTION: CKC VERSION 1 */
+function get_nelec called 0 returned 0% blocks executed 0%
+    #####:  531:double get_nelec (CKCdata *st, double Q, double rH, double radius) {
+        -:  532:    int iQ0, iQ1, ir0, ir1, iH0, iH1; 	// Indicies
+        -:  533:    double Qd, Hd, rd; 					// Percent difference
+        -:  534:    double n000, n001, n010, n011; 		// n_qhr
+        -:  535:    double n100, n101, n110, n111; 		// n_qhr
+        -:  536:    double n00, n01, n10, n11; 			// n_hr
+        -:  537:    double n0, n1; 						// n_r
+        -:  538:        
+        -:  539:    int i;
+        -:  540:    
+        -:  541:    double H = rH;
+    #####:  542:    int nQ = st->nQ_values;
+    #####:  543:    int nH = st->nH_values;
+    #####:  544:    int nr = st->nr_values;
+        -:  545:    
+    #####:  546:    double r = radius * 1e-3; //Converts from m in SUBLIME to km in CKC
+        -:  547:    
+        -:  548:    double nelec;
+        -:  549: 	
+    #####:  550:    if (Q <= st->Q_values[0]) {
+branch  0 never executed
+branch  1 never executed
+        -:  551:    	iQ1 = 0;
+        -:  552:    	iQ0 = 0;
+        -:  553:    	Qd = 0;
+        -:  554:    	//printf("Case 1: Q = %.2le <= Q%d = %.2le \n", Q, iQ1, st->Q_values[iQ1]);
+        -:  555:    }
+    #####:  556:    else if (Q >= st->Q_values[nQ-1]) {
+branch  0 never executed
+branch  1 never executed
+    #####:  557:    	iQ1 = nQ-1;
+        -:  558:    	iQ0 = nQ-1;
+        -:  559:    	Qd = 0;
+        -:  560:    	//printf("Case 2: Q = %.2le >= Q%d = %.2le \n", Q, iQ1, st->Q_values[iQ1]);
+        -:  561:    }
+        -:  562:    else {
+    #####:  563:    	for (i = 0; i < nQ; i++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  564:			if (Q < st->Q_values[i]) {
+branch  0 never executed
+branch  1 never executed
+        -:  565:				break;
+        -:  566:			}
+        -:  567: 		}
+        -:  568:    	iQ1 = i;
+    #####:  569:    	iQ0 = iQ1 - 1;
+    #####:  570:    	Qd = (Q - st->Q_values[iQ0])/(st->Q_values[iQ1] - st->Q_values[iQ0]);
+        -:  571:    	//printf("Case 3: Q = %.2le lies between Q%d = %.2le and Q%d = %.2le \n", Q, iQ0, st->Q_values[iQ0], iQ1, st->Q_values[iQ1]);
+        -:  572:    }
+        -:  573:    
+        -:  574:    //printf("Qd = %.2le \n", Qd);
+        -:  575:    
+    #####:  576:    if (H <= st->H_values[0]) {
+branch  0 never executed
+branch  1 never executed
+        -:  577:    	iH1 = 0;
+        -:  578:    	iH0 = 0;
+        -:  579:    	Hd = 0;
+        -:  580:    	//printf("Case A: H = %.2le <= H%d = %.2le \n", H, iH1, st->H_values[iH1]);
+        -:  581:    }
+    #####:  582:    else if (H >= st->H_values[nH-1]) {
+branch  0 never executed
+branch  1 never executed
+    #####:  583:    	iH1 = nH-1;
+        -:  584:    	iH0 = nH-1;
+        -:  585:    	Hd = 0;
+        -:  586:    	//printf("Case B: H = %.2le >= H%d = %.2le \n", H, iH1, st->H_values[iH1]);
+        -:  587:    }
+        -:  588:    else {
+    #####:  589:    	for (i = 0; i < nH; i++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  590:			if (H < st->H_values[i]) {
+branch  0 never executed
+branch  1 never executed
+        -:  591:				break;
+        -:  592:			}
+        -:  593: 		}
+        -:  594:    	iH1 = i;
+    #####:  595:    	iH0 = iH1 - 1;
+    #####:  596:    	Hd = (H - st->H_values[iH0])/(st->H_values[iH1] - st->H_values[iH0]);
+        -:  597:    	//printf("Case C: H = %.2le lies between H%d = %.2le and H%d = %.2le \n", H, iH0, st->H_values[iH0], iH1, st->H_values[iH1]);
+        -:  598:    }
+        -:  599:    
+        -:  600:    //printf("Hd = %.2le \n", Hd);
+        -:  601:        
+    #####:  602:    if (r <= st->r_values[0]) {
+branch  0 never executed
+branch  1 never executed
+        -:  603:    	ir1 = 0;
+        -:  604:    	ir0 = 0;
+        -:  605:    	rd = 0;
+        -:  606:    	//printf("Case alpha: r = %.2le <= r%d = %.2le \n", r, ir1, st->r_values[ir1]);
+        -:  607:    }
+    #####:  608:    else if (r >= st->r_values[nr-1]) {
+branch  0 never executed
+branch  1 never executed
+    #####:  609:    	ir1 = nr-1;
+        -:  610:    	ir0 = nr-1;
+        -:  611:    	rd = 0;
+        -:  612:    	//printf("Case beta: r = %.2le >= r%d = %.2le \n", r, ir1, st->r_values[ir1]);
+        -:  613:    }
+        -:  614:    else {
+    #####:  615:    	for (i = 0; i < nr; i++) {
+branch  0 never executed
+branch  1 never executed
+    #####:  616:			if (r < st->r_values[i]) {
+branch  0 never executed
+branch  1 never executed
+        -:  617:				break;
+        -:  618:			}
+        -:  619: 		}
+        -:  620:    	ir1 = i;
+        -:  621:    	//ir1 = upper_index(r, st->r_values, nr);
+    #####:  622:    	ir0 = ir1 - 1;
+    #####:  623:    	rd = (r - st->r_values[ir0])/(st->r_values[ir1] - st->r_values[ir0]);
+        -:  624:    	//printf("Case gamma: r = %.2le lies between r%d = %.2le and r%d = %.2le \n", r, ir0, st->r_values[ir0], ir1, st->r_values[ir1]);
+        -:  625:    }
+        -:  626:    
+        -:  627:    //printf("rd = %.2le \n", rd);
+        -:  628:
+        -:  629:    // Identify values to interpolate
+    #####:  630:    n000 = st->nedata[iQ0][iH0][ir0];
+    #####:  631:    n001 = st->nedata[iQ0][iH0][ir1];
+    #####:  632:    n010 = st->nedata[iQ0][iH1][ir0];
+    #####:  633:    n011 = st->nedata[iQ0][iH1][ir1];
+    #####:  634:    n100 = st->nedata[iQ1][iH0][ir0];
+    #####:  635:    n101 = st->nedata[iQ1][iH0][ir1];
+    #####:  636:    n110 = st->nedata[iQ1][iH1][ir0];
+    #####:  637:    n111 = st->nedata[iQ1][iH1][ir1];
+        -:  638:    
+        -:  639:    //printf("n000 = %.2le \n", n000);
+        -:  640:    //printf("n001 = %.2le \n", n001);
+        -:  641:    //printf("n010 = %.2le \n", n010);
+        -:  642:    //printf("n011 = %.2le \n", n011);
+        -:  643:    //printf("n100 = %.2le \n", n100);
+        -:  644:    //printf("n101 = %.2le \n", n101);
+        -:  645:    //printf("n110 = %.2le \n", n110);
+        -:  646:    //printf("n111 = %.2le \n", n111);
+        -:  647:    
+        -:  648:    //Begin interpolation
+    #####:  649:    n00 = n000 * (1 - Qd) + n100 * Qd;
+    #####:  650:    n01 = n001 * (1 - Qd) + n101 * Qd;
+    #####:  651:    n10 = n010 * (1 - Qd) + n110 * Qd;
+    #####:  652:    n11 = n011 * (1 - Qd) + n111 * Qd;
+        -:  653:    //printf("n00 = %.2le \n", n00);
+        -:  654:    //printf("n01 = %.2le \n", n01);
+        -:  655:    //printf("n10 = %.2le \n", n10);
+        -:  656:    //printf("n11 = %.2le \n", n11);
+        -:  657:        
+    #####:  658:    n0 = n00 * (1 - Hd) + n10 * Hd;
+    #####:  659:    n1 = n01 * (1 - Hd) + n11 * Hd;
+        -:  660:    //printf("n0 = %.2le \n", n0);
+        -:  661:    //printf("n1 = %.2le \n", n1);
+        -:  662:    
+    #####:  663:    nelec = n0 * (1 - rd) + n1 * rd;
+        -:  664:    
+        -:  665:    /*
+        -:  666:    printf("n000 = %.2le \n", n000);
+        -:  667:    printf("n100 = %.2le \t n00 = %.2le \n", n100, n00);
+        -:  668:    printf("n010 = %.2le \n", n010);
+        -:  669:    printf("n110 = %.2le \t n10 = %.2le \t n0 = %.2le \n", n110, n10, n0);
+        -:  670:    printf("n001 = %.2le \n", n001);
+        -:  671:    printf("n101 = %.2le \t n01 = %.2le \n", n101, n01);
+        -:  672:    printf("n011 = %.2le \n", n011);
+        -:  673:    printf("n111 = %.2le \t n11 = %.2le \t n1 = %.2le \n", n111, n11, n1);
+        -:  674:    */
+    #####:  675:	nelec = nelec * 1e6; // Unit conversion: cm^-3 (CKC) -> m^-3 (SUBLIME)
+        -:  676:
+    #####:  677:	return nelec;
+        -:  678:}

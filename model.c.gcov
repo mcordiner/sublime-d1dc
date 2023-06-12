@@ -1,0 +1,159 @@
+        -:    0:Source:/Users/kdarnell/code/sublimed1dc_profile/src/model.c
+        -:    0:Graph:src/model.gcno
+        -:    0:Data:src/model.gcda
+        -:    0:Runs:1
+        -:    1:#include "lime.h"
+        -:    2:
+        -:    3:double beta= 1.042e-5;
+        -:    4:double betahcn= 1.5e-5;
+        -:    5:
+        -:    6:double vexp = 700.;
+        -:    7:double Qwater = 1e27;
+        -:    8:double tkin = 50.;
+        -:    9:double rnuc = 2.5e2;
+        -:   10:double abund = 0.001;
+        -:   11:
+        -:   12:/******************************************************************************/
+        -:   13:
+        -:   14:void
+function input called 2 returned 100% blocks executed 100%
+        2:   15:input(inputPars *par, image *img){
+        -:   16:/*
+        -:   17: * Basic parameters. See cheat sheet for details.
+        -:   18: */
+        2:   19:  par->beta = 1.042e-5;
+        2:   20:  par->betamol = 1.5e-5;
+        2:   21:  par->vexp = 700.;
+        2:   22:  par->tkin = 50;
+        2:   23:  par->rnuc = 2.5e2;
+        2:   24:  par->abund = 0.001;
+        2:   25:  par->dopplerb = 0;
+        -:   26:   
+        2:   27:  par->useEP       = 0;
+        2:   28:  par->Qwater       = 1e27;
+        2:   29:  par->xne = 0.2;
+        2:   30:  par->rHelio       = 1.0;
+        2:   31:  par->radius           = 2e8;
+        2:   32:  par->minScale         = rnuc;
+        2:   33:  par->pIntensity = 500;
+        2:   34:  par->moldatfile[0]    = "data/moldat/hcn.dat";
+        2:   35:  par->girdatfile[0]    = "data/girdat/g_hcn_1au.dat";
+        2:   36:  par->girScale = 1.0;
+        2:   37:  par->lte_only         = 1;
+        2:   38:  par->useCKCdata		= 1;
+        2:   39:  par->CKCTeFile        = "na";
+        2:   40:  par->CKCneFile        = "na";
+        -:   41:
+        2:   42:  par->outputfile = "output/hcn.pop";
+        2:   43:  par->gridfile         = "output/grid.vtk";
+        -:   44:
+        2:   45:  par->collPartIds[0]   = 1;
+        2:   46:  par->nMolWeights[0]   = 1.0;
+        -:   47:
+        -:   48:/*
+        -:   49: * Definitions for image #0. Add blocks for additional images.
+        -:   50: */
+        2:   51:  img[0].velres         = 100.;   // Channel resolution in m/s
+        2:   52:  img[0].nchan          = 50;     // Number of channels
+        2:   53:  img[0].trans          = 3;    // zero-indexed J quantum number
+        2:   54:  img[0].pxls           = 256;    // Pixels per dimension
+        2:   55:  img[0].imgres         = 0.5;    // Resolution in arc seconds
+        2:   56:  img[0].distance = 1.0*AU; // source distance in m
+        2:   57:  img[0].unit           = 0;    // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau
+        2:   58:  img[0].filename = "output/hcn.fits"; // Output filename
+        2:   59:}
+        -:   60:
+        -:   61:/******************************************************************************/
+        -:   62:
+        -:   63:void
+function density called 1002 returned 100% blocks executed 100%
+     1002:   64:density(double x, double y, double z, double *density){
+        -:   65:/*
+        -:   66: * Define variable for radial coordinate
+        -:   67: */
+        -:   68:  double r;
+        -:   69:
+     1002:   70:  const double rMin = rnuc; /* This cutoff should be chosen smaller than par->minScale but greater than zero (to avoid a singularity at the origin). */
+        -:   71:
+        -:   72:  /*
+        -:   73:   * Calculate radial distance from origin
+        -:   74:   */
+     1002:   75:  r=sqrt(x*x+y*y+z*z);
+        -:   76:  /*
+        -:   77:   * Calculate a Haser density profile
+        -:   78:   * (Multiply with 1e6 to go to SI-units)
+        -:   79:   */
+     1002:   80:  if(r<rMin)
+branch  0 taken 1% (fallthrough)
+branch  1 taken 100%
+        3:   81:    density[0] = 1e-20; /* Just to prevent overflows at r==0! */
+        -:   82:  else
+      999:   83:    density[0] = Qwater /(4*PI*pow(r, 2)*vexp)*exp(-r*beta/vexp);
+     1002:   84:}
+        -:   85:
+        -:   86:/******************************************************************************/
+        -:   87:
+        -:   88:void
+function temperature called 502 returned 100% blocks executed 100%
+      502:   89:temperature(double x, double y, double z, double *temperature){
+      502:   90:  temperature[0] = tkin;
+      502:   91:}
+        -:   92:
+        -:   93:/******************************************************************************/
+        -:   94:
+        -:   95:void
+function molNumDensity called 502 returned 100% blocks executed 100%
+      502:   96:molNumDensity(double x, double y, double z, double *nmol){
+        -:   97: /*
+        -:   98: * Define variable for radial coordinate
+        -:   99: */
+        -:  100:  double r;
+        -:  101:
+      502:  102:  const double rMin = rnuc; /* This cutoff should be chosen smaller than par->minScale but greater than zero (to avoid a singularity at the origin). */
+        -:  103:
+        -:  104:  /*
+        -:  105:   * Calculate radial distance from origin
+        -:  106:   */
+      502:  107:  r=sqrt(x*x+y*y+z*z);
+        -:  108:  /*
+        -:  109:   * Calculate a Haser density profile
+        -:  110:   * (Multiply with 1e6 to go to SI-units)
+        -:  111:   */
+      502:  112:  if(r<rMin)
+branch  0 taken 1% (fallthrough)
+branch  1 taken 100%
+        2:  113:    nmol[0] = 0.;
+        -:  114:  else
+      500:  115:    nmol[0] =abund*Qwater/(4*PI*pow(r, 2)*vexp)*exp(-r*betahcn/vexp);
+      502:  116:}
+        -:  117:
+        -:  118:/******************************************************************************/
+        -:  119:
+        -:  120:void
+function doppler called 502 returned 100% blocks executed 100%
+      502:  121:doppler(double x, double y, double z, double *doppler){
+      502:  122:  *doppler = 100.;
+      502:  123:}
+        -:  124:
+        -:  125:/******************************************************************************/
+        -:  126:
+        -:  127:void
+function velocity called 49899 returned 100% blocks executed 100%
+    49899:  128:velocity(double x, double y, double z, double *vel){
+        -:  129:/*
+        -:  130: * Variables for spherical coordinates
+        -:  131: */
+        -:  132:  double phi, theta;
+        -:  133:/*
+        -:  134: * Transform Cartesian coordinates into spherical coordinates
+        -:  135: */
+    49899:  136:  theta=atan2(sqrt(x*x+y*y),z);
+    49899:  137:  phi=atan2(y,x);
+        -:  138:/*
+        -:  139: * Vector transformation back into Cartesian basis
+        -:  140: */
+    49899:  141:  vel[0]=vexp*sin(theta)*cos(phi);
+    49899:  142:  vel[1]=vexp*sin(theta)*sin(phi);
+    49899:  143:  vel[2]=vexp*cos(theta);
+    49899:  144:}
+        -:  145:
