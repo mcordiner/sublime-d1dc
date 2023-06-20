@@ -22,7 +22,7 @@ input(inputPars *par, image *img){
   par->tkin = 50;
   par->rnuc = 2.5e2;
   par->abund = 0.001;
-  par->dopplerb = 0;
+  par->dopplerb = 100;
    
   par->useEP       = 0;
   par->Qwater       = 1e27;
@@ -61,7 +61,7 @@ input(inputPars *par, image *img){
 /******************************************************************************/
 
 void
-density(double x, double y, double z, double *density){
+density(configInfo *par, double x, double y, double z, double *density){
 /*
  * Define variable for radial coordinate
  */
@@ -81,19 +81,26 @@ density(double x, double y, double z, double *density){
     density[0] = 1e-20; /* Just to prevent overflows at r==0! */
   else
     density[0] = Qwater /(4*PI*pow(r, 2)*vexp)*exp(-r*beta/vexp);
+//   printf("density function:\n");
+//   printf("rnuc = %.3e \t par->rnuc = %.3e \n", rnuc, par->rnuc);
+//   printf("Qwater = %.3e \t par->Qwater = %.3e \n", Qwater, par->Qwater);
+//   printf("vexp = %.3e \t par->vexp = %.3e \n", vexp, par->vexp);
+//   printf("beta = %.3e \t par->beta = %.3e \n", beta, par->beta);
 }
 
 /******************************************************************************/
 
 void
-temperature(double x, double y, double z, double *temperature){
+temperature(configInfo *par, double x, double y, double z, double *temperature){
   temperature[0] = tkin;
+//   printf("temperature function:\n");
+//   printf("tkin = %.3e \t par->tkin = %.3e \n", tkin, par->tkin);
 }
 
 /******************************************************************************/
 
 void
-molNumDensity(double x, double y, double z, double *nmol){
+molNumDensity(configInfo *par, double x, double y, double z, double *nmol){
  /*
  * Define variable for radial coordinate
  */
@@ -113,19 +120,26 @@ molNumDensity(double x, double y, double z, double *nmol){
     nmol[0] = 0.;
   else
     nmol[0] =abund*Qwater/(4*PI*pow(r, 2)*vexp)*exp(-r*betahcn/vexp);
+//   printf("molNumDensity function:\n");
+//   printf("rnuc = %.3e \t par->rnuc = %.3e \n", rnuc, par->rnuc);
+//   printf("Qwater = %.3e \t par->Qwater = %.3e \n", Qwater, par->Qwater);
+//   printf("vexp = %.3e \t par->vexp = %.3e \n", vexp, par->vexp);
+//   printf("betahcn = %.3e \t par->betamol = %.3e \n", betahcn, par->betamol);
 }
 
 /******************************************************************************/
 
 void
-doppler(double x, double y, double z, double *doppler){
+doppler(configInfo *par, double x, double y, double z, double *doppler){
   *doppler = 100.;
+//   printf("doppler function:\n");
+//   printf("*doppler = %.3e \t par->dopplerb = %.3e \n", *doppler, par->dopplerb);
 }
 
 /******************************************************************************/
 
 void
-velocity(double x, double y, double z, double *vel){
+velocity(configInfo *par, double x, double y, double z, double *vel){
 /*
  * Variables for spherical coordinates
  */
@@ -141,5 +155,7 @@ velocity(double x, double y, double z, double *vel){
   vel[0]=vexp*sin(theta)*cos(phi);
   vel[1]=vexp*sin(theta)*sin(phi);
   vel[2]=vexp*cos(theta);
+//   printf("velocity function:\n");
+//   printf("vexp = %.3e \t par->vexp = %.3e \n", vexp, par->vexp);
 }
 

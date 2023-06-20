@@ -366,7 +366,7 @@ Generate the remaining values if needed. **Note** that we check a few of them to
     for(i=0;i<par->ncell; i++)
       (*gp)[i].dens = malloc(sizeof(double)*par->numDensities);
     for(i=0;i<par->pIntensity;i++)
-      density((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].dens);
+      density(par,(*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].dens);
     for(i=par->pIntensity;i<par->ncell;i++){
       for(j=0;j<par->numDensities;j++)
         (*gp)[i].dens[j]=EPS; //************** what is the low but non zero value for? Probably to make sure no ills happen in case something gets divided by this?
@@ -380,7 +380,7 @@ Generate the remaining values if needed. **Note** that we check a few of them to
       /* Check that the user has defined gas temperatures at least (if the dust temp was not defined, it is taken to be the same as the gas temp).
       */
       dummyT[0] = -1.0; /* a non-physical temperature. */
-      temperature(0.0,0.0,0.0, dummyT);
+      temperature(par,0.0,0.0,0.0, dummyT);
       if(dummyT[0]<0.0){
         if(!silent) bail_out("You need to set gas temperatures in your model.");
 exit(1);
@@ -388,7 +388,7 @@ exit(1);
     }
 
     for(i=0;i<par->pIntensity;i++)
-      temperature((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].t);
+      temperature(par,(*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].t);
     for(i=par->pIntensity;i<par->ncell;i++){
       (*gp)[i].t[0]=par->tcmb;
       (*gp)[i].t[1]=par->tcmb;
@@ -434,7 +434,7 @@ exit(1);
           */
           for(si=0;si<par->nSpecies;si++)
             dummyPointer[si] = -1.0; /* non-physical values. */
-          molNumDensity(0.0,0.0,0.0, dummyPointer);
+          molNumDensity(par,0.0,0.0,0.0, dummyPointer);
           for(si=0;si<par->nSpecies;si++){
             if(dummyPointer[si]<0.0){
               if(!silent) bail_out("You need to set molNumDensity for all species in your model.");
@@ -444,7 +444,7 @@ exit(1);
         }
 
         for(i=0;i<par->pIntensity;i++){
-          molNumDensity((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],dummyPointer);
+          molNumDensity(par,(*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],dummyPointer);
           for(si=0;si<par->nSpecies;si++)
             (*gp)[i].mol[si].nmol = dummyPointer[si];
         }
@@ -463,7 +463,7 @@ exit(1);
         /* Check that the user set reasonable values.
         */
         dummyScalar = -1.0; /* a non-physical value. */
-        doppler(0.0,0.0,0.0, &dummyScalar);
+        doppler(par,0.0,0.0,0.0, &dummyScalar);
         if(dummyScalar<0.0){
           if(!silent) bail_out("You need to set gas turbulence doppler values in your model.");
 exit(1);
@@ -471,7 +471,7 @@ exit(1);
       }
 
       for(i=0;i<par->pIntensity;i++)
-        doppler((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],&(*gp)[i].dopb_turb); 
+        doppler(par,(*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],&(*gp)[i].dopb_turb); 
       for(i=par->pIntensity;i<par->ncell;i++)
         (*gp)[i].dopb_turb=0.;
 
@@ -481,7 +481,7 @@ exit(1);
     if(!allBitsSet(par->dataFlags, DS_mask_velocity)){
       /* There seems to be no way we can test if the user has set velocities properly because -ve component values are of course possible. */
       for(i=0;i<par->pIntensity;i++)
-        velocity((*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].vel);
+        velocity(par,(*gp)[i].x[0],(*gp)[i].x[1],(*gp)[i].x[2],(*gp)[i].vel);
 
       par->dataFlags |= DS_mask_velocity;
     }

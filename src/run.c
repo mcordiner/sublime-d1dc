@@ -263,12 +263,12 @@ Run through all the user functions and set flags in the global defaultFuncFlags 
 
   for(i=0;i<MAX_N_COLL_PART;i++) dummyDens[i] = -1.0; /* We expect that no real function will return such values, so this may be used as an indicator for the number of values returned. */
 
-  density(      x, y, z, dummyDens);
-  temperature(  x, y, z, dummyT);
+  density(      par, x, y, z, dummyDens);
+  temperature(  par, x, y, z, dummyT);
   abundance(    x, y, z, dummyAbun);
-  molNumDensity(x, y, z, dummyNmol);
-  doppler(      x, y, z, &dummyTurbDop);
-  velocity(     x, y, z, dummyVel);
+  molNumDensity(par, x, y, z, dummyNmol);
+  doppler(      par, x, y, z, &dummyTurbDop);
+  velocity(     par, x, y, z, dummyVel);
   magfield(     x, y, z, dummyB);
   gasIIdust(    x, y, z, &dummyG2d);
 
@@ -349,6 +349,13 @@ Copy over user-set parameters to the configInfo versions. (This seems like dupli
   par->fixRNG            = inpars.fixRNG;
   par->tNuc              = inpars.tNuc;
   par->useCKCdata        = inpars.useCKCdata ;
+  par->beta				 = inpars.beta;
+  par->betamol			 = inpars.betamol;
+  par->vexp				 = inpars.vexp;
+  par->tkin				 = inpars.tkin;
+  par->rnuc				 = inpars.rnuc;
+  par->abund			 = inpars.abund;
+  par->dopplerb			 = inpars.dopplerb;
 
   /* Somewhat more carefully copy over the strings:
   */

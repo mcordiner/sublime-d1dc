@@ -456,7 +456,7 @@ getEdgeVelocities(configInfo *par, struct grid *gp){
     for(k=0;k<gp[i].numNeigh;k++){
       for(j=0;j<3;j++) x[j]=gp[i].x[j];		
       for(l=0;l<5;l++){
-        velocity(x[0],x[1],x[2],vel);	
+        velocity(par,x[0],x[1],x[2],vel);	
 
         if (l==1) {
 	  gp[i].v1[3*k]=vel[0]; gp[i].v1[3*k+1]=vel[1]; gp[i].v1[3*k+2]=vel[2];

@@ -650,8 +650,8 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, configInfo *par, int
   double jbar[par->pIntensity],molDens[par->nSpecies], tau, beta, interp_coeff;
 
   rnuc = par->minScale;
-  density(radius,0.0,0.0,dens);
-  temperature(radius,0.0,0.0,tkin);
+  density(par,radius,0.0,0.0,dens);
+  temperature(par,radius,0.0,0.0,tkin);
 
   /* Initialize matrix with zeros */
   if(md[ispec].nlev<=0){
@@ -757,7 +757,7 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, configInfo *par, int
    //Radiation trapping using the Escape Probaility method
    if(par->useEP){ 
 
-   molNumDensity(radius,0.0,0.0, molDens); 
+   molNumDensity(par, radius,0.0,0.0, molDens); 
     for(li=0;li<md[ispec].nline;li++){
       upper=md[ispec].lau[li];
       lower=md[ispec].lal[li];
@@ -823,8 +823,9 @@ int f(realtype radius, N_Vector P, N_Vector Pdot, void *data){
   NEQ = user_data -> array_size;
   double *pij = user_data -> transition_rates;
   double Pops_array[NEQ], vel[DIM], vexp;
-
-  velocity(0.,0.,radius,vel);
+  configInfo *par = user_data -> par;
+  
+  velocity(par,0.,0.,radius,vel);
   vexp = sqrt(vel[0]*vel[0] + vel[1]*vel[1] + vel[2]*vel[2]);
 
   //Pasing P values to Pops_array for readability

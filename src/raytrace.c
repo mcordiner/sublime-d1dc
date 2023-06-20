@@ -115,7 +115,7 @@ traceray(imageInfo *img,configInfo *par,struct grid *gp,molData *md,struct rayDa
        }
       
       // Find the velocity vector   
-      velocity(x[0],x[1],x[2],vel);
+      velocity(par,x[0],x[1],x[2],vel);
      
       /* Calculate first the continuum stuff because it is the same for all channels:*/
       

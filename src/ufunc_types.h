@@ -24,12 +24,12 @@
 
 //extern int defaultFuncFlags;
 
-void	density(double,double,double,double *);
-void	temperature(double,double,double,double *);
+void	density(configInfo*,double,double,double,double *);
+void	temperature(configInfo*,double,double,double,double *);
 void	abundance(double,double,double,double *);
-void	molNumDensity(double,double,double,double *);
-void	doppler(double,double,double, double *);
-void	velocity(double,double,double,double *);
+void	molNumDensity(configInfo*,double,double,double,double *);
+void	doppler(configInfo*,double,double,double, double *);
+void	velocity(configInfo*,double,double,double,double *);
 void	magfield(double,double,double,double *);
 void	gasIIdust(double,double,double,double *);
 double	gridDensity(configInfo*, double*);

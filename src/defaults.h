@@ -27,7 +27,7 @@ extern double defaultDensyPower;
 void	default_abundance(double x, double y, double z, double *abundance);
 void	default_magfield(double x, double y, double z, double *B);
 void	default_gasIIdust(double x, double y, double z, double *gas2dust);
-double	default_gridDensity(configInfo *par, double *r, void (*density)(double x, double y, double z, double *val));
+double	default_gridDensity(configInfo *par, double *r, void (*density)(configInfo *par, double x, double y, double z, double *val));
 
 #endif /* DEFAULTS_H */
 

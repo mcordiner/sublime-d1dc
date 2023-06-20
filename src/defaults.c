@@ -33,7 +33,7 @@ default_gasIIdust(double x, double y, double z, double *gas2dust){
 }
 
 double
-default_gridDensity(configInfo *par, double *r, void (*density)(double x, double y, double z, double *val)){
+default_gridDensity(configInfo *par, double *r, void (*density)(configInfo *par, double x, double y, double z, double *val)){
   /*
 The grid points within the model are chosen randomly via the rejection method with a probability distribution which the present function is intended to provide.
 
@@ -49,7 +49,7 @@ Notes:
   if(rSquared>=par->radiusSqu)
     return 0.0;
 
-  density(r[0],r[1],r[2],val);
+  density(par,r[0],r[1],r[2],val);
   for (i=0;i<par->numDensities;i++) totalDensity += val[i];
   fracDensity = pow(totalDensity,defaultDensyPower)/par->gridDensGlobalMax;
 
