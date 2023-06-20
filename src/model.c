@@ -1,14 +1,4 @@
 #include "lime.h"
-
-double beta= 1.042e-5;
-double betahcn= 1.5e-5;
-
-double vexp = 700.;
-double Qwater = 1e27;
-double tkin = 50.;
-double rnuc = 2.5e2;
-double abund = 0.001;
-
 /******************************************************************************/
 
 void
@@ -29,7 +19,7 @@ input(inputPars *par, image *img){
   par->xne = 0.2;
   par->rHelio       = 1.0;
   par->radius           = 2e8;
-  par->minScale         = rnuc;
+  par->minScale         = par->rnuc;
   par->pIntensity = 500;
   par->moldatfile[0]    = "data/moldat/hcn.dat";
   par->girdatfile[0]    = "data/girdat/g_hcn_1au.dat";
@@ -67,7 +57,7 @@ density(configInfo *par, double x, double y, double z, double *density){
  */
   double r;
 
-  const double rMin = rnuc; /* This cutoff should be chosen smaller than par->minScale but greater than zero (to avoid a singularity at the origin). */
+  const double rMin = par->rnuc; /* This cutoff should be chosen smaller than par->minScale but greater than zero (to avoid a singularity at the origin). */
 
   /*
    * Calculate radial distance from origin
@@ -80,21 +70,14 @@ density(configInfo *par, double x, double y, double z, double *density){
   if(r<rMin)
     density[0] = 1e-20; /* Just to prevent overflows at r==0! */
   else
-    density[0] = Qwater /(4*PI*pow(r, 2)*vexp)*exp(-r*beta/vexp);
-//   printf("density function:\n");
-//   printf("rnuc = %.3e \t par->rnuc = %.3e \n", rnuc, par->rnuc);
-//   printf("Qwater = %.3e \t par->Qwater = %.3e \n", Qwater, par->Qwater);
-//   printf("vexp = %.3e \t par->vexp = %.3e \n", vexp, par->vexp);
-//   printf("beta = %.3e \t par->beta = %.3e \n", beta, par->beta);
+    density[0] = par->Qwater /(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->beta/par->vexp);
 }
 
 /******************************************************************************/
 
 void
 temperature(configInfo *par, double x, double y, double z, double *temperature){
-  temperature[0] = tkin;
-//   printf("temperature function:\n");
-//   printf("tkin = %.3e \t par->tkin = %.3e \n", tkin, par->tkin);
+  temperature[0] = par->tkin;
 }
 
 /******************************************************************************/
@@ -106,7 +89,7 @@ molNumDensity(configInfo *par, double x, double y, double z, double *nmol){
  */
   double r;
 
-  const double rMin = rnuc; /* This cutoff should be chosen smaller than par->minScale but greater than zero (to avoid a singularity at the origin). */
+  const double rMin = par->rnuc; /* This cutoff should be chosen smaller than par->minScale but greater than zero (to avoid a singularity at the origin). */
 
   /*
    * Calculate radial distance from origin
@@ -119,21 +102,14 @@ molNumDensity(configInfo *par, double x, double y, double z, double *nmol){
   if(r<rMin)
     nmol[0] = 0.;
   else
-    nmol[0] =abund*Qwater/(4*PI*pow(r, 2)*vexp)*exp(-r*betahcn/vexp);
-//   printf("molNumDensity function:\n");
-//   printf("rnuc = %.3e \t par->rnuc = %.3e \n", rnuc, par->rnuc);
-//   printf("Qwater = %.3e \t par->Qwater = %.3e \n", Qwater, par->Qwater);
-//   printf("vexp = %.3e \t par->vexp = %.3e \n", vexp, par->vexp);
-//   printf("betahcn = %.3e \t par->betamol = %.3e \n", betahcn, par->betamol);
+    nmol[0] =par->abund*par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp);
 }
 
 /******************************************************************************/
 
 void
 doppler(configInfo *par, double x, double y, double z, double *doppler){
-  *doppler = 100.;
-//   printf("doppler function:\n");
-//   printf("*doppler = %.3e \t par->dopplerb = %.3e \n", *doppler, par->dopplerb);
+  *doppler = par->dopplerb;
 }
 
 /******************************************************************************/
@@ -152,10 +128,8 @@ velocity(configInfo *par, double x, double y, double z, double *vel){
 /*
  * Vector transformation back into Cartesian basis
  */
-  vel[0]=vexp*sin(theta)*cos(phi);
-  vel[1]=vexp*sin(theta)*sin(phi);
-  vel[2]=vexp*cos(theta);
-//   printf("velocity function:\n");
-//   printf("vexp = %.3e \t par->vexp = %.3e \n", vexp, par->vexp);
+  vel[0]=par->vexp*sin(theta)*cos(phi);
+  vel[1]=par->vexp*sin(theta)*sin(phi);
+  vel[2]=par->vexp*cos(theta);
 }
 
