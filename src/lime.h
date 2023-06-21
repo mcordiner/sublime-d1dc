@@ -321,6 +321,9 @@ struct CKCdata readCKCdata(CKCdata *st);
 struct CKCdata readCKCfile(CKCdata *st, char *Tefilename, char *nefilename, double Q_values, double H_values);
 double get_Telec (CKCdata *st, double Q, double rH, double radius);
 double get_nelec (CKCdata *st, double Q, double rH, double radius);
+void remove_spaces (char* restrict str_trimmed, const char* restrict str_untrimmed);
+int indexOf(char *elm, char *arr[], int arr_cnt);
+
 
 /* Curses functions */
 
