@@ -1,3 +1,13 @@
+/*
+ *  model.c
+ *
+ *  This file is part of SUBLIMED1D (SUBlimating gases in LIME, version D1D)
+ *
+ *  Copyright (C) 2023 Martin Cordiner and Kristen Darnell (NASA GSFC)
+ *
+ */
+
+
 #include "lime.h"
 /******************************************************************************/
 
@@ -168,7 +178,6 @@ input(inputPars *par, image *img){
   
   if (isnan(dblval[5]) == 0){
   	par->rHelio  = dblval[5];
-  	
   }
 
   if (isnan(dblval[6]) == 0){

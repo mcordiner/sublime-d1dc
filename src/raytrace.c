@@ -1,3 +1,16 @@
+/*
+ *  raytrace.c
+ *
+ *  This file is part of SUBLIMED1D (SUBlimating gases in LIME, version D1D)
+ *
+ *  Copyright (C) 2006-2014 Christian Brinch
+ *  Copyright (C) 2015-2017 The LIME development team
+ *  Copyright (C) 2023 Martin Cordiner and Kristen Darnell (NASA GSFC)
+ *
+ */
+
+
+
 #include "lime.h"
 #include <math.h>
 

@@ -1,3 +1,15 @@
+/*
+ *  readckc.c
+ *
+ *  This file is part of SUBLIMED1D (SUBlimating gases in LIME, version D1D)
+ *
+ *  Copyright (C) 2023 Martin Cordiner and Kristen Darnell (NASA GSFC)
+ *
+ */
+
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
