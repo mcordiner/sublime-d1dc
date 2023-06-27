@@ -51,8 +51,8 @@ input(inputPars *par, image *img){
 	int i_str, i_dbl, i_int;
 	FILE *fp;
 	
-	char name[100];
-	char value[100];
+	char name[200];
+	char value[200];
 	
 	/* Strings */
 	int numstr = 3;
@@ -127,12 +127,12 @@ input(inputPars *par, image *img){
  
  /* strings */
  if (strval[0] != "NaN"){
- 	par->outputfile = (char*)malloc(100);
+ 	par->outputfile = (char*)malloc(200);
  	strcpy(par->outputfile, "output/");
  	strcat(par->outputfile, strval[0]);
  	strcat(par->outputfile, ".pop");    
     
-    img[0].filename = (char*)malloc(100);
+    img[0].filename = (char*)malloc(200);
     strcpy(img[0].filename, "output/");
  	strcat(img[0].filename, strval[0]);
  	strcat(img[0].filename, ".fits");
@@ -140,12 +140,12 @@ input(inputPars *par, image *img){
 
  
  if (strval[1] != "NaN"){
- 	par->moldatfile[0] = (char*)malloc(100);
+ 	par->moldatfile[0] = (char*)malloc(200);
  	strcpy(par->moldatfile[0], strval[1]);
  }
  
  if (strval[2] != "NaN"){
- 	par->girdatfile[0] = (char*)malloc(100);
+ 	par->girdatfile[0] = (char*)malloc(200);
  	strcpy(par->girdatfile[0], strval[2]);
  }
   
