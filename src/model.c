@@ -128,13 +128,11 @@ input(inputPars *par, image *img){
  /* strings */
  if (strval[0] != "NaN"){
  	par->outputfile = (char*)malloc(200);
- 	strcpy(par->outputfile, "output/");
- 	strcat(par->outputfile, strval[0]);
+ 	strcpy(par->outputfile, strval[0]);
  	strcat(par->outputfile, ".pop");    
     
     img[0].filename = (char*)malloc(200);
-    strcpy(img[0].filename, "output/");
- 	strcat(img[0].filename, strval[0]);
+ 	strcpy(img[0].filename, strval[0]);
  	strcat(img[0].filename, ".fits");
  }
 
@@ -265,7 +263,7 @@ input(inputPars *par, image *img){
   par->useCKCdata		= 1;
   par->CKCTeFile        = "na";
   par->CKCneFile        = "na";
-  par->gridfile         = "output/grid.vtk";
+  par->gridfile         = "grid.vtk";
 
   par->nMolWeights[0]   = 1.0;
 }
