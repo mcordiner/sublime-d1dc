@@ -1,6 +1,6 @@
 /*
  *  grid.c
- *  SUBLIMED1D main driver script
+ *  
  *  This file is part of SUBLIMED1D (SUBlimating gases in LIME, version D1D)
  *
  *  Copyright (C) 2006-2014 Christian Brinch
