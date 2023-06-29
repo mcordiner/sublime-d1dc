@@ -1,8 +1,8 @@
 /*
  * Filenames
  */
-runname		= test_run;					// (str) What you want your output files to be labeled as
-moldatfile	= data/moldat/hcn.dat;		// (str) File must be located in "data/moldat/"
+runname		= output/test_run;				// (str) What you want your output files to be labeled as
+moldatfile	= data/moldat/hcn.dat;			// (str) File must be located in "data/moldat/"
 girdatfile	= data/girdat/g_hcn_1au.dat;	// (str) File must be located in "data/girdat/"
 
 /*
