@@ -10,7 +10,7 @@ Example input and output files are given in the example/ folder.
 
 After installation of the required gsl, qhull and cvode (SUNDIALS) libraries, and updating the Makefile.defs for your system, the code is compiled as follows:
 
-> ./sublimed1d
+> ./compile_sublimed1d
 
 This generates a binary executable called sublimed1dc.
 
