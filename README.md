@@ -4,11 +4,13 @@ SUBlimated cometary gases in LIME (Dynamical, 1D, compiled version)
 
 This is SUBLIMED1D, a 1D radiative transfer code for outflowing cometary gases, by Martin Cordiner, Emmanuel Garcia-Berrios and Kristen Darnell (2023). 
 
-SUBLIMED1DC is based on SUBLIMED, and the LIME (LIne Modeling Engine) version 1.9.3 by Christian Brinch (2006-2014) and the LIME development team (2015-2018). Main changes from the original LIME code include (1) switching from the static (GSL) solver to a time-dependent (CVODE) solver, which allows the dynamical nature of the cometary outflow to be properly simulated. Equations of statistical equilibrium in solver.c have been restructured as time-dependent differential equations, assuming constant outflow velocity. (2) Electron collision rates are added to the differential equations; analytic electron densities and temperatures are generated at runtime. (3) This model is strictly 1D, and the raytracing is now performed along a radial vector from the origin (in the plane of the sky), which is then interpolated onto the 2D image grid, supersampling the central pixels where the brightness can change rapidly. (4) For photon trapping, the escape probability approximation can invoked using par->useEP=1. (5) This version is compiled once, and the model parameters are read in at runtime using the "input.par" file; remaining parameters can be set in src/model.c before compiling.
+SUBLIMED1DC is based on SUBLIMED, and the LIME (LIne Modeling Engine) version 1.9.3 by Christian Brinch (2006-2014) and the LIME development team (2015-2018). Main changes from the original LIME code include (1) switching from the static (GSL) solver to a time-dependent (CVODE) solver, which allows the dynamical nature of the cometary outflow to be properly simulated. Equations of statistical equilibrium in solver.c have been restructured as time-dependent differential equations, assuming constant outflow velocity. (2) Electron collision rates are added to the differential equations; analytic electron densities and temperatures are generated at runtime. (3) This model is strictly 1D, and the raytracing is now performed along a radial vector from the origin (in the plane of the sky), which is then interpolated onto the 2D image grid, supersampling the central pixels where the brightness can change rapidly. (4) For photon trapping, the escape probability approximation can invoked using par->useEP=1. (5) This version is compiled once, and the model parameters are read in at runtime using the "input.par" file; a few other parameters can be set in src/model.c before compiling.
 
-Example input and output files are given in the example/ folder.
+Example input and output files are given in the example/ folder. 
 
-After installation of the required gsl, qhull and cvode (SUNDIALS) libraries, and updating the Makefile.defs for your system, the code is compiled as follows:
+To install, you will require the  gsl, qhull, cfitsio and cvode version 5 (SUNDIALS) libraries. If you have them installed outside the usual system lib folders, you will need to insert the relevant folder names in the Makefile.defs files, along with the correct qhull name (qhull|qhulstatic) and C compiler.
+
+The code is then compiled by running the following shell script:
 
 > ./compile_sublimed1d
 
