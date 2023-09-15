@@ -18,7 +18,6 @@ PREFIX  =  ${PATHTOLIME}
 srcdir		= ${CURDIR}/src
 docdir		= ${CURDIR}/doc
 exampledir	= ${CURDIR}/example
-#*** better to use ${PREFIX} here rather than ${CURDIR}? (the latter is used in artist/lime.)
 
 ifneq (,$(wildcard ${PREFIX}/lib/.))
     LIBS += -L${PREFIX}/lib
@@ -39,23 +38,11 @@ endif
 CPPFLAGS += -I${PREFIX}/include \
             -I${PREFIX}/include/libqhull \
             -I${PREFIX}/src \
-            -I${HOME}/include \
-            -I/Users/kdarnell/macports/include \
-            -I/Users/kdarnell/macports/include/qhull \
-            -I/sw//include \
             ${EXTRACPPFLAGS}
 
 
 # Names of source files included:
 include Makefile.srcs
-
-##
-## Do not change anything below unless you know what you are doing! 
-##
-
-TARGET  = lime.x # Overwritten in usual practice by the value passed in by the 'lime' script.
-MODELS  = model.c # Overwritten in usual practice by the value passed in by the 'lime' script.
-MODELO 	= ${srcdir}/model.o
 
 CCFLAGS += -O3 -falign-loops=16 -fno-strict-aliasing
 LDFLAGS += -lgsl -lgslcblas -l${LIB_QHULL} -lcfitsio -lncurses -lsundials_cvode -lsundials_nvecserial -lsundials_nvecmanyvector -lm
@@ -93,37 +80,14 @@ all:: ${TARGET}
 %.o : %.c
 	${CC} ${CCFLAGS} ${CPPFLAGS} -o $@ -c $<
 
-${TARGET}: ${OBJS} ${MODELO} 
+${TARGET}: ${OBJS}
 	${CC} -o $@ $^ ${LIBS} ${LDFLAGS}
 
 ${OBJS} : ${INCS}
 ${CONV_OBJS} : ${CONVINCLUDES}
 
-${MODELO}: ${INCS}
-	${CC} ${CCFLAGS} ${CPPFLAGS} -o ${MODELO} -c ${MODELS}
-
-gridconvert : CPPFLAGS += -DNO_NCURSES
-
-gridconvert: ${CONV_OBJS}
-	${CC} -o $@ $^ ${LIBS} ${LDFLAGS}
-
-doc::
-	mkdir ${docdir}/_html || true
-	sphinx-build doc ${docdir}/_html
-
-docclean::
-	rm -rf ${docdir}/_html
-
 objclean::
 	rm -f ${srcdir}/*.o
 
-limeclean:: objclean
-	rm -f ${TARGET}
-
 clean:: objclean
-	rm -f gridconvert
 	rm -f *~ ${srcdir}/*~
-
-distclean:: clean docclean limeclean
-	rm Makefile.defs
-
