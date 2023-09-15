@@ -1,0 +1,29 @@
+/*
+ *  collparts.h
+ *  SUBLIMED1D main driver script
+ *  This file is part of SUBLIMED1D (SUBlimating gases in LIME, version D1D)
+ *
+ *  Copyright (C) 2006-2014 Christian Brinch
+ *  Copyright (C) 2015-2017 The LIME development team
+ *
+ */
+
+#ifndef COLLPARTS_H
+#define COLLPARTS_H
+
+/* Collision partner ID numbers from LAMDA */
+#define CP_H2			1
+#define CP_p_H2			2
+#define CP_o_H2			3
+#define CP_e			4
+#define CP_H			5
+#define CP_He			6
+#define CP_Hplus		7
+
+/* Bit codes for par->collPartUserSetFlags */
+#define CPF_BIT_ids        0
+#define CPF_BIT_weights    1
+#define CPF_BIT_names      2
+#define CPF_BIT_MolWeights 3
+
+#endif /* COLLPARTS_H */

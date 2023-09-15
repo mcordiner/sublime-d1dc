@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "lime.h"
+#include "sublime.h"
 
 /* FUNCTION TO READ CKC DATA: LOOKUP TABLES */
 struct CKCdata readCKCdata(CKCdata *st){

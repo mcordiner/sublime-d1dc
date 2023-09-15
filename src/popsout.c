@@ -10,7 +10,7 @@
 	- Change the definition of the file format so that nmol is now read with the other mol[] scalars.
  */
 
-#include "lime.h"
+#include "sublime.h"
 
 void
 popsout(configInfo *par, struct grid *gp, molData *md){

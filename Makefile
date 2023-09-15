@@ -74,7 +74,7 @@ CONV_OBJS = $(CONVSOURCES:.c=.o)
 
 .PHONY: all doc docclean objclean limeclean clean distclean
 
-all:: ${TARGET} 
+all:: ${TARGET}
 
 # Implicit rules:
 %.o : %.c

@@ -6,10 +6,13 @@
 # Copyright (C) 2015-2017 The LIME development team
 # Copyright (C) 2023 Martin Cordiner and Kristen Darnell (NASA GSFC)
 
+# Set the number of threads to use for multithreaded raytracing etc. May need to make clean for this to take effect
+nthreads=4
+
 # Set up the PATHTOLIME, LD_LIBRARY_PATH and WORKDIR variables
 export PATHTOLIME=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PATHTOLIME}/lib
 export WORKDIR=$PWD
 
 # Compile the code
-make -s EXTRACPPFLAGS="-DNO_NCURSES -DFASTEXP" TARGET=$WORKDIR/sublimed1dc
+make -s EXTRACPPFLAGS="-DNO_NCURSES -DFASTEXP -DNTHREADS=${nthreads}" TARGET=$WORKDIR/sublimed1dc

@@ -8,7 +8,7 @@
  *
  */
 
-#include "lime.h"
+#include "sublime.h"
 
 #ifdef FASTEXP
 double EXP_TABLE_2D[128][10];

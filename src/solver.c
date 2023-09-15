@@ -20,7 +20,7 @@ TODO:
 #include <sunlinsol/sunlinsol_dense.h> /* access to dense SUNLinearSolver      */
 #include <sundials/sundials_types.h>   /* defs. of realtype, sunindextype      */
 
-#include "lime.h"
+#include "sublime.h"
 #include <gsl/gsl_sort.h>
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_vector.h>

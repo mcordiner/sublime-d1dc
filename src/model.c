@@ -8,7 +8,7 @@
  */
 
 
-#include "lime.h"
+#include "sublime.h"
 /******************************************************************************/
 
 void 
@@ -62,8 +62,8 @@ input(inputPars *par, image *img){
 	char strval[numstr][100];
 	
 	/* doubles */
-	int numdbl = 11;
-	char *dbllist[11] = {"abund",
+	int numdbl = 14;
+	char *dbllist[14] = {"abund",
 						"betamol",
 						"delta",
 						"imgres",
@@ -71,19 +71,23 @@ input(inputPars *par, image *img){
 						"rhelio", 
 						"tkin",
 						"velres",
-						"vexp", 
+						"vexp",
+						"radius",
+						"rnuc", 
 						"dopplerb",
-						"xne"};
+						"xne",
+						"tnuc"};
 	double dblval[numdbl];
 	
 	/* ints */
-	int numint = 6;
-	char *intlist[6] = {"collPartIds",
+	int numint = 7;
+	char *intlist[7] = {"collPartIds",
 						"nchan", 
 						"pxls", 
 						"trans",
 						"unit", 
-						"useEP"};
+						"useEP",
+						"npts"};
 	int intval[numint];
 
 	/* Populate arrays */
@@ -175,7 +179,7 @@ input(inputPars *par, image *img){
   }
   
   if (isnan(dblval[5]) == 0){
-  	par->rHelio  = dblval[5];
+  	par->rHelio  = dblval[5]; // Heliocentric distance in AU
   }
 
   if (isnan(dblval[6]) == 0){
@@ -190,6 +194,15 @@ input(inputPars *par, image *img){
   	par->vexp  = dblval[8];
   }
   
+  if (isnan(dblval[9]) == 0){
+  	par->radius  = dblval[9];
+  }
+
+  if (isnan(dblval[10]) == 0){
+  	par->rnuc  = dblval[10];
+  }
+
+  
 //   printf("par->abund  = %.2e\n",par->abund);
 //   printf("par->betamol  = %.2e\n",par->betamol);
 //   printf("img[0].distance  = %.2e\n",img[0].distance);
@@ -203,12 +216,16 @@ input(inputPars *par, image *img){
   
   /* optional doubles */
   
-  if (isnan(dblval[9]) == 0){
-  	par->dopplerb  = dblval[9];
+  if (isnan(dblval[11]) == 0){
+  	par->dopplerb  = dblval[11];
   }
   
-  if (isnan(dblval[10]) == 0){
-  	par->xne = dblval[10];
+  if (isnan(dblval[12]) == 0){
+  	par->xne = dblval[12];
+  }
+
+  if (isnan(dblval[13]) == 0){
+  	par->tNuc  = dblval[13];
   }
   
 //   	printf("par->dopplerb  = %.2e\n",par->dopplerb);
@@ -247,25 +264,30 @@ input(inputPars *par, image *img){
   	par->useEP  = intval[5]; // zero-indexed J quantum number
   }
   
-//   printf("par->useEP = %d\n",par->useEP);
+  if (intval[6] != -1){
+  	par->pIntensity = intval[6];
+  }
+  
+//  printf("par->useEP = %d\n",par->useEP);
   
   
   
-  /* Variables not in input.par */
-  par->beta = 1.042e-5;
-  par->rnuc = 2.5e2;
-   
-  par->radius           = 2e8;
+  /* Other model variables the user might want to change */
+  
   par->minScale         = par->rnuc;
-  par->pIntensity = 500;
-  par->girScale = 1.0;
-  par->lte_only         = 1;
-  par->useCKCdata		= 1;
+  par->girScale = 1.0/pow(par->rHelio,2);
+  par->lte_only         = 0;
+  par->useCKCdata		= 0;
   par->CKCTeFile        = "na";
   par->CKCneFile        = "na";
   par->gridfile         = "grid.vtk";
 
   par->nMolWeights[0]   = 1.0;
+
+  /* Rescale photo-rates by heliocentric distance */
+  par->beta = par->beta * par->girScale;
+  par->betamol = par->betamol * par->girScale;
+
 }
 
 /******************************************************************************/

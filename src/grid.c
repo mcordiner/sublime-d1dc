@@ -12,7 +12,7 @@ TODO:
   - In readOrBuildGrid(), test for the presence of the 5 mandatory functions (actually 4, since velocity() is already tested in aux.c:parseInput() ) before doing smoothing.
  */
 
-#include "lime.h"
+#include "sublime.h"
 #include "defaults.h"
 
 

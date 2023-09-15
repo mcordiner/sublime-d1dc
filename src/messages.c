@@ -13,7 +13,7 @@ TODOs:
 	- Wouldn't it be better if 'silent' was tested inside these functions rather than at every single point in the rest of the code where they are called?
  */
 
-#include "lime.h"
+#include "sublime.h"
 #include <curses.h>
 #include <time.h>
 
@@ -49,7 +49,7 @@ greetings_parallel(int numThreads){
 #ifdef NO_NCURSES
 
   if (numThreads>1){
-    printf("*** SUBLIME - SUBlimating cometary gases in LIME, Ver. %s (parallel running, %d threads)\n", VERSION, numThreads);
+    printf("*** SUBLIME - SUBlimating cometary gases in LIME, Ver. %s (%d threads)\n", VERSION, numThreads);
   } else {
     printf("*** SUBLIME - SUBlimating cometary gases in LIME, Ver. %s\n", VERSION);
   }
@@ -64,7 +64,7 @@ greetings_parallel(int numThreads){
 
   initscr();
   if (numThreads>1){
-    printw("*** SUBLIME - SUBlimating cometary gases in LIME, Ver. %s (parallel running, %d threads)\n", VERSION, numThreads);
+    printw("*** SUBLIME - SUBlimating cometary gases in LIME, Ver. %s (%d threads)\n", VERSION, numThreads);
   } else {
     printw("*** SUBLIME - SUBlimating cometary gases in LIME, Ver. %s\n", VERSION);
   }

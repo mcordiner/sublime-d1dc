@@ -10,7 +10,7 @@
  */
 
 
-#include "lime.h"
+#include "sublime.h"
 #include <locale.h>
 #include "defaults.h"
 
@@ -1161,7 +1161,7 @@ exit(1);
   /*Set locale to avoid trouble when reading files*/
   setlocale(LC_ALL, "C");
 
-  if(!silent) greetings();
+  if(!silent) greetings_parallel(NTHREADS);
   if(!silent) screenInfo();
 
 #ifdef FASTEXP

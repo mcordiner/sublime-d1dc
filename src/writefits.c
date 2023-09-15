@@ -8,7 +8,7 @@
  *
  */
 
-#include "lime.h"
+#include "sublime.h"
 
 void
 writeWCS(fitsfile *fptr, const int i, int axesOrder[4], float cdelt[4], double crpix[4], double crval[4], char ctype[4][9], char cunit[4][9]){

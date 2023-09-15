@@ -10,7 +10,7 @@
  */
 
 
-#include "lime.h"
+#include "sublime.h"
 
 #ifdef NOVERBOSE
 int silent = 1;
@@ -34,12 +34,10 @@ initParImg(inputPars *par, image **img)
   /* Set 'impossible' default values for mandatory parameters */
   par->radius    = 0;
   par->minScale  = 0;
-  par->pIntensity= 0;
   par->sinkPoints= 0;
   par->Qwater    = 0;
   par->rHelio    = 0; 
   par->beta 	 = 0;
-  par->betamol 	 = 0;
   par->vexp 	 = 0;
   par->tkin 	 = 0;
   par->rnuc 	 = 0;
@@ -87,12 +85,14 @@ initParImg(inputPars *par, image **img)
   par->doSolveRTE=0;
   par->colliScale = 1.0;
   par->girScale = 1.0;
-  par->xne = 1.0;
+  par->xne = DEFAULT_XNE;
   par->useEP = 0;
   par->fixRNG = 1;
-  par->tNuc = 100;
+  par->tNuc = DEFAULT_TNUC;
   par->dopplerb=0;
   par->useCKCdata = 0;
+  par->beta = DEFAULT_BETA;
+  par->pIntensity= DEFAULT_PINTENSITY;
 
   par->gridOutFiles = malloc(sizeof(char *)*NUM_GRID_STAGES);
   for(i=0;i<NUM_GRID_STAGES;i++)
@@ -119,14 +119,16 @@ initParImg(inputPars *par, image **img)
     (*img)[i].units=NULL;
   }
 
-  /* First call to the user function which sets par, img values. Note that, as far as img is concerned, here we just want to find out how many images the user wants, so we can malloc the array properly. We call input() a second time then to get the actual per-image parameter values.
+  /* First call to the user function which sets par, img values. Note that, as far as img is concerned, here we just want to find out how many images the user wants, so we can malloc the array properly. After setting up the default image parameters below, we call input() a second time then to set the actual per-image parameter values. SUBLIMED1D only makes one image so two calls are not required. If multiple images are implemented in the future, then we need to change how the beta heliocentric scaling is done inside input() or else the beta values will be scaled twice!
   */
-  input(par, *img);
+  //input(par, *img);
 
   /* If the user has provided a list of image filenames, the corresponding elements of (*img).filename will be non-NULL. Thus we can deduce the number of images from the number of non-NULL elements. */
-  nImages=0;
-  while((*img)[nImages].filename!=NULL && nImages<MAX_NIMAGES)
-    nImages++;
+  //nImages=0;
+  //while((*img)[nImages].filename!=NULL && nImages<MAX_NIMAGES)
+  // nImages++;
+
+   nImages=1;
 
   /* Set img defaults. */
   for(i=0;i<nImages;i++) {
@@ -154,15 +156,17 @@ initParImg(inputPars *par, image **img)
     (*img)[i].doInterpolateVels = FALSE;
   }
 
-  /* Second-pass reading of the user-set parameters (this time just to read the par->moldatfile and img stuff). */
+  /* LIME requests a second-pass reading of the user-set parameters (this time just to read the par->moldatfile and img stuff), but presently, we are only making a single image so don't need to. */
   input(par,*img);
 
   return nImages;
+
+
 }
 
 /*....................................................................*/
 int main() {
-  /* Main program for stand-alone LIME */
+  /* Main program for stand-alone SUBLIME */
 
   inputPars par;
   image *img = NULL;

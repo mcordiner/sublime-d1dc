@@ -20,7 +20,7 @@ Files which include this must
 #ifndef DEFAULTS_H
 #define DEFAULTS_H
 
-#include "lime_config.h" /* for configInfo. */
+#include "sublime_config.h" /* for configInfo. */
 
 #define DENSITY_POWER           0.2
 

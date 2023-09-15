@@ -16,6 +16,7 @@ CORESOURCES = \
 	src/frees.c\
 	src/grid.c\
 	src/grid_aux.c\
+	src/model.c\
 	src/molinit.c\
 	src/popsout.c\
 	src/raytrace.c\
@@ -26,7 +27,7 @@ CORESOURCES = \
 	src/writefits.c
 
 STDSOURCES = \
-	src/lime_defaults.c\
+	src/sublime_defaults.c\
 	src/main.c\
 	src/messages.c
 
@@ -36,8 +37,8 @@ COREINCLUDES = \
 	src/defaults.h\
 	src/dims.h\
 	src/inpars.h\
-	src/lime_config.h\
-	src/lime.h\
+	src/sublime_config.h\
+	src/sublime.h\
 	src/tree_random.h\
 	src/ufunc_types.h
 

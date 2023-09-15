@@ -1,9 +1,6 @@
 LIB_QHULL = qhullstatic
-CCFLAGS += -I/Users/kdarnell/macports/lib
-CCFLAGS += -I/Users/kdarnell/macports/lib/libgcc
-CCFLAGS += -I/Users/kdarnell/macports/include
-LDFLAGS += -Wl,-rpath,/Users/kdarnell/macports/lib
-LDFLAGS += -Wl,-rpath,/Users/kdarnell/macports/lib/libgcc
-LIBS += -L/Users/kdarnell/macports/lib
-LIBS += -L/Users/kdarnell/macports/lib/libgcc
-CC      = /opt/local/bin/gcc-mp-12 -fopenmp
+CCFLAGS += -I<path_to_cfitsio>
+CCFLAGS += -I<path_to_cvode_include_dir>
+LDFLAGS += -Wl,-rpath,<path_to_cvode_lib_dir>
+LIBS += -L<path_to_cvode_lib_dir>
+CC      = <path_to_gcc-mp> -fopenmp

@@ -9,7 +9,7 @@
  *
  */
 
-#include "lime.h"
+#include "sublime.h"
 
 /*....................................................................*/
 void mallocAndSetDefaultGrid(struct grid **gp, const size_t numPoints, const size_t numSpecies){

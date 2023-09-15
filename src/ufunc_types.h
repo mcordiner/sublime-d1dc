@@ -13,7 +13,7 @@
 #ifndef UFUNC_TYPES_H
 #define UFUNC_TYPES_H
 
-#include "lime_config.h" /* for configInfo */
+#include "sublime_config.h" /* for configInfo */
 
 #define USERFUNC_density       0
 #define USERFUNC_temperature   1

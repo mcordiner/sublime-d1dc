@@ -1,0 +1,9 @@
+2022-05-10 14:16:15	INFO	::casa	
+2022-05-10 14:16:16	INFO	::casa	Python version 3.8.10
+2022-05-10 14:16:16	INFO	::casa	CASA Version CASALITH 6.4.4.31
+2022-05-10 14:16:16	INFO	::casa	
+2022-05-10 14:16:16	INFO	::casa	Found an existing telemetry logfile: /Users/kdarnell/.casa/casastats-6.4.4.31-3664203bc45239a35c-20220506-191726.log
+2022-05-10 14:16:16	INFO	::casa	Telemetry log file: /Users/kdarnell/.casa/casastats-6.4.4.31-3664203bc45239a35c-20220506-191726.log
+2022-05-10 14:16:16	INFO	::casa	Checking telemetry submission interval
+2022-05-10 14:16:16	INFO	::casa	Telemetry submit interval not reached. Not submitting data.
+2022-05-10 14:16:16	INFO	::casa	Next telemetry data submission in: 3 days, 5:01:10.143547

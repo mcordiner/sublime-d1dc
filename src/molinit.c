@@ -10,7 +10,7 @@
 	- Clean up all the new messages which are going to dick with the stdout when curses are selected? (Sigh.)
  */
 
-#include "lime.h"
+#include "sublime.h"
 
 /*....................................................................*/
 void readDummyCollPart(FILE *fp, const int strLen){

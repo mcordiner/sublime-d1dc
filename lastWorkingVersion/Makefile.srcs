@@ -1,0 +1,45 @@
+# Makefile.defs
+# SUBLIMED1D main driver script
+# This file is part of SUBLIMED1D (SUBlimating gases in LIME, version D1D)
+#
+# Copyright (C) 2006-2014 Christian Brinch
+# Copyright (C) 2015-2017 The LIME development team
+# Copyright (C) 2023 Martin Cordiner and Kristen Darnell (NASA GSFC)
+#
+# Included by Makefile
+
+CORESOURCES = \
+	src/aux.c\
+	src/collparts.c\
+	src/defaults.c\
+	src/fastexp.c\
+	src/frees.c\
+	src/grid.c\
+	src/grid_aux.c\
+	src/molinit.c\
+	src/popsout.c\
+	src/raytrace.c\
+	src/readckc.c\
+	src/run.c\
+	src/solver.c\
+	src/sourcefunc.c\
+	src/writefits.c
+
+STDSOURCES = \
+	src/lime_defaults.c\
+	src/main.c\
+	src/messages.c
+
+COREINCLUDES = \
+	src/collparts.h\
+	src/constants.h\
+	src/defaults.h\
+	src/dims.h\
+	src/inpars.h\
+	src/lime_config.h\
+	src/lime.h\
+	src/tree_random.h\
+	src/ufunc_types.h
+
+
+
