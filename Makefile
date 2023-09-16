@@ -36,7 +36,6 @@ ifneq (,$(wildcard /usr/local/lib/.))
 endif
 
 CPPFLAGS += -I${PREFIX}/include \
-            -I${PREFIX}/include/libqhull \
             -I${PREFIX}/src \
             ${EXTRACPPFLAGS}
 
@@ -45,7 +44,7 @@ CPPFLAGS += -I${PREFIX}/include \
 include Makefile.srcs
 
 CCFLAGS += -O3 -falign-loops=16 -fno-strict-aliasing
-LDFLAGS += -lgsl -lgslcblas -l${LIB_QHULL} -lcfitsio -lncurses -lsundials_cvode -lsundials_nvecserial -lsundials_nvecmanyvector -lm
+LDFLAGS += -lgsl -lgslcblas -lcfitsio -lncurses -lsundials_cvode -lsundials_nvecserial -lsundials_nvecmanyvector -lm
 
 ifeq (${DOTEST},yes)
   CCFLAGS += -DTEST

@@ -28,7 +28,6 @@
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_linalg.h>
-#include <qhull_a.h>
 #include <fitsio.h>
 
 #ifdef _OPENMP

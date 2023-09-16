@@ -1,2 +1,0 @@
-#!/bin/bash
-lime -p 4 -n -f $1

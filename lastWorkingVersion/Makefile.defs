@@ -1,6 +1,0 @@
-LIB_QHULL = qhullstatic
-CCFLAGS += -I/usr/include/cfitsio
-CCFLAGS += -I/Users/mcordine/Install/cvode-5.3.0/sundials/instdir/include
-LDFLAGS += -Wl,-rpath,/Users/mcordine/Install/cvode-5.3.0/sundials/instdir/lib
-LIBS += -L/Users/mcordine/Install/cvode-5.3.0/sundials/instdir/lib
-CC      = /opt/local/bin/gcc-mp-11 -fopenmp

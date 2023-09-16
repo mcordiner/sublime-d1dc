@@ -130,12 +130,6 @@ readGridWrapper(configInfo *par, struct grid **gp, char ***collPartNames, int *n
 }
 
 /*....................................................................*/
-void
-dumpGrid(configInfo *par, struct grid *g){
-  if(par->gridfile) write_VTK_unstructured_Points(par, g);
-}
-
-/*....................................................................*/
 int pointEvaluation(configInfo *par, const double uniformRandom, double *r){
   double fracDensity;
 
@@ -520,7 +514,6 @@ exit(1);
   if(onlyBitsSet(par->dataFlags & DS_mask_all_but_mag, DS_mask_4)) /* Only happens if (i) we read no file and have constructed this data within LIME, or (ii) we read a file at dataStageI==4. */
     writeGridIfRequired(par, *gp, NULL, 4);
 
-  dumpGrid(par,*gp);
   free(dc);
 
   freeArrayOfStrings(collPartNames, numCollPartRead);

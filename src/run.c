@@ -372,10 +372,10 @@ Copy over user-set parameters to the configInfo versions. (This seems like dupli
   copyInparStr(inpars.CKCneFile, 	 &(par->CKCneFile));
 
   if(par->fixRNG){
-    fixRandomSeeds = True;
+    fixRandomSeeds = 1;
     printf("Random number generator seeds are fixed.\n");
     }else{
-    fixRandomSeeds = False; 
+    fixRandomSeeds = 0; 
   }
 
   par->gridOutFiles = malloc(sizeof(char *)*NUM_GRID_STAGES);

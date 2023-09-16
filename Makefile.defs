@@ -1,4 +1,3 @@
-LIB_QHULL = qhullstatic
 CCFLAGS += -I<path_to_cfitsio>
 CCFLAGS += -I<path_to_cvode_include_dir>
 LDFLAGS += -Wl,-rpath,<path_to_cvode_lib_dir>
