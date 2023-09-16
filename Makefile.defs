@@ -1,5 +1,7 @@
-CCFLAGS += -I<path_to_cfitsio>
-CCFLAGS += -I<path_to_cvode_include_dir>
-LDFLAGS += -Wl,-rpath,<path_to_cvode_lib_dir>
-LIBS += -L<path_to_cvode_lib_dir>
+#CCFLAGS += -I<path_to_cfitsio>
+#CCFLAGS += -I<path_to_cvode_include_dir>
+#LDFLAGS += -Wl,-rpath,<path_to_cvode_lib_dir>
+#LIBS += -L<path_to_cvode_lib_dir>
+#LDFLAGS += -Wl,-rpath,<path_to_libgcc>
+#LIBS += -L<path_to_libgcc>
 CC      = <path_to_gcc-mp> -fopenmp
