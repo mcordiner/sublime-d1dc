@@ -1,6 +1,6 @@
 # SUBLIMED1DC
 
-SUBlimated cometary gases in LIME (Dynamical, 1D, compiled version)
+SUBlimated cometary gases in LIME (Dynamical, 1D, Compiled version)
 
 This is SUBLIMED1D, a 1D radiative transfer code for outflowing cometary gases, by Martin Cordiner, Emmanuel Garcia-Berrios and Kristen Darnell (2023). 
 
@@ -14,13 +14,14 @@ The code is then compiled by running the following shell script:
 
 > ./compile_sublimed1d
 
-This generates a binary executable called sublimed1dc.
+This generates a binary executable called sublimed1dc, which reads parameters from the input.par file (located in the current working directory). 
 
 To generate a reliable coma image, care needs to be taken to correctly set the par->radius parameter in model.c to capture all the expected emission (this will vary depending on the molecule, coma and viewing geometry). The channel spacing (velres) needs to be small enough (around 100 m/s or less) to properly sample the spectral line profile, even if the velocity information is later discarded. 
 
-Experience has shown that a good model can be produced with par->pIntensity ~ 300 - 500 radial grid points. Qhull is used to generate the radial (1D) grid, weighted by the density. Radiation trapping effects tend to be very small, so useEP = 0 can be set for most models (apart from H2O), which allows the code to run much faster (in a matter of seconds), particularly for CH3OH. Faster raytracing is achieved for lower values of par->pIntensity.
+The radial grid is generated pseudo-randomly, with a density of points proportional to the gas density. Experience has shown that a good model can be produced with npts ~ 300 - 500 (300 is the default).  Radiation trapping effects tend to be very small for molecules other than water, so useEP = 0 should be used for most molecules, which allows the code to run faster. Faster raytracing is achieved for lower values of npts, nchan and pxls.
 
-If CVODE has an error but the input model appears physically reasonable, it can usually be fixed by adjusting RTOL and ATOL in sublime.h. Their default values are both 1.0E-10, but some CH3OH models require RTOL = ATOL = 1.0E-11, and some CO models require RTOL = ATOL = 1.0E-12. If CVODE does fail, the code will automatically try to reduce RTOL and ATOL until success is achieved. Some models may require RTOL to be increased to 1.0E-6, while ATOL can remain at 1.0E-9.
+If CVODE has an error but the input model appears physically reasonable, it can usually be fixed by adjusting RTOL and ATOL in sublime.h (the relative and absolute tolerances for parameter errors). Their default values are both 1.0E-10, but some CH3OH models require RTOL = ATOL = 1.0E-11, and some CO models require RTOL = ATOL = 1.0E-12. In the event that CVODE fails, the code will automatically try reducing RTOL and ATOL until success is achieved. Some models may require RTOL to be increased to 1.0E-6, while ATOL can remain at 1.0E-9.
 
+The optional input parameter par->useCKCdata controls how the electron densities and temperatures are determined. par->useCKCdata=0 uses the formalism of Zakharov et al. (2007, A&A, 473, 303). par->useCKCdata=1 interpolates the electron collision rates from data tables included in the program that were generated with the coma kinetic code developed by Cordiner & Charnley (2021, MNRAS, 504, 5401). par->useCKC=2 interpolates the electron collision rates from data tables provided by the user using par->CKCTeFile and par->CKCneFile.
 
-CKC_electrons branch: In this branch we can use the input parameter par->useCKC to control how the electron density and temperatures are determined. par->useCKC=0 uses the formalism of Zakharov et al. (2007). par->useCKC=1 interpolates the electron collision rates from data tables included in the program that were generated with the coma kinetic code developed by Dr. Cordiner and Dr. Charnley. par->useCKC=2 interpolates the electron collision rates from data tables provided by the user using par->CKCTeFile and par->CKCneFile.
+If you use this code in a published work, please reference Cordiner, M. A., Coulson, I. M., Garcia-Berrios, E. et al. 2022, Astrophysical Journal, Volume 929, id.38.

@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
-#include <time.h>
+#include <sys/time.h>
 #include <signal.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_math.h>
@@ -339,7 +339,8 @@ void	collpartmesg(char*, int);
 void	collpartmesg2(char*);
 void	collpartmesg3(int, int);
 void	error(char*);
-void	goodnight(int);
+void	goodnight(struct timeval);
+
 void	greetings(void);
 void	greetings_parallel(int);
 void	printDone(int);

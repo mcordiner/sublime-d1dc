@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2006-2014 Christian Brinch
  *  Copyright (C) 2015-2017 The LIME development team
- *  Copyright (C) 2023 Martin Cordiner and Kristen Darnell (NASA GSFC)
+ *  Copyright (C) 2023 Martin Cordiner, Emmanuel Garcia-Berrios and Kristen Darnell (NASA GSFC)
  *
  */
 
@@ -357,7 +357,9 @@ Copy over user-set parameters to the configInfo versions. (This seems like dupli
   par->tkin				 = inpars.tkin;
   par->rnuc				 = inpars.rnuc;
   par->abund			 = inpars.abund;
-  par->dopplerb			 = inpars.dopplerb;
+  par->dopplerb		 = inpars.dopplerb;
+  par->lp             = inpars.lp;
+  par->dAbund         = inpars.dAbund;
 
   /* Somewhat more carefully copy over the strings:
   */
@@ -1136,7 +1138,9 @@ run(inputPars inpars, image *inimg, const int nImages){
      external program.
   */
   int i,j,gi,si,ei,status=0,sigactionStatus=0;
-  double initime=time(0);
+  struct timeval start;
+  gettimeofday(&start, NULL);
+  
   int popsdone=0,nExtraSolverIters=0;
   molData *md=NULL;
   configInfo par;
@@ -1282,7 +1286,7 @@ exit(1);
 
   if(!silent){
     if(par.nImages>0) reportOutput(img[0].filename);
-    goodnight(initime);
+    goodnight(start);
   }
 
   freeGrid((unsigned int)par.ncell, (unsigned short)par.nSpecies, gp);

@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2006-2014 Christian Brinch
  *  Copyright (C) 2015-2017 The LIME development team
- *  Copyright (C) 2023 Martin Cordiner and Kristen Darnell (NASA GSFC)
+ *  Copyright (C) 2023 Martin Cordiner, Emmanuel Garcia-Berrios and Kristen Darnell (NASA GSFC)
  *
  */
 
@@ -686,6 +686,6 @@ Note that the argument 'md', and the grid element '.mol', are only accessed for 
   free(rayData.mols);
 
 
-printf("Raytracing done...\n");
+printf("Raytracing done.\n\n");
 
 }

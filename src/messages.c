@@ -15,7 +15,7 @@ TODOs:
 
 #include "sublime.h"
 #include <curses.h>
-#include <time.h>
+#include <sys/time.h>
 
 void
 greetings(){
@@ -236,15 +236,23 @@ reportOutput(char filename[STR_LEN_0]){
 }
 
 void
-goodnight(int initime){
-  int runtime=time(0)-initime;
+goodnight(struct timeval start){
+  struct timeval end;
+  double musec;
+  gettimeofday(&end, NULL);
+  long seconds = (end.tv_sec - start.tv_sec);
+  double dseconds  = ((double)(((seconds * 1000000) + end.tv_usec) - (start.tv_usec)))/1e6;
+  double fracsecs = dseconds - (double)(int)dseconds;
+
+  printf("%le\n",fracsecs);
+
 #ifdef NO_NCURSES
   printf("*** Program ended successfully               \n");
-  printf("    Runtime: %3dh %2dm %2ds\n\n", runtime / 3600, runtime / 60 % 60, runtime % 60);
+  printf("    Runtime: %3dh %2dm %2d.%2ds\n\n", seconds / 3600, seconds / 60 % 60, seconds % 60, (int)round(fracsecs*100.));
 
 #else
   move(22,0); printw("*** Program ended successfully               ");
-  move(22,58); printw("runtime: %3dh %2dm %2ds", runtime/3600, runtime/60%60, runtime%60);
+  move(22,58); printw("runtime: %3dh %2dm %2d.%2ds\n\n", seconds / 3600, seconds / 60 % 60, seconds % 60, (int)round(fracsecs*100.));
   move(23,0); printw("*** [Press any key to quit]");
   refresh();
   getch();
@@ -303,10 +311,12 @@ void
 collpartmesg(char molecule[STR_LEN_0], int partners){//, int specnumber){
 #ifdef NO_NCURSES
   printf("\n   Molecule: %.25s\n", molecule);
-  if (partners==1)
-    printf("   %d collision partner:\n", partners);
+  if (partners==0)
+    printf("   \n * WARNING: NO VALID COLLISION PARTNERS - CHECK collPartIDs in moldatfile *\n\n");
+  else if (partners==1)
+    printf("   %d collision partner set\n", partners);
   else
-    printf("   %d collision partners:\n", partners);
+    printf("   %d collision partners set\n", partners);
 
 #else
   move(6,63); printw("%.25s", molecule);

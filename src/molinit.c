@@ -390,7 +390,7 @@ void molInit(configInfo *par, molData *md){
 
         if(!silent) {
           collpartmesg(md[i].molName, numActiveCollParts);
-          collpartmesg2(partstr);
+          //collpartmesg2(partstr); //In SUBLIME, we no longer care what the collision partner is called
           collpartmesg3(par->numDensities, 0);//**************** was the 2nd arg used in lime-1.5??
         }
       }else{

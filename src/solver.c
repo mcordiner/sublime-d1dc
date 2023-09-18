@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2006-2014 Christian Brinch
  *  Copyright (C) 2015-2017 The LIME development team
- *  Copyright (C) 2023 Martin Cordiner and Kristen Darnell (NASA GSFC)
+ *  Copyright (C) 2023 Martin Cordiner, Emmanuel Garcia-Berrios and Kristen Darnell (NASA GSFC)
  *
 TODO:
   - The test to run calculateJBar() etc in levelPops just tests dens[0]. This is a bit sloppy.

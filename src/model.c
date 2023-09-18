@@ -63,8 +63,8 @@ input(inputPars *par, image *img){
 	char strval[numstr][100];
 	
 	/* doubles */
-	int numdbl = 14;
-	char *dbllist[14] = {"abund",
+	int numdbl = 16;
+	char *dbllist[16] = {"abund",
 						"betamol",
 						"delta",
 						"imgres",
@@ -74,7 +74,9 @@ input(inputPars *par, image *img){
 						"velres",
 						"vexp",
 						"radius",
-						"rnuc", 
+						"rnuc",
+						"lp",
+						"dAbund", 
 						"dopplerb",
 						"xne",
 						"tnuc"};
@@ -203,6 +205,13 @@ input(inputPars *par, image *img){
   	par->rnuc  = dblval[10];
   }
 
+  if (isnan(dblval[11]) == 0){
+  	par->lp  = dblval[11];
+  }
+  
+  if (isnan(dblval[12]) == 0){
+  	par->dAbund  = dblval[12];
+  }
   
 //   printf("par->abund  = %.2e\n",par->abund);
 //   printf("par->betamol  = %.2e\n",par->betamol);
@@ -217,16 +226,16 @@ input(inputPars *par, image *img){
   
   /* optional doubles */
   
-  if (isnan(dblval[11]) == 0){
-  	par->dopplerb  = dblval[11];
+  if (isnan(dblval[13]) == 0){
+  	par->dopplerb  = dblval[13];
   }
   
-  if (isnan(dblval[12]) == 0){
-  	par->xne = dblval[12];
+  if (isnan(dblval[14]) == 0){
+  	par->xne = dblval[14];
   }
 
-  if (isnan(dblval[13]) == 0){
-  	par->tNuc  = dblval[13];
+  if (isnan(dblval[15]) == 0){
+  	par->tNuc  = dblval[15];
   }
   
 //   	printf("par->dopplerb  = %.2e\n",par->dopplerb);
@@ -307,11 +316,10 @@ density(configInfo *par, double x, double y, double z, double *density){
    */
   r=sqrt(x*x+y*y+z*z);
   /*
-   * Calculate a Haser density profile
-   * (Multiply with 1e6 to go to SI-units)
+   * Calculate Haser density profile
    */
   if(r<rMin)
-    density[0] = 1e-20; /* Just to prevent overflows at r==0! */
+    density[0] = 1e-20; /* Prevent overflows at r==0 */
   else
     density[0] = par->Qwater /(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->beta/par->vexp);
 }
@@ -330,22 +338,26 @@ molNumDensity(configInfo *par, double x, double y, double z, double *nmol){
  /*
  * Define variable for radial coordinate
  */
-  double r;
+  double r,ld;
 
   const double rMin = par->rnuc; /* This cutoff should be chosen smaller than par->minScale but greater than zero (to avoid a singularity at the origin). */
+  
+  /*
+   * Haser daughter scale length
+   */
+  ld = par->vexp/par->betamol;
 
   /*
    * Calculate radial distance from origin
    */
   r=sqrt(x*x+y*y+z*z);
   /*
-   * Calculate a Haser density profile
-   * (Multiply with 1e6 to go to SI-units)
+   * Calculate Haser density profile
    */
   if(r<rMin)
     nmol[0] = 0.;
   else
-    nmol[0] =par->abund*par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp);
+    nmol[0] =par->abund*par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * par->Qwater * (ld/(par->lp-ld)) * (exp(-r / par->lp) - exp(-r / ld)) / (4.0 * PI * pow(r, 2)*par->vexp));
 }
 
 /******************************************************************************/

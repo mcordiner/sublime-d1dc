@@ -5,7 +5,7 @@
  *
  *  Copyright (C) 2006-2014 Christian Brinch
  *  Copyright (C) 2015-2017 The LIME development team
- *  Copyright (C) 2023 Martin Cordiner and Kristen Darnell (NASA GSFC)
+ *  Copyright (C) 2023 Martin Cordiner, Emmanuel Garcia-Berrios and Kristen Darnell (NASA GSFC)
  *
  */
 
@@ -89,10 +89,12 @@ initParImg(inputPars *par, image **img)
   par->useEP = 0;
   par->fixRNG = 1;
   par->tNuc = DEFAULT_TNUC;
-  par->dopplerb=0;
+  par->dopplerb=0.0;
   par->useCKCdata = 0;
   par->beta = DEFAULT_BETA;
   par->pIntensity= DEFAULT_PINTENSITY;
+  par->lp = 0.0;
+  par->dAbund = 0.0;
 
   par->gridOutFiles = malloc(sizeof(char *)*NUM_GRID_STAGES);
   for(i=0;i<NUM_GRID_STAGES;i++)
