@@ -1,4 +1,4 @@
-# SUBLIMED1DC
+# SUBLIME-D1DC
 
 SUBlimated cometary gases in LIME (Dynamical, 1D, Compiled version)
 
