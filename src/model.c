@@ -133,7 +133,7 @@ input(inputPars *par, image *img){
  */
  
  /* strings */
- if (strval[0] != "NaN"){
+ if (strcmp(strval[0],"NaN")){
  	par->outputfile = (char*)malloc(200);
  	strcpy(par->outputfile, strval[0]);
  	strcat(par->outputfile, ".pop");    
@@ -144,12 +144,12 @@ input(inputPars *par, image *img){
  }
 
  
- if (strval[1] != "NaN"){
+ if (strcmp(strval[1],"NaN")){
  	par->moldatfile[0] = (char*)malloc(200);
  	strcpy(par->moldatfile[0], strval[1]);
  }
  
- if (strval[2] != "NaN"){
+ if (strcmp(strval[2],"NaN")){
  	par->girdatfile[0] = (char*)malloc(200);
  	strcpy(par->girdatfile[0], strval[2]);
  }

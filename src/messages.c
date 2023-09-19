@@ -244,7 +244,6 @@ goodnight(struct timeval start){
   double dseconds  = ((double)(((seconds * 1000000) + end.tv_usec) - (start.tv_usec)))/1e6;
   double fracsecs = dseconds - (double)(int)dseconds;
 
-  printf("%le\n",fracsecs);
 
 #ifdef NO_NCURSES
   printf("*** Program ended successfully               \n");
