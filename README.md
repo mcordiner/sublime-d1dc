@@ -14,7 +14,7 @@ The code is then compiled by running the following shell script:
 
 > ./compile_sublimed1d
 
-This generates a binary executable called sublimed1dc, which reads parameters from the input.par file (located in the current working directory). 
+This generates a binary executable called sublimed1dc, which reads parameters from the input.par file (located in the working directory). 
 
 To generate a reliable coma image, care needs to be taken to correctly set the par->radius parameter in model.c to capture all the expected emission (this will vary depending on the molecule, coma and viewing geometry). The channel spacing (velres) needs to be small enough (around 100 m/s or less) to properly sample the spectral line profile, even if the velocity information is later discarded. 
 
