@@ -1,43 +1,43 @@
 /*
  * Filenames
  */
-runname		= test_run;			// (str) Prefix for output files
-moldatfile	= hcn.dat;			// (str) Molecular data file (LAMDA format)
-girdatfile	= g_hcn_1au.dat;	// (str) Effective solar pumping rates (at 1 AU)
+runname		= test_run;			// Prefix for output files
+moldatfile	= hcn.dat;			// Molecular data file (LAMDA format)
+girdatfile	= g_hcn_1au.dat;	// Effective solar pumping rates (at 1 AU)
 
 /*
  * Coma Physical Parameters.
  */
-Qwater		= 1e29;  	// (double) H2O production rate from the nucleus (mol/s)
-vexp		   = 800.;		// (double) Coma expansion velocity (m/s)
-tkin		   = 50.;		// (double) Kinetic temperature (K)
-abund		   = 0.001;	   // (double) Parent molecular abundance
-lp          = 0.0;      // (double) Production scale length (m)
-dAbund      = 0.0;      // (double) Daughter molecular abundance
-betamol		= 1.5e-5;   // (double) Molecular photolysis rate (s^-1)
+Qwater		= 1e29;  	//  H2O production rate from the nucleus (mol/s)
+vexp		   = 800;		//  Coma expansion velocity (m/s)
+tkin		   = 50;		   //  Kinetic temperature (K)
+abund		   = 0.001;	   //  Parent molecular abundance
+lp          = 0;        //  Production scale length (m)
+dAbund      = 0;        //  Daughter molecular abundance
+betamol		= 1.5e-5;   //  Molecular photolysis rate (s^-1)
 
-rhelio	= 1.0;         // (double) Heliocentric distance (AU)
-rnuc     = 250.;        // (double) Nucleus radius (m)
-radius   = 1e9;         // (double) Model coma outer radius (m) 
+rhelio	= 1.0;         //  Heliocentric distance (AU)
+rnuc     = 250;         //  Nucleus radius (m)
+radius   = 1e9;         //  Model coma outer radius (m) 
 
-collPartIds	= 1;		   // (int) Collision partner ID (in moldatfile)
+collPartIds	= 1;		   //  Collision partner ID (in moldatfile)
 
 /*
  * Spectral Image Cube Parameters
  */
-unit		= 0;		   // (int) Output intensity units - 0=Kelvin, 1=Jansky/pixel, 2=SI, 3=Lsun/pixel
-trans		= 3;    	   // (int) Zero-indexed transition number
-velres	= 100.;	   // (double) Channel resolution (m/s)
-nchan		= 50;		   // (int) Number of channels
-pxls		= 256;		// (int) Pixels per dimension
-imgres	= 0.5;      // (double) Pixel size (arcsec)
-delta		= 1.0;   	// (double) Distance from observer (AU)
+unit		= 0;		   //  Output intensity units - 0=Kelvin, 1=Jansky/pixel, 2=SI, 3=Lsun/pixel
+trans		= 3;    	   //  Zero-indexed transition number
+velres	= 100;	   //  Channel resolution (m/s)
+nchan		= 50;		   //  Number of channels
+pxls		= 256;		//  Pixels per dimension
+imgres	= 0.5;      //  Pixel size (arcsec)
+delta		= 1.0;   	//  Distance from observer (AU)
 
 /*
  * Optional parameters.
  */
-// dopplerb	= 100;		// (double) - optional: turbulent Doppler broadening parameter (m/s) - default is 0
-// useEP 		= 0;		// (int) – optional: Use escape probability method - default value is 0
-// xne 		= 0.2;		// (double) – optional: Electron density scaling factor - default value is 0.2
-// tnuc 		= 100.;		// (double) – optional: Nucleus temperature (K) - default value is 100.
-// npts 		= 300;		// (int) – optional: Number of points in radial grid - default value is 300
+// dopplerb	= 100;		// Turbulent Doppler broadening parameter (m/s) - default is 0
+// useEP 		= 0;		// Use escape probability method - default value is 0
+// xne 		= 0.2;		// Electron density scaling factor - default value is 0.2
+// tnuc 		= 100.;		// Nucleus temperature (K) - default value is 100.
+// npts 		= 300;		// Number of points in radial grid - default value is 300
