@@ -63,8 +63,8 @@ input(inputPars *par, image *img){
 	char strval[numstr][100];
 	
 	/* doubles */
-	int numdbl = 16;
-	char *dbllist[16] = {"abund",
+	int numdbl = 17;
+	char *dbllist[17] = {"abund",
 						"betamol",
 						"delta",
 						"imgres",
@@ -79,7 +79,8 @@ input(inputPars *par, image *img){
 						"dAbund", 
 						"dopplerb",
 						"xne",
-						"tnuc"};
+						"tnuc",
+						"colliScale"};
 	double dblval[numdbl];
 	
 	/* ints */
@@ -236,6 +237,10 @@ input(inputPars *par, image *img){
 
   if (isnan(dblval[15]) == 0){
   	par->tNuc  = dblval[15];
+  }
+  
+  if (isnan(dblval[16]) == 0){
+  	par->colliScale  = dblval[16];
   }
   
 //   	printf("par->dopplerb  = %.2e\n",par->dopplerb);

@@ -37,7 +37,8 @@ delta		= 1.0;   	//  Distance from observer (AU)
  * Optional parameters.
  */
 // dopplerb	= 100;		// Turbulent Doppler broadening parameter (m/s) - default is 0
-// useEP 		= 0;		// Use escape probability method - default value is 0
+// useEP 	= 0;		// Use escape probability method - default value is 0
 // xne 		= 0.2;		// Electron density scaling factor - default value is 0.2
-// tnuc 		= 100.;		// Nucleus temperature (K) - default value is 100.
+// tnuc 		= 100;		// Nucleus temperature (K) - default value is 100
 // npts 		= 300;		// Number of points in radial grid - default value is 300
+// colliScale	= 10;		// Scale the collision rates by a constant factor - default value is 1
