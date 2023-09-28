@@ -155,7 +155,6 @@ input(inputPars *par, image *img){
  if (strcmp(strval[1],"NaN")){
  	par->moldatfile[0] = (char*)malloc(1000);
  	strcpy(par->moldatfile[0], strval[1]);
- 	printf("%s\n\n",par->moldatfile[0]);
  }else{
    bail_out("Required parameter 'moldatfile' not read correctly from input.par");
    exit(1);
