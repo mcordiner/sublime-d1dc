@@ -108,7 +108,7 @@ input(inputPars *par, image *img){
 	/* Read input file and assign data to arrays */
 	fp = fopen (input, "r");
 	if(fp == NULL){
-	   printf("ERROR: Input file '%s' cannot be read. Make sure it exists in the current working directory.\n",input);
+	   printf("ERROR: Input file '%s' cannot be read - make sure it exists in the current working directory.\n",input);
 	   exit(1);
 	}
 	while(fgets(buffer, sizeof buffer, fp) != NULL) {
@@ -189,7 +189,7 @@ input(inputPars *par, image *img){
   if (isnan(dblval[2]) == 0){
   	img[0].distance = dblval[2] * AU; // source distance in m
   }else{
-   bail_out("Required parameter 'distance' not read correctly from input.par");
+   bail_out("Required parameter 'delta' not read correctly from input.par");
    exit(1);
   }
   
@@ -210,7 +210,7 @@ input(inputPars *par, image *img){
   if (isnan(dblval[5]) == 0){
   	par->rHelio  = dblval[5]; // Heliocentric distance in AU
   }else{
-   bail_out("Required parameter 'rHelio' not read correctly from input.par");
+   bail_out("Required parameter 'rhelio' not read correctly from input.par");
    exit(1);
   }
 
