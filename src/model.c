@@ -85,7 +85,7 @@ input(inputPars *par, image *img){
 	
 	/* ints */
 	int numint = 7;
-	char *intlist[7] = {"collPartIds",
+	char *intlist[7] = {"collPartId",
 						"nchan", 
 						"pxls", 
 						"trans",
@@ -107,6 +107,10 @@ input(inputPars *par, image *img){
 	
 	/* Read input file and assign data to arrays */
 	fp = fopen (input, "r");
+	if(fp == NULL){
+	   printf("ERROR: Input file '%s' cannot be read. Make sure it exists in the current working directory.\n",input);
+	   exit(1);
+	}
 	while(fgets(buffer, sizeof buffer, fp) != NULL) {
 		remove_spaces(parline, buffer);	// Removes white space from string
 		if (strstr(parline,"=") && strstr(parline,";")){	//Only consideres lines with the expected formatting
@@ -142,13 +146,19 @@ input(inputPars *par, image *img){
     img[0].filename = (char*)malloc(200);
  	strcpy(img[0].filename, strval[0]);
  	strcat(img[0].filename, ".fits");
- }
+ }else{
+   bail_out("Required parameter 'runname' not read correctly from input.par");
+   exit(1);
+  }
 
  
  if (strcmp(strval[1],"NaN")){
  	par->moldatfile[0] = (char*)malloc(200);
  	strcpy(par->moldatfile[0], strval[1]);
- }
+ }else{
+   bail_out("Required parameter 'moldatfile' not read correctly from input.par");
+   exit(1);
+  }
  
  if (strcmp(strval[2],"NaN")){
  	par->girdatfile[0] = (char*)malloc(200);
@@ -164,56 +174,82 @@ input(inputPars *par, image *img){
   
   if (isnan(dblval[0]) == 0){
   	par->abund = dblval[0];
+  }else{
+   bail_out("Required parameter 'abund' not read correctly from input.par");
+   exit(1);
   }
   
   if (isnan(dblval[1]) == 0){
   	par->betamol = dblval[1];
+  }else{
+   bail_out("Required parameter 'betamol' not read correctly from input.par");
+   exit(1);
   }
   
   if (isnan(dblval[2]) == 0){
   	img[0].distance = dblval[2] * AU; // source distance in m
+  }else{
+   bail_out("Required parameter 'distance' not read correctly from input.par");
+   exit(1);
   }
   
   if (isnan(dblval[3]) == 0){
   	img[0].imgres  = dblval[3]; // Resolution in arc seconds
+  }else{
+   bail_out("Required parameter 'imgres' not read correctly from input.par");
+   exit(1);
   }
   
   if (isnan(dblval[4]) == 0){
   	par->Qwater  = dblval[4];
+  }else{
+   bail_out("Required parameter 'Qwater' not read correctly from input.par");
+   exit(1);
   }
   
   if (isnan(dblval[5]) == 0){
   	par->rHelio  = dblval[5]; // Heliocentric distance in AU
+  }else{
+   bail_out("Required parameter 'rHelio' not read correctly from input.par");
+   exit(1);
   }
 
   if (isnan(dblval[6]) == 0){
   	par->tkin  = dblval[6];
+  }else{
+   bail_out("Required parameter 'tkin' not read correctly from input.par");
+   exit(1);
   }
   
   if (isnan(dblval[7]) == 0){
   	img[0].velres  = dblval[7]; // Channel resolution in m/s
+  }else{
+   bail_out("Required parameter 'velres' not read correctly from input.par");
+   exit(1);
   }
   
   if (isnan(dblval[8]) == 0){
   	par->vexp  = dblval[8];
+  }else{
+   bail_out("Required parameter 'vexp' not read correctly from input.par");
+   exit(1);
   }
   
   if (isnan(dblval[9]) == 0){
   	par->radius  = dblval[9];
+  }else{
+   bail_out("Required parameter 'radius' not read correctly from input.par");
+   exit(1);
   }
 
   if (isnan(dblval[10]) == 0){
   	par->rnuc  = dblval[10];
+  }else{
+   bail_out("Required parameter 'rnuc' not read correctly from input.par");
+   exit(1);
   }
 
-  if (isnan(dblval[11]) == 0){
-  	par->lp  = dblval[11];
-  }
-  
-  if (isnan(dblval[12]) == 0){
-  	par->dAbund  = dblval[12];
-  }
-  
+ 
 //   printf("par->abund  = %.2e\n",par->abund);
 //   printf("par->betamol  = %.2e\n",par->betamol);
 //   printf("img[0].distance  = %.2e\n",img[0].distance);
@@ -226,6 +262,14 @@ input(inputPars *par, image *img){
   
   
   /* optional doubles */
+
+  if (isnan(dblval[11]) == 0){
+  	par->lp  = dblval[11];
+  }
+  
+  if (isnan(dblval[12]) == 0){
+  	par->dAbund  = dblval[12];
+  }
   
   if (isnan(dblval[13]) == 0){
   	par->dopplerb  = dblval[13];
@@ -250,22 +294,37 @@ input(inputPars *par, image *img){
   
   if (intval[0] != -1){
   	par->collPartIds[0]  = intval[0];
+  }else{
+   bail_out("Required parameter 'collPartId' not read correctly from input.par");
+   exit(1);
   }
   
   if (intval[1] != -1){
   	img[0].nchan  = intval[1]; // Number of channels
+  }else{
+   bail_out("Required parameter 'nchan' not read correctly from input.par");
+   exit(1);
   }
   
   if (intval[2] != -1){
   	img[0].pxls  = intval[2]; // Pixels per dimension
+  }else{
+   bail_out("Required parameter 'pxls' not read correctly from input.par");
+   exit(1);
   }
   
   if (intval[3] != -1){
   	img[0].trans  = intval[3]; // zero-indexed J quantum number
+  }else{
+   bail_out("Required parameter 'trans' not read correctly from input.par");
+   exit(1);
   }
   
   if (intval[4] != -1){
   	img[0].unit  = intval[4]; // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau
+  }else{
+   bail_out("Required parameter 'unit' not read correctly from input.par");
+   exit(1);
   }
   
 //   printf("par->collPartIds[0] = %d\n",par->collPartIds[0]);
