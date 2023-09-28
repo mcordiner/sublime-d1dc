@@ -46,8 +46,8 @@ indexOf(char *elm, char *arr[], int arr_cnt)
 void
 input(inputPars *par, image *img){
 	char input[] = "input.par";
-	char buffer[10000];
-	char parline[10000];
+	char buffer[1000];
+	char parline[1000];
 	char token[1000];
 	int i_str, i_dbl, i_int;
 	FILE *fp;
@@ -60,7 +60,7 @@ input(inputPars *par, image *img){
 	char *strlist[3] = {"runname", 
 						"moldatfile", 
 						"girdatfile"};
-	char strval[numstr][100];
+	char strval[numstr][1000];
 	
 	/* doubles */
 	int numdbl = 17;
@@ -139,11 +139,11 @@ input(inputPars *par, image *img){
  
  /* strings */
  if (strcmp(strval[0],"NaN")){
- 	par->outputfile = (char*)malloc(200);
+ 	par->outputfile = (char*)malloc(1000);
  	strcpy(par->outputfile, strval[0]);
  	strcat(par->outputfile, ".pop");    
     
-    img[0].filename = (char*)malloc(200);
+    img[0].filename = (char*)malloc(1000);
  	strcpy(img[0].filename, strval[0]);
  	strcat(img[0].filename, ".fits");
  }else{
@@ -153,15 +153,16 @@ input(inputPars *par, image *img){
 
  
  if (strcmp(strval[1],"NaN")){
- 	par->moldatfile[0] = (char*)malloc(200);
+ 	par->moldatfile[0] = (char*)malloc(1000);
  	strcpy(par->moldatfile[0], strval[1]);
+ 	printf("%s\n\n",par->moldatfile[0]);
  }else{
    bail_out("Required parameter 'moldatfile' not read correctly from input.par");
    exit(1);
   }
  
  if (strcmp(strval[2],"NaN")){
- 	par->girdatfile[0] = (char*)malloc(200);
+ 	par->girdatfile[0] = (char*)malloc(1000);
  	strcpy(par->girdatfile[0], strval[2]);
  }
   
