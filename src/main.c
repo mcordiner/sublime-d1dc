@@ -20,7 +20,7 @@ int silent = 0;
 
 /*....................................................................*/
 int
-initParImg(inputPars *par, image **img)
+initParImg(inputPars *par, image **img, char *inputFile)
 {
   /* Initialize par with default values, allocate space for the
      output fits images, initialize the images with default values,
@@ -158,8 +158,8 @@ initParImg(inputPars *par, image **img)
     (*img)[i].doInterpolateVels = FALSE;
   }
 
-  /* LIME requests a second-pass reading of the user-set parameters (this time just to read the par->moldatfile and img stuff), but presently, we are only making a single image so don't need to. */
-  input(par,*img);
+  /* LIME requests a second-pass reading of the user-set parameters (this time just to read the par->moldatfile and img stuff), but presently, we are only making a single image so don't need to do that. */
+  input(par,*img,inputFile);
 
   return nImages;
 
@@ -167,17 +167,24 @@ initParImg(inputPars *par, image **img)
 }
 
 /*....................................................................*/
-int main() {
+int main(int argc, char **argv) {
   /* Main program for stand-alone SUBLIME */
 
   inputPars par;
   image *img = NULL;
   int nImages,status=0;
   char message[STR_LEN_0];
-
+  
   (void)status; // just to stop compiler warnings because this return value is currently unused.
 
-  nImages = initParImg(&par, &img);
+  FILE *file = fopen(argv[1], "r");
+  if(file == NULL){
+	   printf("ERROR: Input file '%s' cannot be read - check filename.\n",argv[1]);
+	   exit(1);
+	}
+  
+  
+  nImages = initParImg(&par, &img, argv[1]);
 
   status = run(par, img, nImages);
   if(status){

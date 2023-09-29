@@ -44,8 +44,7 @@ indexOf(char *elm, char *arr[], int arr_cnt)
 }
 
 void
-input(inputPars *par, image *img){
-	char input[] = "input.par";
+input(inputPars *par, image *img, char *input){
 	char buffer[1000];
 	char parline[1000];
 	char token[1000];
@@ -107,10 +106,7 @@ input(inputPars *par, image *img){
 	
 	/* Read input file and assign data to arrays */
 	fp = fopen (input, "r");
-	if(fp == NULL){
-	   printf("ERROR: Input file '%s' cannot be read - make sure it exists in the current working directory.\n",input);
-	   exit(1);
-	}
+
 	while(fgets(buffer, sizeof buffer, fp) != NULL) {
 		remove_spaces(parline, buffer);	// Removes white space from string
 		if (strstr(parline,"=") && strstr(parline,";")){	//Only consideres lines with the expected formatting

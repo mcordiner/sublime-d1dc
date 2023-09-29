@@ -296,7 +296,7 @@ void	freeSomeGridFields(const unsigned int, const unsigned short, struct grid*);
 double	gaussline(const double, const double);
 double	geterf(const double, const double);
 void	getEdgeVelocities(configInfo *, struct grid *);
-void	input(inputPars*, image*);
+void	input(inputPars*, image*, char*);
 double	interpolateKappa(const double, double*, double*, const int, gsl_spline*, gsl_interp_accel*);
 int	levelPops(molData*, configInfo*, struct grid*, int*, double*, double*, const int, double*, int*);
 void	mallocAndSetDefaultGrid(struct grid**, const size_t, const size_t);

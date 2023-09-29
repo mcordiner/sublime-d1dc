@@ -1,10 +1,10 @@
-# SUBLIME-D1DC
+# SUBLIMED1DC
 
 SUBlimated cometary gases in LIME (Dynamical, 1D, Compiled version)
 
-This is SUBLIME-D1DC, a 1D radiative transfer code for outflowing cometary gases, by Martin Cordiner, Emmanuel Garcia-Berrios and Kristen Darnell (2023). 
+This is SUBLIMED1D, a 1D radiative transfer code for outflowing cometary gases, by Martin Cordiner, Emmanuel Garcia-Berrios and Kristen Darnell (2023). 
 
-SUBLIME-D1DC is based on the [SUBLIME code](https://ui.adsabs.harvard.edu/abs/2022ApJ...929...38C/abstract) by Martin Cordiner (2022), and the [LIME (LIne Modeling Engine)](https://github.com/lime-rt/lime) by Christian Brinch (2006-2014) and the LIME development team (2015-2018). Main changes from the original LIME code include (1) switching from the static (GSL) matrix solver to the time-dependent (CVODE) solver, which allows the dynamical nature of the cometary outflow to be properly simulated. Equations of statistical equilibrium in solver.c have been restructured as time-dependent differential equations, assuming constant outflow velocity. (2) Electron collision rates are added to the differential equations; analytic electron densities and temperatures are generated at runtime. (3) This model is strictly 1D, and the raytracing is now performed along a radial vector from the origin (in the plane of the sky), which is then interpolated onto the 2D image grid, supersampling the central pixels where the brightness can change rapidly. (4) For photon trapping, the escape probability approximation can invoked using par->useEP=1. (5) This version is compiled once, and the model parameters are read in at runtime using the "input.par" file; a few other parameters can be set in src/model.c before compiling (see also sublime.h for the values of physical constants and other default parameters).
+SUBLIMED1DC is based on SUBLIMED by Martin Cordiner (2022), and the LIME (LIne Modeling Engine) by Christian Brinch (2006-2014) and the LIME development team (2015-2018). Main changes from the original LIME code include (1) switching from the static (GSL) solver to a time-dependent (CVODE) solver, which allows the dynamical nature of the cometary outflow to be properly simulated. Equations of statistical equilibrium in solver.c have been restructured as time-dependent differential equations, assuming constant outflow velocity. (2) Electron collision rates are added to the differential equations; analytic electron densities and temperatures are generated at runtime. (3) This model is strictly 1D, and the raytracing is now performed along a radial vector from the origin (in the plane of the sky), which is then interpolated onto the 2D image grid, supersampling the central pixels where the brightness can change rapidly. (4) For photon trapping, the escape probability approximation can invoked using par->useEP=1. (5) This version is compiled once, and the model parameters are read in at runtime using the "input.par" file; a few other parameters can be set in src/model.c before compiling (see also sublime.h for the values of physical constants and other default parameters).
 
 Example input and output files are given in the example/ folder. 
 
@@ -14,7 +14,11 @@ The code is then compiled by running the following shell script:
 
 > ./compile_sublimed1d
 
-This generates a binary executable called sublimed1dc, which reads parameters from the input.par file (located in the current working directory). 
+This generates a binary executable called sublimed1dc, which is executed as follows:
+
+> ./sublimed1dc <inputFile.par>
+
+where inputFile.par is the name of the file containing the model input parameters (a template is given in example/input.par).
 
 To generate a reliable coma image, care needs to be taken to correctly set the par->radius parameter in model.c to capture all the expected emission (this will vary depending on the molecule, coma and viewing geometry). The channel spacing (velres) needs to be small enough (around 100 m/s or less) to properly sample the spectral line profile, even if the velocity information is later discarded. 
 
