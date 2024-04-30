@@ -55,15 +55,18 @@ input(inputPars *par, image *img, char *input){
 	char value[200];
 	
 	/* Strings */
-	int numstr = 3;
-	char *strlist[3] = {"runname", 
+	int numstr = 5;
+	char *strlist[5] = {"runname", 
 						"moldatfile", 
-						"girdatfile"};
+						"girdatfile",
+						"moldatfile2",
+						"girdatfile2"
+						};
 	char strval[numstr][1000];
 	
 	/* doubles */
-	int numdbl = 17;
-	char *dbllist[17] = {"abund",
+	int numdbl = 19;
+	char *dbllist[19] = {"abund",
 						"betamol",
 						"delta",
 						"imgres",
@@ -79,7 +82,9 @@ input(inputPars *par, image *img, char *input){
 						"dopplerb",
 						"xne",
 						"tnuc",
-						"colliScale"};
+						"colliScale",
+						"ratio",
+						"freq"};
 	double dblval[numdbl];
 	
 	/* ints */
@@ -130,7 +135,7 @@ input(inputPars *par, image *img, char *input){
 	fclose(fp);
 	
 /*
- * Basic parameters. See cheat sheet for details.
+ * Basic parameters.
  */
  
  /* strings */
@@ -283,6 +288,14 @@ input(inputPars *par, image *img, char *input){
   	par->colliScale  = dblval[16];
   }
   
+  if (isnan(dblval[17]) == 0){
+  	par->ratio  = dblval[17];
+  }
+  
+  if (isnan(dblval[18]) == 0){
+  	img[0].freq  = dblval[18];
+  }
+  
 //   	printf("par->dopplerb  = %.2e\n",par->dopplerb);
 //    	printf("par->xne = %.2e\n",par->xne);
   
@@ -309,13 +322,6 @@ input(inputPars *par, image *img, char *input){
    exit(1);
   }
   
-  if (intval[3] != -1){
-  	img[0].trans  = intval[3]; // zero-indexed J quantum number
-  }else{
-   bail_out("Required parameter 'trans' not read correctly from input.par");
-   exit(1);
-  }
-  
   if (intval[4] != -1){
   	img[0].unit  = intval[4]; // 0:Kelvin 1:Jansky/pixel 2:SI 3:Lsun/pixel 4:tau
   }else{
@@ -330,6 +336,10 @@ input(inputPars *par, image *img, char *input){
 //   printf("img[0].unit = %d\n",img[0].unit);
   
   /* optional ints */
+  if (intval[3] != -1){
+  	img[0].trans  = intval[3]; // zero-indexed J quantum number
+  }
+  
   if (intval[5] != -1){
   	par->useEP  = intval[5]; // zero-indexed J quantum number
   }
@@ -340,6 +350,15 @@ input(inputPars *par, image *img, char *input){
   
 //  printf("par->useEP = %d\n",par->useEP);
   
+  /* optional strings */
+  if (strcmp(strval[3],"NaN")){
+ 	par->moldatfile[1] = (char*)malloc(1000);
+ 	strcpy(par->moldatfile[1], strval[3]);
+  }
+  if (strcmp(strval[4],"NaN")){
+ 	par->girdatfile[1] = (char*)malloc(1000);
+ 	strcpy(par->girdatfile[1], strval[4]);
+  }
   
   
   /* Other model variables the user might want to change */
@@ -414,10 +433,22 @@ molNumDensity(configInfo *par, double x, double y, double z, double *nmol){
   /*
    * Calculate Haser density profile
    */
-  if(r<rMin)
-    nmol[0] = 0.;
-  else
-    nmol[0] =par->abund*par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * par->Qwater * (ld/(par->lp-ld)) * (exp(-r / par->lp) - exp(-r / ld)) / (4.0 * PI * pow(r, 2)*par->vexp));
+  
+  if(par->ratio == 0.0){
+    if(r<rMin){
+      nmol[0] = 0.;
+    }else{
+      nmol[0] =par->abund*par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * par->Qwater * (ld/(par->lp-ld)) * (exp(-r / par->lp) - exp(-r / ld)) / (4.0 * PI * pow(r, 2)*par->vexp));
+    }
+  }else{  
+    if(r<rMin){
+      nmol[0] = 0.;
+      nmol[1] = 0.;
+    }else{
+      nmol[0] =par->abund* (par->ratio/(1+par->ratio)) * par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * par->Qwater * (ld/(par->lp-ld)) * (exp(-r / par->lp) - exp(-r / ld)) / (4.0 * PI * pow(r, 2)*par->vexp));
+      nmol[1] =par->abund * (1/(1+par->ratio)) * par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * par->Qwater * (ld/(par->lp-ld)) * (exp(-r / par->lp) - exp(-r / ld)) / (4.0 * PI * pow(r, 2)*par->vexp));
+    }
+  }
 }
 
 /******************************************************************************/

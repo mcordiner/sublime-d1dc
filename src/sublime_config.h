@@ -33,7 +33,7 @@ extern int silent;
 
 typedef struct {
   /* Elements also present in struct inpars: */
-  double beta,betamol,vexp,tkin,rnuc,abund,dopplerb; // Formerly magic numbers in model.c
+  double beta,betamol,vexp,tkin,rnuc,abund,dopplerb,ratio; // Formerly magic numbers in model.c
   double radius,minScale,tcmb,Qwater,rHelio,xne,colliScale,girScale,tNuc,*nMolWeights,lp,dAbund;
   double (*gridDensMaxLoc)[DIM],*gridDensMaxValues,*collPartMolWeights;
   int sinkPoints,pIntensity,blend,*collPartIds,traceRayAlgorithm,samplingAlgorithm;

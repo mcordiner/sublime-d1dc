@@ -360,6 +360,7 @@ Copy over user-set parameters to the configInfo versions. (This seems like dupli
   par->dopplerb		 = inpars.dopplerb;
   par->lp             = inpars.lp;
   par->dAbund         = inpars.dAbund;
+  par->ratio          = inpars.ratio;
 
   /* Somewhat more carefully copy over the strings:
   */

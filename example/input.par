@@ -12,7 +12,7 @@ Qwater		= 1e29;  	//  H2O production rate from the nucleus (mol/s)
 vexp		   = 800;		//  Coma expansion velocity (m/s)
 tkin		   = 50;		   //  Kinetic temperature (K)
 abund		   = 0.001;	   //  Parent molecular abundance
-betamol		= 1.5e-5;   //  Molecular photolysis rate (s^-1)
+betamol		= 1.5e-5;   //  Molecular photolysis rate at 1 AU (s^-1)
 rhelio	= 1.0;         //  Heliocentric distance (AU)
 rnuc     = 500;         //  Nucleus radius (m)
 radius   = 1e9;         //  Model coma outer radius (m) 
@@ -22,7 +22,7 @@ collPartId	= 1;		   //  Collision partner ID (in moldatfile)
  * Spectral Image Cube Parameters
  */
 unit		= 0;		   //  Output intensity units - 0=Kelvin, 1=Jansky/pixel, 2=SI, 3=Lsun/pixel
-trans		= 3;    	   //  Zero-indexed transition number
+trans		= 3;    	   //  Zero-indexed transition number // Alternatively freq=241800033569. // Hz;
 velres	= 100;	   //  Channel resolution (m/s)
 nchan		= 50;		   //  Number of channels
 pxls		= 256;		//  Pixels per dimension
@@ -40,3 +40,6 @@ delta		= 1.0;   	//  Distance from observer (AU)
 // tnuc 		= 100;		// Nucleus temperature (K) - default value is 100
 // npts 		= 300;		// Number of points in radial grid - default value is 300
 // colliScale	= 10;		// Scale the collision rates by a constant factor - default value is 1
+// moldatfile2	= ch3oh_e_300K.dat;			// Molecular data file #2 (LAMDA format)
+// girdatfile2	= g_eCH3OH_1au_300K.dat;	// Effective solar pumping rates #2 (at 1 AU)
+// ratio = 1.0;  // Ratio of abundances for species [1/2] (required if moldatfile2 specified)
