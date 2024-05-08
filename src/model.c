@@ -115,7 +115,7 @@ input(inputPars *par, image *img, char *input){
 
 	while(fgets(buffer, sizeof buffer, fp) != NULL) {
 		remove_spaces(parline, buffer);	// Removes white space from string
-		if (strstr(parline,"=") && strstr(parline,";")){	//Only consideres lines with the expected formatting
+		if (strstr(parline,"=") && strstr(parline,";")){	//Only considers lines with the expected formatting
 			strcpy(name,strtok(parline, "="));
 			strcpy(value,strtok(NULL, ";"));			
 			i_str = indexOf(name,strlist,numstr);
@@ -301,8 +301,6 @@ input(inputPars *par, image *img, char *input){
   	img[0].source_vel  = dblval[19];
   }
   
-//   	printf("par->dopplerb  = %.2e\n",par->dopplerb);
-//    	printf("par->xne = %.2e\n",par->xne);
   
   /* ints */
   
@@ -381,7 +379,7 @@ input(inputPars *par, image *img, char *input){
   /* Rescale photo-rates by heliocentric distance */
   par->beta = par->beta * par->girScale;
   par->betamol = par->betamol * par->girScale;
-
+  
 }
 
 /******************************************************************************/
@@ -437,7 +435,12 @@ molNumDensity(configInfo *par, double x, double y, double z, double *nmol){
   r=sqrt(x*x+y*y+z*z);
   /*
    * Calculate Haser density profile
+   * Parent and daughter components can be simultaneously specified.
+   * If the lp value is 0, we end up with the strangely redundant case of a dual parent distribution,
+   * so best to set input dAbund to zero to avoid that. 
    */
+  
+  if(par->lp > 0.){
   
   if(par->ratio == 0.0){
     if(r<rMin){
@@ -450,10 +453,31 @@ molNumDensity(configInfo *par, double x, double y, double z, double *nmol){
       nmol[0] = 0.;
       nmol[1] = 0.;
     }else{
-      nmol[0] =par->abund* (par->ratio/(1+par->ratio)) * par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * par->Qwater * (ld/(par->lp-ld)) * (exp(-r / par->lp) - exp(-r / ld)) / (4.0 * PI * pow(r, 2)*par->vexp));
-      nmol[1] =par->abund * (1/(1+par->ratio)) * par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * par->Qwater * (ld/(par->lp-ld)) * (exp(-r / par->lp) - exp(-r / ld)) / (4.0 * PI * pow(r, 2)*par->vexp));
+      nmol[0] = par->abund * (par->ratio/(1+par->ratio)) * par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * (par->ratio/(1+par->ratio)) * par->Qwater * (ld/(par->lp-ld)) * (exp(-r / par->lp) - exp(-r / ld)) / (4.0 * PI * pow(r, 2)*par->vexp));
+      nmol[1] = par->abund * (1/(1+par->ratio)) * par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * (1/(1+par->ratio)) * par->Qwater * (ld/(par->lp-ld)) * (exp(-r / par->lp) - exp(-r / ld)) / (4.0 * PI * pow(r, 2)*par->vexp));
     }
   }
+  
+  }else{
+  
+   if(par->ratio == 0.0){
+    if(r<rMin){
+      nmol[0] = 0.;
+    }else{
+      nmol[0] = par->abund*par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * par->Qwater * (ld/(par->lp-ld)) * (exp(-r / par->lp) - exp(-r / ld)) / (4.0 * PI * pow(r, 2)*par->vexp));
+    }
+  }else{  
+    if(r<rMin){
+      nmol[0] = 0.;
+      nmol[1] = 0.;
+    }else{
+      nmol[0] = par->abund * (par->ratio/(1+par->ratio)) * par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * (par->ratio/(1+par->ratio)) * par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp));
+      nmol[1] = par->abund * (1/(1+par->ratio)) * par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * (1/(1+par->ratio)) * par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp));
+    }
+  } 
+  
+  }
+  
 }
 
 /******************************************************************************/
