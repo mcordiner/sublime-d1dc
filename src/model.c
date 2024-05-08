@@ -434,13 +434,14 @@ molNumDensity(configInfo *par, double x, double y, double z, double *nmol){
    */
   r=sqrt(x*x+y*y+z*z);
   /*
-   * Calculate Haser density profile
-   * Parent and daughter components can be simultaneously specified.
+   * Calculate Haser parent + daughter density profile
+   * Parent and daughter components can be independently specified (or set to zero).  
+   * Two molecular species can be specified with an abundance ratio given by par->ratio (e.g. A/E CH3OH).
    * If the lp value is 0, we end up with the strangely redundant case of a dual parent distribution,
-   * so best to set input dAbund to zero to avoid that. 
+   * so best to set input dAbund to zero in that case, to avoid unwanted behaviour. 
    */
   
-  if(par->lp > 0.){
+  if(par->lp > 0.){ // Avoid dividing by zero in case of zero parent scale length
   
   if(par->ratio == 0.0){
     if(r<rMin){
@@ -464,7 +465,7 @@ molNumDensity(configInfo *par, double x, double y, double z, double *nmol){
     if(r<rMin){
       nmol[0] = 0.;
     }else{
-      nmol[0] = par->abund*par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * par->Qwater * (ld/(par->lp-ld)) * (exp(-r / par->lp) - exp(-r / ld)) / (4.0 * PI * pow(r, 2)*par->vexp));
+      nmol[0] = par->abund*par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp) + (par->dAbund * par->Qwater/(4*PI*pow(r, 2)*par->vexp)*exp(-r*par->betamol/par->vexp));
     }
   }else{  
     if(r<rMin){
