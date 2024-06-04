@@ -40,6 +40,8 @@ delta		= 1.0;   	//  Distance from observer (AU)
 // tnuc 		= 100;		// Nucleus temperature (K) - default value is 100
 // npts 		= 300;		// Number of points in radial grid - default value is 300
 // colliScale	= 10;		// Scale the collision rates by a constant factor - default value is 1
+// xsec = 5e-18;  // Average collision cross section in case of no LAMDA collision data (m^2) - standard value is 5e-18; default is 0 (i.e. use LAMDA data)
 // moldatfile2	= ch3oh_e_300K.dat;			// Molecular data file #2 (LAMDA format)
 // girdatfile2	= g_eCH3OH_1au_300K.dat;	// Effective solar pumping rates #2 (at 1 AU)
 // ratio = 1.0;  // Ratio of abundances for species [1/2] (required if moldatfile2 specified)
+

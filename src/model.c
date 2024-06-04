@@ -65,8 +65,8 @@ input(inputPars *par, image *img, char *input){
 	char strval[numstr][1000];
 	
 	/* doubles */
-	int numdbl = 20;
-	char *dbllist[20] = {"abund",
+	int numdbl = 21;
+	char *dbllist[21] = {"abund",
 						"betamol",
 						"delta",
 						"imgres",
@@ -85,7 +85,8 @@ input(inputPars *par, image *img, char *input){
 						"colliScale",
 						"ratio",
 						"freq",
-						"deldot"};
+						"deldot",
+						"xsec"};
 	double dblval[numdbl];
 	
 	/* ints */
@@ -299,6 +300,10 @@ input(inputPars *par, image *img, char *input){
   
   if (isnan(dblval[19]) == 0){
   	img[0].source_vel  = dblval[19];
+  }
+  
+  if (isnan(dblval[20]) == 0){
+  	par->xsec  = dblval[20];
   }
   
   

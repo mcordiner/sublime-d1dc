@@ -96,6 +96,7 @@ initParImg(inputPars *par, image **img, char *inputFile)
   par->lp = 0.0;
   par->dAbund = 0.0;
   par->ratio = 0.0;
+  par->xsec = 0.0;
 
   par->gridOutFiles = malloc(sizeof(char *)*NUM_GRID_STAGES);
   for(i=0;i<NUM_GRID_STAGES;i++)

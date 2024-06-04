@@ -361,6 +361,7 @@ Copy over user-set parameters to the configInfo versions. (This seems like dupli
   par->lp             = inpars.lp;
   par->dAbund         = inpars.dAbund;
   par->ratio          = inpars.ratio;
+  par->xsec          = inpars.xsec;
 
   /* Somewhat more carefully copy over the strings:
   */

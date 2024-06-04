@@ -644,16 +644,34 @@ Note that this is called from within the multi-threaded block.
 }
 
 /*....................................................................*/
+void lteOnePoint(molData *md, const int ispec, const double temp, double *pops){
+  int ilev;
+  double sum;
+
+  sum = 0.0;
+  for(ilev=0;ilev<md[ispec].nlev;ilev++){
+    pops[ilev] = md[ispec].gstat[ilev]*exp(-HCKB*md[ispec].eterm[ilev]/temp);
+    sum += pops[ilev];
+  }
+  for(ilev=0;ilev<md[ispec].nlev;ilev++)
+    pops[ilev] /= sum;
+}
+
+
+/*....................................................................*/
 
 void
 getTransitionRates(molData *md, int ispec, struct grid *gp, configInfo *par, int NEQ, double A[NEQ-1], double *p, realtype radius, double *jbar_grid, double *Pops, int *nMaserWarnings, double vexp, struct CKCdata *CKCdata){
   int itemp,ipart,t_binlow,iline,k,l,ti, li, upper, lower, j,tnint=-1;
   double rnuc, Te, ne, aij, sigmaij, ve, bessel, ceij, gij, ceji, dens[md[ispec].npart], tkin[md[ispec].npart];
-  double jbar[par->pIntensity],molDens[par->nSpecies], tau, beta, interp_coeff;
+  double jbar[par->pIntensity],molDens[par->nSpecies], tau, beta, interp_coeff, LTEpops[md[ispec].nlev];
+  double vkin,collRate;
+
 
   rnuc = par->minScale;
   density(par,radius,0.0,0.0,dens);
   temperature(par,radius,0.0,0.0,tkin);
+  lteOnePoint(md, ispec, tkin[ipart], LTEpops);
 
   /* Initialize matrix with zeros */
   if(md[ispec].nlev<=0){
@@ -691,7 +709,7 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, configInfo *par, int
       interp_coeff = 1.0;
     }
 
-
+   if (par->xsec == 0){
     for(ti=0;ti<part.ntrans;ti++){
       int coeff_index = ti*part.ntemp + t_binlow;
       double down = downrates[coeff_index]\
@@ -701,8 +719,18 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, configInfo *par, int
 
       p[part.lcu[ti] * NEQ + part.lcl[ti]] = p[part.lcu[ti] * NEQ + part.lcl[ti]] + down*dens[ipart];
       p[part.lcl[ti] * NEQ + part.lcu[ti]] = p[part.lcl[ti] * NEQ + part.lcu[ti]] + up*dens[ipart];
-  }
+    }
+   }else{
+   /* If xsec was provided, then use the Meudon approximation */
+     vkin = sqrt(8.0*KBOLTZ*tkin[ipart]/PI * (1.0/md[ispec].amass + 1.0/MATM));
+     collRate = dens[ipart]*vkin*par->xsec;
+     for(k=0;k<md[ispec].nlev;k++){
+        for(l=0;l<md[ispec].nlev;l++){
+          p[l * NEQ + k] = p[l * NEQ + k] + collRate * LTEpops[k];  
+        }
+     }
 
+   }
   }
   
   /*GENERATE ELECTRON COLLISIONAL RATES AND ADD TO MATRIX*/
@@ -789,19 +817,6 @@ getTransitionRates(molData *md, int ispec, struct grid *gp, configInfo *par, int
   }
 }
 
-/*....................................................................*/
-void lteOnePoint(molData *md, const int ispec, const double temp, double *pops){
-  int ilev;
-  double sum;
-
-  sum = 0.0;
-  for(ilev=0;ilev<md[ispec].nlev;ilev++){
-    pops[ilev] = md[ispec].gstat[ilev]*exp(-HCKB*md[ispec].eterm[ilev]/temp);
-    sum += pops[ilev];
-  }
-  for(ilev=0;ilev<md[ispec].nlev;ilev++)
-    pops[ilev] /= sum;
-}
 
 /*....................................................................*/
 void
