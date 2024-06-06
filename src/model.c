@@ -65,8 +65,8 @@ input(inputPars *par, image *img, char *input){
 	char strval[numstr][1000];
 	
 	/* doubles */
-	int numdbl = 21;
-	char *dbllist[21] = {"abund",
+	int numdbl = 22;
+	char *dbllist[22] = {"abund",
 						"betamol",
 						"delta",
 						"imgres",
@@ -86,7 +86,8 @@ input(inputPars *par, image *img, char *input){
 						"ratio",
 						"freq",
 						"deldot",
-						"xsec"};
+						"xsec",
+						"fwhm"};
 	double dblval[numdbl];
 	
 	/* ints */
@@ -306,6 +307,9 @@ input(inputPars *par, image *img, char *input){
   	par->xsec  = dblval[20];
   }
   
+  if (isnan(dblval[21]) == 0){
+  	img[0].fwhm  = dblval[21];
+  }
   
   /* ints */
   

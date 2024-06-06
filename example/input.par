@@ -21,7 +21,7 @@ collPartId	= 1;		   //  Collision partner ID (in moldatfile)
 /*
  * Spectral Image Cube Parameters
  */
-unit		= 0;		   //  Output intensity units - 0=Kelvin, 1=Jansky/pixel, 2=SI, 3=Lsun/pixel
+unit		= 1;		   //  Output intensity units - 0=Kelvin, 1=Jansky/pixel, 2=SI, 3=Lsun/pixel
 trans		= 3;    	   //  Zero-indexed transition number // Alternatively freq=241800033569. // Hz;
 velres	= 100;	   //  Channel resolution (m/s)
 nchan		= 50;		   //  Number of channels
@@ -32,6 +32,7 @@ delta		= 1.0;   	//  Distance from observer (AU)
 /*
  * Optional parameters.
  */
+// fwhm        = 15.      // Telescope beam FWHM for flux integral ('') - default is 0;   
 // lp          = 0;        //  Daughter production scale length (m) - default is 0
 // dAbund      = 0;        //  Daughter molecular abundance - default is 0
 // dopplerb	= 100;		// Turbulent Doppler broadening parameter (m/s) - default is 0

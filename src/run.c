@@ -650,6 +650,7 @@ The cutoff will be the value of abs(x) for which the error in the exact expressi
       (*img)[i].posang     = inimg[i].posang;
       (*img)[i].azimuth    = inimg[i].azimuth;
       (*img)[i].distance   = inimg[i].distance;
+      (*img)[i].fwhm   = inimg[i].fwhm;
       (*img)[i].doInterpolateVels = inimg[i].doInterpolateVels; // This is only accessed if par->traceRayAlgorithm==1.
     
       (*img)[i].psfWidth = inimg[i].psfWidth / inimg[i].velres;  // Convert the spectral response FWHM to channels
@@ -1149,10 +1150,11 @@ run(inputPars inpars, image *inimg, const int nImages){
   imageInfo *img=NULL;
   struct grid *gp=NULL;
   char message[STR_LEN_0];
+  char units[10];
   int nEntries=0;
   double *lamtab=NULL,*kaptab=NULL;
-  double *radii, current;
-  int *gp_sorted;
+  double *radii, current, sigmapix, gauss, fluxsum;
+  int *gp_sorted, ichan, px, py, ppi;
 
   struct sigaction sigact = {.sa_handler = sigintHandler};
   sigactionStatus = sigaction(SIGINT, &sigact, NULL);
@@ -1275,12 +1277,38 @@ exit(1);
 
   freeSomeGridFields((unsigned int)par.ncell, (unsigned short)par.nSpecies, gp);
 
-  /* Now make the line images.
+  /* Now make the line images, and integrate the fluxes if needed.
   */
   if(par.nLineImages>0){
     for(i=0;i<par.nImages;i++){
       if(img[i].doline){
+        fluxsum = 0.0;
         raytrace(i, &par, gp, md, img, lamtab, kaptab, nEntries, radii);
+        if(img[i].fwhm > 0.0){
+        // Integrate the line flux within the supplied beam fwhm
+          sigmapix = img[i].fwhm/2.35482/img[i].imgres*ARCSEC_TO_RAD;         
+          for(ichan=0;ichan<img[i].nchan;ichan++){
+            for(py=0;py<img[i].pxls;py++){
+              for(px=0;px<img[i].pxls;px++){
+                ppi = py*img[i].pxls + px;
+                gauss = exp(-(pow(px-(img[i].pxls/2. - 0.5),2)+pow(py-(img[i].pxls/2. - 0.5),2))/(2.*sigmapix*sigmapix));
+                fluxsum += gauss * img[i].pixel[ppi].intense[ichan];
+              }
+            }
+          }
+          fluxsum = fluxsum * img[i].velres / 1000.;
+          
+          // Scale according to units (Jy or Kelvin)
+          if (img[i].imgunits[0] == 0){  // The units are stored in imgunits[0]
+            strcpy(units, "K");
+            fluxsum = fluxsum * 0.5*(CLIGHT/img[i].freq)*(CLIGHT/img[i].freq)/KBOLTZ / (2.*PI*sigmapix*sigmapix);
+          }else{
+            strcpy(units, "Jy");
+            fluxsum = fluxsum * 1e26*img[i].imgres*img[i].imgres;
+          }
+
+          printf("Beam-integrated line flux = %8.3e %2s km/s\n\n",fluxsum,units);
+        }
         writeFitsAllUnits(i, &par, img);
       }
     }

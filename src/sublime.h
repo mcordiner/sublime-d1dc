@@ -226,6 +226,7 @@ typedef struct {
   struct spec *pixel;
   double velres;
   double imgres;
+  double fwhm;
   int pxls;
   char *units;
   int *imgunits;

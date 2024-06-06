@@ -147,6 +147,7 @@ initParImg(inputPars *par, image **img, char *inputFile)
     (*img)[i].bandwidth  = -1.0;
     (*img)[i].psfShape   = 0;
     (*img)[i].psfWidth   = 0.0;
+    (*img)[i].fwhm       = 0.0;
     (*img)[i].rebinSpec   = 0;
     (*img)[i].nBins      = 0;
     (*img)[i].binWidth   = 0;
