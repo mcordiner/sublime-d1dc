@@ -38,6 +38,7 @@ typedef struct {
   char *units;
   int psfShape;
   double psfWidth;
+  double fwhm;
   int rebinSpec;
   int nBins;
   double binWidth;
