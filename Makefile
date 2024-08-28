@@ -44,7 +44,7 @@ CPPFLAGS += -I${PREFIX}/include \
 include Makefile.srcs
 
 CCFLAGS += -O3 -falign-loops=16 -fno-strict-aliasing
-LDFLAGS += -lgsl -lgslcblas -lcfitsio -lncurses -lsundials_cvode -lsundials_nvecserial -lsundials_nvecmanyvector -lm
+LDFLAGS += -lgsl -lgslcblas -lcfitsio -lsundials_cvode -lsundials_nvecserial -lsundials_nvecmanyvector -lm
 
 ifeq (${DOTEST},yes)
   CCFLAGS += -DTEST
