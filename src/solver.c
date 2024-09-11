@@ -7,8 +7,6 @@
  *  Copyright (C) 2015-2017 The LIME development team
  *  Copyright (C) 2023 Martin Cordiner, Emmanuel Garcia-Berrios and Kristen Darnell (NASA GSFC)
  *
-TODO:
-  - The test to run calculateJBar() etc in levelPops just tests dens[0]. This is a bit sloppy.
  */
 
 #include <stdio.h>
@@ -133,24 +131,6 @@ double nelec(double r, double Q, double vexp, double Te, double rH, double xne){
   return ne;
 }
 
-
-
-/*....................................................................*/
-void
-freeMolsWithBlends(struct molWithBlends *mols, const int numMolsWithBlends){
-  int mi, li;
-
-  if(mols != NULL){
-    for(mi=0;mi<numMolsWithBlends;mi++){
-      if(mols[mi].lines != NULL){
-        for(li=0;li<mols[mi].numLinesWithBlends;li++)
-          free(mols[mi].lines[li].blends);
-        free(mols[mi].lines);
-      }
-    }
-    free(mols);
-  }
-}
 
 /*....................................................................*/
 void
@@ -394,254 +374,6 @@ Note that this is called from within the multi-threaded block.
   } else *vfac_in+=gaussline(0.5*(v[1]+v[2]),binv_next);
 }
 
-/*....................................................................*/
-void
-calculateJBar(int id, struct grid *gp, molData *md, const gsl_rng *ran\
-  , configInfo *par, const int nlinetot, struct blendInfo blends\
-  , gridPointData *mp, double *halfFirstDs, int *nMaserWarnings){
-  /*
-Note that this is called from within the multi-threaded block.
-  */
-
-  int iphot,iline,here,there,firststep,neighI,numLinks=0;
-  int nextMolWithBlend, nextLineWithBlend, molI, lineI, molJ, lineJ, bi;
-  double segment,vblend_in,vblend_out,dtau,expDTau,ds_in=0.0,ds_out=0.0,pt_theta,pt_z,semiradius;
-  double deltav[par->nSpecies],vfac_in[par->nSpecies],vfac_out[par->nSpecies],vfac_inprev[par->nSpecies];
-  double expTau[nlinetot],inidir[3];
-  double remnantSnu,velProj;
-  char message[STR_LEN_0];
-
-  for(iphot=0;iphot<gp[id].nphot;iphot++){
-    firststep=1;
-    iline = 0;
-    for(molI=0;molI<par->nSpecies;molI++){
-      for(lineI=0;lineI<md[molI].nline;lineI++){
-        mp[molI].phot[lineI+iphot*md[molI].nline]=0.;
-        expTau[iline]=1.;
-        iline++;
-      }
-    }
-
-    /* Choose random initial photon direction (the distribution used here is even over the surface of a sphere of radius 1).
-    */
-    pt_theta=gsl_rng_uniform(ran)*2*M_PI;
-    pt_z=2*gsl_rng_uniform(ran)-1;
-    semiradius = sqrt(1.-pt_z*pt_z);
-    inidir[0]=semiradius*cos(pt_theta);
-    inidir[1]=semiradius*sin(pt_theta);
-    inidir[2]=pt_z;
-
-    /* Choose the photon frequency/velocity offset.
-    */
-    segment=gsl_rng_uniform(ran)-0.5;
-    /*
-    Values of segment should be evenly distributed (considering the
-    entire ensemble of photons) between -0.5 and +0.5.
-    */
-
-    for (molI=0;molI<par->nSpecies;molI++){
-      /* Is factor 4.3=[-2.15,2.15] enough?? */
-      deltav[molI]=4.3*segment*gp[id].mol[molI].dopb+dotProduct3D(inidir,gp[id].vel);
-      /*
-      This is the local (=evaluated at a grid point, not averaged over the local cell) lineshape.
-      We store this for later use in ALI loops.
-      */
-      mp[molI].vfac_loc[iphot]=gaussline(deltav[molI]-dotProduct3D(inidir,gp[id].vel),gp[id].mol[molI].binv);
-    }
-
-    here = gp[id].id;
-
-    /* Photon propagation loop */
-    numLinks=0;
-    while(!gp[here].sink){ /* Testing for sink at loop start is redundant for the first step, since we only start photons from non-sink points, but it makes for simpler code. */
-      numLinks++;
-      if(numLinks>par->ncell){
-        if(!silent){
-          snprintf(message, STR_LEN_0, "Bad grid? Too many links in photon path, point %d photon %d", id, iphot);
-          bail_out(message);
-        }
-exit(1);
-      }
-
-      neighI = getNextEdge(inidir,id,here,gp,ran);
-
-      there=gp[here].neigh[neighI]->id;
-
-      if(firststep){
-        firststep=0;
-        ds_out=0.5*gp[here].ds[neighI]*dotProduct3D(inidir,gp[here].dir[neighI].xn);
-        halfFirstDs[iphot]=ds_out;
-
-        for(molI=0;molI<par->nSpecies;molI++){
-          if(par->edgeVelsAvailable) {
-            calcLineAmpPWLin(gp,here,neighI,molI,deltav[molI],inidir,&vfac_in[molI],&vfac_out[molI]);
-         } else
-            calcLineAmpLin(gp,here,neighI,molI,deltav[molI],inidir,&vfac_in[molI],&vfac_out[molI]);
-
-          mp[molI].vfac[iphot]=vfac_out[molI];
-        }
-        /*
-        Contribution of the local cell to emission and absorption is done in updateJBar.
-        We only store the vfac for the local cell for use in ALI loops.
-        */
-        here=there;
-    continue;
-      }
-
-      /* If we've got to here, we have progressed beyond the first edge. Length of the new "in" edge is the length of the previous "out".
-      */
-      ds_in=ds_out;
-      ds_out=0.5*gp[here].ds[neighI]*dotProduct3D(inidir,gp[here].dir[neighI].xn);
-
-      for(molI=0;molI<par->nSpecies;molI++){
-        vfac_inprev[molI]=vfac_in[molI];
-        if(par->edgeVelsAvailable)
-          calcLineAmpPWLin(gp,here,neighI,molI,deltav[molI],inidir,&vfac_in[molI],&vfac_out[molI]);
-        else
-          calcLineAmpLin(gp,here,neighI,molI,deltav[molI],inidir,&vfac_in[molI],&vfac_out[molI]);
-      }
-
-      nextMolWithBlend = 0;
-      iline = 0;
-      for(molI=0;molI<par->nSpecies;molI++){
-        nextLineWithBlend = 0;
-        for(lineI=0;lineI<md[molI].nline;lineI++){
-          double jnu_line_in=0., jnu_line_out=0., jnu_cont=0., jnu_blend=0.;
-          double alpha_line_in=0., alpha_line_out=0., alpha_cont=0., alpha_blend=0.;
-
-          sourceFunc_line(&md[molI],vfac_inprev[molI],&(gp[here].mol[molI]),lineI,&jnu_line_in,&alpha_line_in);
-          sourceFunc_line(&md[molI],vfac_out[molI],&(gp[here].mol[molI]),lineI,&jnu_line_out,&alpha_line_out);
-          sourceFunc_cont(gp[here].mol[molI].cont[lineI],&jnu_cont,&alpha_cont);
-
-          /* cont and blend could use the same alpha and jnu counter, but maybe it's clearer this way */
-
-          /* Line blending part.
-          */
-          if(par->blend && blends.mols!=NULL && molI==blends.mols[nextMolWithBlend].molI\
-          && lineI==blends.mols[nextMolWithBlend].lines[nextLineWithBlend].lineI){
-
-            for(bi=0;bi<blends.mols[nextMolWithBlend].lines[nextLineWithBlend].numBlends;bi++){
-              molJ  = blends.mols[nextMolWithBlend].lines[nextLineWithBlend].blends[bi].molJ;
-              lineJ = blends.mols[nextMolWithBlend].lines[nextLineWithBlend].blends[bi].lineJ;
-              velProj = deltav[molI] - blends.mols[nextMolWithBlend].lines[nextLineWithBlend].blends[bi].deltaV;
-        /*  */
-              if(par->edgeVelsAvailable)
-                calcLineAmpPWLin(gp,here,neighI,molJ,velProj,inidir,&vblend_in,&vblend_out);
-              else
-                calcLineAmpLin(gp,here,neighI,molJ,velProj,inidir,&vblend_in,&vblend_out);
-
-        /* we should use also the previous vblend_in, but I don't feel like writing the necessary code now */
-              sourceFunc_line(&md[molJ],vblend_out,&(gp[here].mol[molJ]),lineJ,&jnu_blend,&alpha_blend);
-              /* note that sourceFunc* increment jnu and alpha, they don't overwrite it  */
-            }
-
-            nextLineWithBlend++;
-            if(nextLineWithBlend>=blends.mols[nextMolWithBlend].numLinesWithBlends){
-              nextLineWithBlend = 0;
-              /* The reason for doing this is as follows. Firstly, we only enter the present IF block if molI has at least 1 line which is blended with others; and further, if we have now processed all blended lines for that molecule. Thus no matter what value lineI takes for the present molecule, it won't appear as blends.mols[nextMolWithBlend].lines[i].lineI for any i. Yet we will still test blends.mols[nextMolWithBlend].lines[nextLineWithBlend], thus we want nextLineWithBlend to at least have a sensible value between 0 and blends.mols[nextMolWithBlend].numLinesWithBlends-1. We could set nextLineWithBlend to any number in this range in safety, but zero is simplest. */
-            }
-          }
-          /* End of line blending part */
-
-    /* as said above, out-in split should be done also for blended lines... */
-
-    dtau=(alpha_line_out+alpha_cont+alpha_blend)*ds_out;
-          if(dtau < -MAX_NEG_OPT_DEPTH) dtau = -MAX_NEG_OPT_DEPTH;
-          calcSourceFn(dtau, par, &remnantSnu, &expDTau);
-          remnantSnu *= (jnu_line_out+jnu_cont+jnu_blend)*ds_out;
-          mp[molI].phot[lineI+iphot*md[molI].nline]+=expTau[iline]*remnantSnu;
-    expTau[iline]*=expDTau;
-
-    dtau=(alpha_line_in+alpha_cont+alpha_blend)*ds_in;
-          if(dtau < -MAX_NEG_OPT_DEPTH) dtau = -MAX_NEG_OPT_DEPTH;
-          calcSourceFn(dtau, par, &remnantSnu, &expDTau);
-          remnantSnu *= (jnu_line_in+jnu_cont+jnu_blend)*ds_in;
-          mp[molI].phot[lineI+iphot*md[molI].nline]+=expTau[iline]*remnantSnu;
-    expTau[iline]*=expDTau;
-
-          if(expTau[iline] > exp(MAX_NEG_OPT_DEPTH)){
-            (*nMaserWarnings)++;
-            expTau[iline]=exp(MAX_NEG_OPT_DEPTH);
-          }
-
-          iline++;
-        } /* Next line this molecule. */
-
-        if(par->blend && blends.mols!=NULL && molI==blends.mols[nextMolWithBlend].molI)
-          nextMolWithBlend++;
-      }
-
-      here=there;
-    };
-
-    /* Add cmb contribution.
-    */
-    iline = 0;
-    for(molI=0;molI<par->nSpecies;molI++){
-      for(lineI=0;lineI<md[molI].nline;lineI++){
-        mp[molI].phot[lineI+iphot*md[molI].nline]+=expTau[iline]*md[molI].cmb[lineI];
-        iline++;
-      }
-    }
-  }
-}
-
-/*....................................................................*/
-void
-updateJBar(int posn, molData *md, struct grid *gp, const int molI\
-  , configInfo *par, struct blendInfo blends, int nextMolWithBlend\
-  , gridPointData *mp, double *halfFirstDs){
-  /*
-Note that this is called from within the multi-threaded block.
-  */
-  int lineI,iphot,bi,molJ,lineJ,nextLineWithBlend;
-  double dtau,expDTau,remnantSnu,vsum=0.;
-  
-  for(lineI=0;lineI<md[molI].nline;lineI++) mp[molI].jbar[lineI]=0.;
-
-  for(iphot=0;iphot<gp[posn].nphot;iphot++){
-    if(mp[molI].vfac_loc[iphot]>0){
-      nextLineWithBlend = 0;
-      for(lineI=0;lineI<md[molI].nline;lineI++){
-        double jnu=0.0;
-        double alpha=0;
-
-        sourceFunc_line(&md[molI],mp[molI].vfac[iphot],&(gp[posn].mol[molI]),lineI,&jnu,&alpha);
-        sourceFunc_cont(gp[posn].mol[molI].cont[lineI],&jnu,&alpha);
-
-        /* Line blending part.
-        */
-        if(par->blend && blends.mols!=NULL && molI==blends.mols[nextMolWithBlend].molI\
-        && lineI==blends.mols[nextMolWithBlend].lines[nextLineWithBlend].lineI){
-          for(bi=0;bi<blends.mols[nextMolWithBlend].lines[nextLineWithBlend].numBlends;bi++){
-            molJ  = blends.mols[nextMolWithBlend].lines[nextLineWithBlend].blends[bi].molJ;
-            lineJ = blends.mols[nextMolWithBlend].lines[nextLineWithBlend].blends[bi].lineJ;
-            /*
-            The next line is not quite correct, because vfac may be different for other molecules due to different values of binv. Unfortunately we don't necessarily have vfac for molJ available yet.
-            */
-            sourceFunc_line(&md[molJ],mp[molI].vfac[iphot],&(gp[posn].mol[molJ]),lineJ,&jnu,&alpha);
-      /* note that sourceFunc* increment jnu and alpha, they don't overwrite it  */
-          }
-
-          nextLineWithBlend++;
-          if(nextLineWithBlend>=blends.mols[nextMolWithBlend].numLinesWithBlends){
-            nextLineWithBlend = 0;
-            /* The reason for doing this is as follows. Firstly, we only enter the present IF block if molI has at least 1 line which is blended with others; and further, if we have now processed all blended lines for that molecule. Thus no matter what value lineI takes for the present molecule, it won't appear as blends.mols[nextMolWithBlend].lines[i].lineI for any i. Yet we will still test blends.mols[nextMolWithBlend].lines[nextLineWithBlend], thus we want nextLineWithBlend to at least have a sensible value between 0 and blends.mols[nextMolWithBlend].numLinesWithBlends-1. We could set nextLineWithBlend to any number in this range in safety, but zero is simplest. */
-          }
-        }
-        /* End of line blending part */
-
-        dtau=alpha*halfFirstDs[iphot];
-        calcSourceFn(dtau, par, &remnantSnu, &expDTau);
-        remnantSnu *= jnu*halfFirstDs[iphot];
-        mp[molI].jbar[lineI]+=mp[molI].vfac_loc[iphot]*(expDTau*mp[molI].phot[lineI+iphot*md[molI].nline]+remnantSnu);
-
-      }
-      vsum+=mp[molI].vfac_loc[iphot];
-    }
-  }
-  for(lineI=0;lineI<md[molI].nline;lineI++) mp[molI].jbar[lineI] /= vsum;
-}
 
 /*....................................................................*/
 void lteOnePoint(molData *md, const int ispec, const double temp, double *pops){
@@ -1140,9 +872,6 @@ levelPops(molData *md, configInfo *par, struct grid *gp, int *popsdone, double *
   
   for(ispec=0;ispec<par->nSpecies;ispec++){
     solveStatEq(gp,md,ispec,par,blends,nextMolWithBlend,mp,halfFirstDs, nMaserWarnings, radii, gp_sorter); 
-    for(i=0;i<par->pIntensity;i++)
-      if(par->blend && blends.mols!=NULL && ispec==blends.mols[nextMolWithBlend[i]].molI)
-        nextMolWithBlend[i] = nextMolWithBlend[i] + 1;
   }
 
   for(id=0;id<par->pIntensity;id++){
@@ -1161,7 +890,6 @@ levelPops(molData *md, configInfo *par, struct grid *gp, int *popsdone, double *
   }
   if(par->outputfile != NULL) popsout(par,gp,md);
 
-  freeMolsWithBlends(blends.mols, blends.numMolsWithBlends);
   freeGridCont(par, gp);
   for (i=0;i<par->pIntensity;i++)
     gsl_rng_free(threadRans[i]);
