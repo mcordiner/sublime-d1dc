@@ -30,4 +30,4 @@ If CVODE has an error but the input model appears physically reasonable, it can 
 
 If state-to-state collision rates are not known, the "thermalizing collisions" approximation [(Crovisier 1987)](https://ui.adsabs.harvard.edu/abs/1987A%26AS...68..223C/abstract) can be activated by specifying the average collisional cross section (xsec). After each collision, the molecule's excitation state will then be statistically redistributed  according to the Boltzmann distribution at the local kinetic temeprature.
 
-If you use this code in a published work, please reference [Cordiner, M. A., Coulson, I. M., Garcia-Berrios, E. et al. 2022, Astrophysical Journal, Volume 929, id.38](doi.org/10.3847/1538-4357/ac5893).
+If you use this code in a published work, please reference [Cordiner, M. A., Coulson, I. M., Garcia-Berrios, E. et al. 2022, Astrophysical Journal, Volume 929, id.38](https://doi.org/10.3847/1538-4357/ac5893).
