@@ -640,7 +640,6 @@ solveStatEq(struct grid *gp, molData *md, const int ispec, configInfo *par\
   double A[md[ispec].nline]; //Einstein As
   double Pops[NEQ]; //Level Populations
   double logtstep,tout;
-  double timearr[par->pIntensity], sorted_timearr[par->pIntensity]; //times through which the solver will iterate (each one corresponds to a specific gridpoint)
 
   for(id=0;id<md[ispec].nline;id++)
     A[id] = md[ispec].aeinst[id];
