@@ -40,7 +40,7 @@
 
 #include "dims.h"
 
-#define VERSION "D1D-1.2"
+#define VERSION "D1D-1.1"
 #define DEFAULT_NTHREADS 1
 #ifndef NTHREADS /* Value passed from the LIME script */
 #define NTHREADS DEFAULT_NTHREADS
@@ -72,9 +72,10 @@
 #define NUM_VEL_COEFFS          (1+2*N_VEL_SEG_PER_HALF) /* This is the number of velocity samples per edge (not including the grid vertices at each end of the edge). Currently this is elsewhere hard-wired at 3, the macro just being used in the file I/O modules. Note that we want an odd number of velocity samples per edge if we want to have the ability to do 2nd-order interpolation of velocity within Delaunay tetrahedra. */
 #define MAX_NEG_OPT_DEPTH	30.0			/* 30 was the original value in LIME. */
 #define NUM_RAN_DENS		100
-#define RTOL 1.0e-10   /* CVODE scalar relative tolerance */
+#define RTOL 1.0e-10  /* CVODE scalar relative tolerance */
 #define ATOL 1.0e-10   /* CVODE vector absolute tolerance components */
 #define MINTOL 1.0e-15 /*Minimum allowed value for RTOL and ATOL*/
+#define DENSE_NEQ_CUTOFF 300  /* Use Dense solver below this NEQ; Krylov (SPGMR) above it for better speed (as long as useEP is 0) */
 
 #define DEFAULT_BETA 1.042e-5 /*Standard water photolysis rate*/
 #define DEFAULT_XNE 0.2 /*Standard scaling for the electron abundance*/
